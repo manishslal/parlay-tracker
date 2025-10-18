@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.env
+.venv/
+venv/
+.Python
+
+# local IDE / OS
+.DS_Store
+.vscode/
+.idea/
+
+# Data files (do NOT commit real bets)
+Data/*.json
+
+# local python virtualenv
+.venv/
+
+# Node/npm
+node_modules/

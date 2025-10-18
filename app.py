@@ -1,0 +1,801 @@
+# app.py
+from flask import Flask, jsonify, send_from_directory
+from flask_cors import CORS
+import requests
+import os
+from datetime import datetime
+import json
+
+# Data directory for JSON fixtures
+DATA_DIR = os.path.join(os.path.dirname(__file__), "Data")
+
+def data_path(filename):
+    return os.path.join(DATA_DIR, filename)
+
+# Ensure data directory exists
+os.makedirs(DATA_DIR, exist_ok=True)
+
+
+def _parse_american_odds(odds):
+    """Parse American odds like +150 or -120 and return decimal multiplier (including stake).
+    Returns None if odds cannot be parsed.
+    """
+    if odds is None:
+        return None
+    # allow numeric input as well
+    try:
+        # strip whitespace
+        s = str(odds).strip()
+        # if empty
+        if s == "":
+            return None
+        # remove plus if present
+        if s.startswith("+"):
+            val = int(s[1:])
+            return 1 + (val / 100.0)
+        if s.startswith("-"):
+            val = int(s[1:])
+            if val == 0:
+                return None
+            return 1 + (100.0 / val)
+        # try plain integer
+        if s.isdigit() or (s[0] == '-' and s[1:].isdigit()):
+            val = int(s)
+            if val > 0:
+                return 1 + (val / 100.0)
+            else:
+                return 1 + (100.0 / abs(val))
+        # fallback: try float (decimal odds)
+        f = float(s)
+        if f > 0:
+            return f
+    except Exception:
+        return None
+    return None
+
+
+def _compute_parlay_returns_from_odds(wager, parlay_odds=None, leg_odds_list=None):
+    """Compute expected profit (returns) from wager and odds.
+    If parlay_odds provided (American odds string), use that. Otherwise, if leg_odds_list
+    provided, compute combined multiplier. Returns numeric profit or None if not computable.
+    """
+    try:
+        if wager is None:
+            return None
+        w = float(wager)
+        # prefer parlay odds
+        if parlay_odds:
+            mult = _parse_american_odds(parlay_odds)
+            if mult is None:
+                return None
+            # profit is wager * (mult - 1)
+            return round(w * (mult - 1), 2)
+
+        # else try combined leg odds
+        if leg_odds_list:
+            mult = 1.0
+            any_parsed = False
+            for o in leg_odds_list:
+                pm = _parse_american_odds(o)
+                if pm is None:
+                    continue
+                any_parsed = True
+                mult *= pm
+            if any_parsed:
+                return round(w * (mult - 1), 2)
+
+        return None
+    except Exception:
+        return None
+
+app = Flask(__name__)
+CORS(app)
+
+def load_parlays():
+    try:
+        with open(data_path("Todays_Bets.json")) as f:
+            return json.load(f)
+    except Exception as e:
+        app.logger.error("Failed to load today_parlays.json: %s", e)
+        return []
+
+def initialize_parlay_files():
+    """Initialize and organize parlays into appropriate files before server starts"""
+    try:
+        # Load all parlays
+        today_parlays = load_parlays()
+        live_parlays = load_live_parlays()
+        historical_parlays = load_historical_bets()
+
+        # Clear only live parlays list to rebuild it
+        live_parlays = []
+
+        # Create set of existing historical parlay IDs to prevent duplicates
+        existing_historical = {f"{p['name']}_{p['legs'][0]['game_date']}" 
+                             for p in historical_parlays if p.get('legs')}
+
+        # Process each parlay from today's file
+        new_today_parlays = []
+        for parlay in today_parlays:
+            if not parlay.get('legs'):
+                continue
+
+            # Check all legs to determine if parlay is complete or live
+            all_games_complete = True
+            any_game_active = False
+
+            for leg in parlay['legs']:
+                game_date = leg.get('game_date')
+                if not game_date:
+                    continue
+
+                # Check game status regardless of date
+                # Get game details to check if it's complete
+                events = get_events(game_date)
+                for event in events:
+                    team_names = {c['team']['displayName'] for c in event['competitions'][0]['competitors']}
+                    if leg['away'] in team_names and leg['home'] in team_names:
+                        status = event['status']['type']['name']
+                        if status == 'STATUS_FINAL':
+                            continue
+                        elif status == 'STATUS_IN_PROGRESS':
+                            any_game_active = True
+                            all_games_complete = False
+                            break
+                        else:
+                            all_games_complete = False
+                            break
+
+                if not all_games_complete:
+                    break
+
+            # Create unique identifier for this parlay
+            parlay_id = f"{parlay['name']}_{parlay['legs'][0]['game_date']}"
+
+            # Ensure betting metadata fields exist on parlay
+            parlay_odds = parlay.get('odds')
+            parlay_wager = parlay.get('wager')
+            # If the parlay contains a per-leg odds list, keep it
+            leg_odds = [l.get('odds') for l in parlay.get('legs', []) if l.get('odds') is not None]
+
+            # Add to appropriate list based on status
+            if all_games_complete:
+                if parlay_id not in {f"{p['name']}_{p['legs'][0]['game_date']}" for p in historical_parlays}:
+                    # compute returns if coming from today's
+                    returns = parlay.get('returns')
+                    # Treat None or empty-string as missing and compute
+                    if returns is None or (isinstance(returns, str) and str(returns).strip() == ""):
+                        returns = _compute_parlay_returns_from_odds(parlay_wager, parlay_odds, leg_odds)
+                    parlay['returns'] = returns
+                    historical_parlays.append(parlay)
+            elif any_game_active:
+                if parlay_id not in {f"{p['name']}_{p['legs'][0]['game_date']}" for p in live_parlays}:
+                    returns = parlay.get('returns')
+                    if returns is None:
+                        returns = _compute_parlay_returns_from_odds(parlay_wager, parlay_odds, leg_odds)
+                    parlay['returns'] = returns
+                    live_parlays.append(parlay)
+            else:
+                new_today_parlays.append(parlay)
+
+        # Sort all lists by date
+        historical_parlays = sort_parlays_by_date(historical_parlays)
+        live_parlays = sort_parlays_by_date(live_parlays)
+        new_today_parlays = sort_parlays_by_date(new_today_parlays)
+
+        # Save all files (new naming convention)
+        save_parlays(historical_parlays, data_path("Historical_Bets.json"))
+        save_parlays(live_parlays, data_path("Live_Bets.json"))
+        save_parlays(new_today_parlays, data_path("Todays_Bets.json"))
+
+        # Compute and persist any missing returns on startup (idempotent)
+        try:
+            res = compute_and_persist_returns(force=False)
+            app.logger.info(f"Auto-computed returns on startup: {res}")
+        except Exception as e:
+            app.logger.error(f"Failed to auto-compute returns: {e}")
+
+        return new_today_parlays
+    except Exception as e:
+        app.logger.error(f"Failed to initialize parlay files: {e}")
+        return []
+
+def load_live_parlays():
+    try:
+        with open(data_path("Live_Bets.json")) as f:
+            return json.load(f)
+    except Exception as e:
+        app.logger.error("Failed to load live_parlays.json: %s", e)
+        return []
+
+def load_historical_bets():
+    try:
+        with open(data_path("Historical_Bets.json")) as f:
+            return json.load(f)
+    except Exception as e:
+        app.logger.error("Failed to load historical_bets.json: %s", e)
+        return []
+
+def save_parlays(parlays, filename):
+    try:
+        # filename may be a full path or a simple name; ensure we write to Data dir
+        path = filename
+        # if a bare filename was passed, join with DATA_DIR
+        if not os.path.isabs(path) and os.path.basename(path) == path:
+            path = data_path(path)
+        with open(path, "w") as f:
+            json.dump(parlays, f, indent=2)
+    except Exception as e:
+        app.logger.error(f"Failed to save {filename}: {e}")
+
+def sort_parlays_by_date(parlays):
+    # Sort parlays by the most recent game date in any leg
+    def get_latest_date(parlay):
+        dates = [leg.get('game_date', '1900-01-01') for leg in parlay.get('legs', [])]
+        return max(dates) if dates else '1900-01-01'
+    return sorted(parlays, key=get_latest_date, reverse=True)
+
+def process_parlays(current_parlays):
+    """Process and sort parlays into appropriate files based on their status"""
+    # Load existing parlays
+    historical = load_historical_bets()
+    live = []  # Reset live parlays as they will be rebuilt
+    new_today_parlays = []
+    
+    # Create set of existing historical parlay identifiers
+    existing_historical = {f"{p['name']}_{p['legs'][0]['game_date']}" 
+                         for p in historical if p.get('legs')}
+                         
+    # Track IDs of parlays we're processing to avoid duplicates in live list
+    processed_live = set()
+    
+    # Process each current parlay
+    for parlay in current_parlays:
+        if not parlay.get('legs'):
+            continue
+            
+        # Create unique identifier for this parlay
+        first_game_date = parlay['legs'][0].get('game_date')
+        if not first_game_date:
+            continue
+            
+        parlay_id = f"{parlay['name']}_{first_game_date}"
+        
+        # Skip if already in historical
+        if parlay_id in existing_historical:
+            continue
+            
+        # Skip if we've already processed this parlay into live list
+        if parlay_id in processed_live:
+            continue
+        
+        # Check all legs to determine if parlay is complete
+        all_games_complete = True
+        any_game_active = False
+        
+        for leg in parlay['legs']:
+            game_date = leg.get('game_date')
+            if not game_date:
+                continue
+                
+            # Get game details to check if it's complete
+            events = get_events(game_date)
+            for event in events:
+                team_names = {c['team']['displayName'] for c in event['competitions'][0]['competitors']}
+                if leg['away'] in team_names and leg['home'] in team_names:
+                    status = event['status']['type']['name']
+                    if status == 'STATUS_FINAL':
+                        continue
+                    elif status == 'STATUS_IN_PROGRESS':
+                        any_game_active = True
+                        all_games_complete = False
+                        break
+                    else:
+                        all_games_complete = False
+                        break
+            
+            if not all_games_complete:
+                break
+        
+        # Add to appropriate list based on game status
+        if all_games_complete:
+            # Add to historical if it's not already there
+            if parlay_id not in existing_historical:
+                # preserve odds/wager and compute returns if needed
+                parlay_odds = parlay.get('odds')
+                parlay_wager = parlay.get('wager')
+                leg_odds = [l.get('odds') for l in parlay.get('legs', []) if l.get('odds') is not None]
+                returns = parlay.get('returns')
+                # Treat None or empty-string as missing and compute
+                if returns is None or (isinstance(returns, str) and str(returns).strip() == ""):
+                    returns = _compute_parlay_returns_from_odds(parlay_wager, parlay_odds, leg_odds)
+                    parlay['returns'] = returns
+                historical.append(parlay)
+                existing_historical.add(parlay_id)
+        elif any_game_active:
+            # Add to live if we haven't processed it yet
+            if parlay_id not in processed_live:
+                parlay_odds = parlay.get('odds')
+                parlay_wager = parlay.get('wager')
+                leg_odds = [l.get('odds') for l in parlay.get('legs', []) if l.get('odds') is not None]
+                returns = parlay.get('returns')
+                # Treat None or empty-string as missing and compute
+                if returns is None or (isinstance(returns, str) and str(returns).strip() == ""):
+                    returns = _compute_parlay_returns_from_odds(parlay_wager, parlay_odds, leg_odds)
+                    parlay['returns'] = returns
+                live.append(parlay)
+                processed_live.add(parlay_id)
+        else:
+            # Keep in today's parlays if it's not in historical or live
+            if parlay_id not in existing_historical and parlay_id not in processed_live:
+                new_today_parlays.append(parlay)
+    
+    # Sort all lists by date
+    historical = sort_parlays_by_date(historical)
+    live = sort_parlays_by_date(live)
+    new_today_parlays = sort_parlays_by_date(new_today_parlays)
+    
+    # Save all files using the canonical/new naming convention
+    save_parlays(historical, "Historical_Bets.json")
+    save_parlays(live, "Live_Bets.json")
+    save_parlays(new_today_parlays, "Todays_Bets.json")
+
+    return new_today_parlays
+
+def is_past_date(game_date_str):
+    # For testing purposes, use a fixed date after the games
+    today = datetime.strptime("2025-10-14", "%Y-%m-%d").date()
+    game_date = datetime.strptime(game_date_str, "%Y-%m-%d").date()
+    return game_date < today
+
+def get_events(date_str):
+    app.logger.info(f"Fetching events for date: {date_str}")
+    # Mock data disabled - prefer real ESPN responses for accuracy. If you need
+    # mock data for offline testing, re-enable or modify the block below.
+    #
+    # if date_str == "2025-10-13":
+    #     app.logger.info("Using mock data for 2025-10-13")
+    #     return mock_data
+    
+    # For other dates, try the real API
+    d = datetime.strptime(date_str, "%Y-%m-%d").strftime("%Y%m%d")
+    url = f"http://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?dates={d}"
+    try:
+        data = requests.get(url).json()
+        return data.get("events", [])
+    except Exception as e:
+        app.logger.error(f"Failed to fetch events for {date_str}: {e}")
+        return []
+
+def _get_player_stat_from_boxscore(player_name, category_name, stat_label, boxscore):
+    """Get a specific stat for a player from the boxscore."""
+    # Normalize names for more robust matching (remove punctuation, lower-case)
+    def _norm(s):
+        import re
+        return re.sub(r"[^a-z0-9 ]+", "", s.lower()).strip()
+
+    player_norm = _norm(player_name)
+    for team_box in boxscore:
+        for cat in team_box.get("statistics", []):
+            if cat.get("name", "").lower() == category_name.lower():
+                try:
+                    labels = [l for l in cat.get("labels", [])]
+                    if stat_label not in labels:
+                        continue
+                    stat_idx = labels.index(stat_label)
+                    for ath in cat.get("athletes", []):
+                        ath_name_raw = ath.get("athlete", {}).get("displayName", "")
+                        ath_name = _norm(ath_name_raw)
+                        # Match if all tokens of player_norm appear in athlete name
+                        if all(tok in ath_name for tok in player_norm.split()):
+                            stats = ath.get("stats", [])
+                            if stat_idx < len(stats):
+                                try:
+                                    return int(float(stats[stat_idx]))
+                                except Exception:
+                                    return 0
+                    # If strict token matching didn't find a player, try fuzzy matching
+                    try:
+                        import difflib
+                        athlete_names = [a.get('athlete', {}).get('displayName', '') for a in cat.get('athletes', [])]
+                        # find best match to player_name
+                        matches = difflib.get_close_matches(player_name, athlete_names, n=1, cutoff=0.6)
+                        if matches:
+                            best = matches[0]
+                            for ath in cat.get('athletes', []):
+                                if ath.get('athlete', {}).get('displayName') == best:
+                                    stats = ath.get('stats', [])
+                                    if stat_idx < len(stats):
+                                        try:
+                                            return int(float(stats[stat_idx]))
+                                        except Exception:
+                                            return 0
+                    except Exception:
+                        pass
+                except (ValueError, IndexError):
+                    continue
+    return 0
+
+def _get_touchdowns(player_name, boxscore, scoring_plays=None):
+    """Calculate total touchdowns for a player from boxscore and scoring_plays as fallback."""
+    td_cats = {
+        "rushing": "TD", "receiving": "TD",
+        "interception": "TD", "kickoffReturn": "TD", "puntReturn": "TD",
+        "fumbleReturn": "TD"
+    }
+    total_tds = 0
+    # First try structured boxscore totals
+    for cat, label in td_cats.items():
+        total_tds += _get_player_stat_from_boxscore(player_name, cat, label, boxscore)
+
+    # If we found any via boxscore, return that value
+    if total_tds > 0:
+        return total_tds
+
+    # Otherwise try to parse scoring_plays (if provided) for touchdown entries
+    if scoring_plays:
+        import re
+        def _norm(s):
+            return re.sub(r"[^a-z0-9 ]+", "", (s or "").lower()).strip()
+
+        player_norm = _norm(player_name)
+        td_count = 0
+        for play in scoring_plays:
+            # Some play entries include participants with displayName fields
+            participants = play.get("participants", [])
+            for p in participants:
+                name = p.get("displayName") or p.get("athlete", {}).get("displayName")
+                if name and player_norm in _norm(name):
+                    # He was part of a scoring play (likely a TD)
+                    td_count += 1
+                    break
+        return td_count
+
+    return total_tds
+
+def calculate_bet_value(bet, game_data):
+    """Calculate the current value for a bet based on game data."""
+    stat = bet["stat"]
+    boxscore = game_data.get("boxscore", [])
+    scoring_plays = game_data.get("scoring_plays", [])
+    
+    # --- Player Props ---
+    if "player" in bet:
+        player_name = bet["player"]
+        
+        # Simple Box Score Stats
+        stat_map = {
+            "passing_yards": ("passing", "YDS"), "passing_yards_alt": ("passing", "YDS"),
+            "pass_attempts": ("passing", "ATT"),
+            "pass_completions": ("passing", "COMP"), "passing_touchdowns": ("passing", "TD"),
+            "interceptions_thrown": ("passing", "INT"), "longest_pass_completion": ("passing", "LONG"),
+            "rushing_yards": ("rushing", "YDS"), "rushing_yards_alt": ("rushing", "YDS"),
+            "rushing_attempts": ("rushing", "CAR"),
+            "rushing_touchdowns": ("rushing", "TD"), "longest_rush": ("rushing", "LONG"),
+            "receiving_yards": ("receiving", "YDS"), "receiving_yards_alt": ("receiving", "YDS"),
+            "receptions": ("receiving", "REC"), "receptions_alt": ("receiving", "REC"),
+            "receiving_touchdowns": ("receiving", "TD"), "longest_reception": ("receiving", "LONG"),
+            "sacks": ("defensive", "SACK"), "tackles_assists": ("defensive", "TOT"),
+            "field_goals_made": ("kicking", "FGM"), "kicking_points": ("kicking", "PTS"),
+        }
+        if stat in stat_map:
+            cat, label = stat_map[stat]
+            return _get_player_stat_from_boxscore(player_name, cat, label, boxscore)
+
+        # Complex Player Stats
+        if stat == "rushing_receiving_yards":
+            rush = _get_player_stat_from_boxscore(player_name, "rushing", "YDS", boxscore)
+            rec = _get_player_stat_from_boxscore(player_name, "receiving", "YDS", boxscore)
+            return rush + rec
+        
+        if stat in ["anytime_touchdown", "player_to_score_2_touchdowns", "player_to_score_3_touchdowns"]:
+            return _get_touchdowns(player_name, boxscore, scoring_plays)
+
+        td_plays = [p for p in scoring_plays if "Touchdown" in p.get("type", {}).get("text", "")]
+        if stat == "first_touchdown_scorer":
+            if td_plays and player_name.lower() in td_plays[0].get("participants", [{}])[0].get("displayName", "").lower():
+                return 1
+            return 0
+        if stat == "last_touchdown_scorer":
+            if td_plays and player_name.lower() in td_plays[-1].get("participants", [{}])[0].get("displayName", "").lower():
+                return 1
+            return 0
+
+    # --- Team & Game Props ---
+    home_score = game_data["score"]["home"]
+    away_score = game_data["score"]["away"]
+    
+    if stat == "team_total_points":
+        return home_score if bet["team"] == game_data["teams"]["home"] else away_score
+    
+    if stat == "total_points":
+        return home_score + away_score
+
+    if stat == "first_team_to_score":
+        if scoring_plays:
+            return scoring_plays[0].get("team", {}).get("displayName")
+        return "N/A"
+
+    if stat == "last_team_to_score":
+        if scoring_plays:
+            return scoring_plays[-1].get("team", {}).get("displayName")
+        return "N/A"
+        
+    if stat == "will_be_overtime":
+        return 1 if game_data.get("period", 0) > 4 else 0
+
+    return 0 # Default for unhandled stats
+
+def fetch_game_details_from_espn(game_date, away_team, home_team):
+    """Fetch detailed game data for a single game."""
+    try:
+        app.logger.info(f"Fetching game details for {away_team} @ {home_team} on {game_date}")
+        events = get_events(game_date)
+        app.logger.info(f"Found {len(events)} events for {game_date}")
+        
+        ev = None
+        for event in events:
+            try:
+                team_names = {c['team']['displayName'] for c in event['competitions'][0]['competitors']}
+                app.logger.info(f"Event team names: {team_names}")
+                if away_team in team_names and home_team in team_names:
+                    ev = event
+                    app.logger.info("Found matching event")
+                    break
+            except Exception as e:
+                app.logger.error(f"Error processing event: {str(e)}")
+                continue
+                
+        if not ev:
+            app.logger.warning(f"No matching event found for {away_team} @ {home_team}")
+            return None
+
+        comp = ev["competitions"][0]
+        away = next(c for c in comp["competitors"] if c["homeAway"] == "away")
+        home = next(c for c in comp["competitors"] if c["homeAway"] == "home")
+
+        # Prefer boxscore players from the competition, but fall back to the
+        # ESPN summary endpoint when boxscore is missing or empty.
+        boxscore_players = []
+        scoring_plays = []
+        comp_box = comp.get("boxscore")
+        if comp_box and isinstance(comp_box, dict):
+            boxscore_players = comp_box.get("players") or []
+        else:
+            # Try fetching the summary endpoint which contains boxscore and scoringPlays
+            try:
+                summary_url = f"http://site.api.espn.com/apis/site/v2/sports/football/nfl/summary?event={ev['id']}"
+                app.logger.info(f"Fetching summary for event {ev['id']}: {summary_url}")
+                summary = requests.get(summary_url, timeout=8).json()
+                # summary may use camelCase keys
+                s_box = summary.get("boxscore") or summary.get("boxScore") or {}
+                boxscore_players = s_box.get("players") or []
+                scoring_plays = summary.get("scoringPlays") or summary.get("scoring_plays") or []
+                app.logger.info(f"Summary fetched: box players={len(boxscore_players)}, scoring plays={len(scoring_plays)}")
+            except Exception as e:
+                app.logger.error(f"Error fetching summary for event {ev.get('id')}: {e}")
+
+        game = {
+            "espn_game_id": ev["id"],
+            "teams": {"away": away["team"]["displayName"], "home": home["team"]["displayName"]},
+            "startTime": ev.get("date", "").split("T")[1][:5] + " ET" if "T" in ev.get("date", "") else "",
+            "game_date": game_date,
+            "statusTypeName": ev["status"]["type"]["name"],
+            "period": ev["status"].get("period", 0),
+            "clock": ev["status"].get("displayClock", "00:00"),
+            "score": {"away": int(away.get("score", 0)), "home": int(home.get("score", 0))},
+            "boxscore": boxscore_players,
+            "scoring_plays": scoring_plays,
+            "leaders": []
+        }
+        return game
+
+    except Exception as e:
+        app.logger.error(f"Error in fetch_game_details_from_espn: {str(e)}")
+        return None
+
+game_data_cache = {}
+
+def process_parlay_data(parlays):
+    """Process a list of parlays with game data."""
+    app.logger.info("Starting process_parlay_data")
+    processed_parlays = []
+    
+    for parlay in parlays:
+        app.logger.info(f"Processing parlay: {parlay.get('name')}")
+        parlay_games = {}
+        
+        for leg in parlay.get("legs", []):
+            app.logger.info(f"Processing leg for {leg.get('player')} - {leg.get('stat')}")
+            game_key = f"{leg['game_date']}_{leg['away']}_{leg['home']}"
+            app.logger.info(f"Game key: {game_key}")
+            
+            if game_key not in game_data_cache:
+                app.logger.info(f"Fetching game data for {game_key}")
+                game_data = fetch_game_details_from_espn(leg['game_date'], leg['away'], leg['home'])
+                app.logger.info(f"Game data fetched: {game_data is not None}")
+                game_data_cache[game_key] = game_data
+            else:
+                app.logger.info(f"Using cached game data for {game_key}")
+            
+            if game_data_cache.get(game_key):
+                app.logger.info(f"Adding game data to parlay_games: {game_key}")
+                parlay_games[game_key] = game_data_cache[game_key]
+            else:
+                app.logger.warning(f"No game data available for {game_key}")
+
+        for leg in parlay.get("legs", []):
+            app.logger.info(f"Processing leg in final stage: {leg}")
+            game_key = f"{leg['game_date']}_{leg['away']}_{leg['home']}"
+            game_data = parlay_games.get(game_key)
+            app.logger.info(f"Game data for {game_key}: {game_data is not None}")
+            
+            leg["parlay_name"] = parlay.get("name", "Unknown Bet")
+
+            if game_data:
+                try:
+                    leg["current"] = calculate_bet_value(leg, game_data)
+                    app.logger.info(f"Calculated value for {leg['player']} - {leg['stat']}: {leg['current']}")
+                except Exception as e:
+                    app.logger.error(f"Error calculating bet value: {str(e)}")
+                    leg["current"] = 0
+            else:
+                app.logger.warning(f"No game data found for {game_key}")
+                leg["current"] = 0
+
+        processed_parlay = {
+            "name": parlay.get("name", "Unknown Bet"),
+            "type": parlay.get("type", "Wager"),
+            "legs": parlay.get("legs", []),
+            "games": list(parlay_games.values())
+        }
+        processed_parlays.append(processed_parlay)
+    
+    return processed_parlays
+
+
+def compute_and_persist_returns(force=False):
+    """Compute missing returns for all Data files and persist them.
+    If force=True, overwrite existing returns when computable.
+    Returns a dict of {filename: [(parlay_name, returns), ...]}"""
+    results = {}
+    for fname in ("Historical_Bets.json", "Live_Bets.json", "Todays_Bets.json"):
+        path = data_path(fname)
+        try:
+            with open(path) as f:
+                data = json.load(f)
+        except Exception:
+            data = []
+
+        updated = []
+        for parlay in data:
+            parlay_odds = parlay.get('odds')
+            parlay_wager = parlay.get('wager')
+            leg_odds = [l.get('odds') for l in parlay.get('legs', []) if l.get('odds') is not None]
+            current = parlay.get('returns')
+            if force or current is None or (isinstance(current, str) and str(current).strip() == ""):
+                val = _compute_parlay_returns_from_odds(parlay_wager, parlay_odds, leg_odds)
+                if val is not None:
+                    # ensure 2 decimal places
+                    val = round(float(val), 2)
+                    parlay['returns'] = val
+                    updated.append((parlay.get('name'), val))
+
+        # write back
+        try:
+            with open(path, 'w') as f:
+                json.dump(data, f, indent=2)
+        except Exception as e:
+            app.logger.error(f"Failed to persist {path}: {e}")
+
+        results[fname] = updated
+
+    return results
+
+@app.route("/live")
+def live():
+    live_parlays = load_live_parlays()
+    processed = process_parlay_data(live_parlays)
+    return jsonify(sort_parlays_by_date(processed))
+
+
+@app.route("/todays")
+def todays():
+    todays_parlays = load_parlays()
+    # Return the raw today's bets (we want to show what's still in Todays_Bets.json)
+    processed = process_parlay_data(todays_parlays)
+    return jsonify(sort_parlays_by_date(processed))
+
+@app.route("/historical")
+def historical():
+    try:
+        app.logger.info("Starting historical endpoint processing")
+        
+        # Load historical parlays
+        try:
+            historical_parlays = load_historical_bets()
+            app.logger.info(f"Loaded {len(historical_parlays)} historical parlays")
+            for parlay in historical_parlays:
+                app.logger.info(f"Parlay: {parlay.get('name')}, type: {parlay.get('type')}, legs: {len(parlay.get('legs', []))}")
+        except Exception as e:
+            app.logger.error(f"Error loading historical bets: {str(e)}")
+            raise
+            
+        if not historical_parlays:
+            app.logger.warning("No historical parlays found")
+            return jsonify([])
+            
+        # Process parlays
+        try:
+            processed = process_parlay_data(historical_parlays)
+            app.logger.info(f"Processed {len(processed)} historical parlays")
+            for p in processed:
+                app.logger.info(f"Processed parlay: {p.get('name')}")
+        except Exception as e:
+            app.logger.error(f"Error processing parlays: {str(e)}")
+            raise
+        
+        # Sort and return
+        try:
+            sorted_parlays = sort_parlays_by_date(processed)
+            app.logger.info(f"Returning {len(sorted_parlays)} sorted historical parlays")
+            return jsonify(sorted_parlays)
+        except Exception as e:
+            app.logger.error(f"Error sorting parlays: {str(e)}")
+            raise
+            
+    except Exception as e:
+        app.logger.error(f"Error in historical endpoint: {str(e)}")
+        import traceback
+        app.logger.error(traceback.format_exc())
+        return jsonify({"error": str(e)}), 500
+
+@app.route("/stats")
+def stats():
+    parlays = load_parlays()
+    processed_parlays = process_parlay_data(parlays)
+    
+    # Process parlays and move them to appropriate files
+    process_parlays(processed_parlays)
+    
+    # Return processed live parlays for display
+    live_parlays = load_live_parlays()
+    processed_live = process_parlay_data(live_parlays)
+    return jsonify(sort_parlays_by_date(processed_live))
+
+@app.route('/admin/compute_returns', methods=['POST'])
+def admin_compute_returns():
+    """Admin endpoint to compute (and optionally force) returns.
+    POST JSON body: {"force": true|false}
+    Returns a JSON summary of updates.
+    """
+    try:
+        from flask import request
+        # Require ADMIN_TOKEN environment variable to be set for admin actions
+        admin_token = os.environ.get('ADMIN_TOKEN')
+        if not admin_token:
+            app.logger.error('ADMIN_TOKEN not configured; refusing admin operation')
+            return jsonify({"error": "ADMIN_TOKEN not configured on server"}), 500
+
+        # Accept token in header X-Admin-Token or in JSON body as `token`
+        body = request.get_json() or {}
+        header_token = request.headers.get('X-Admin-Token') or body.get('token')
+        if header_token != admin_token:
+            return jsonify({"error": "Unauthorized"}), 401
+
+        force = bool(body.get('force', False))
+        results = compute_and_persist_returns(force=force)
+        return jsonify(results)
+    except Exception as e:
+        app.logger.error(f"Admin compute failed: {e}")
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/')
+def index():
+    return send_from_directory('.', 'index.html')
+
+if __name__ == "__main__":
+    # Initialize and organize parlays before starting server
+    initialize_parlay_files()
+    # Run without the debug reloader during automated tests to avoid restarts
+    app.run(debug=False, port=5001)

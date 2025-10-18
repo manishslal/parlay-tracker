@@ -1,0 +1,393 @@
+<!-- index.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Parlay & Wager Tracker</title>
+  <style>
+    :root {
+      --bg:#121212;--surface:#1a1a1a;--primary:#140d52;
+      --text:#e0e0e0;--border:#ffcc00a4;--green:#4caf50;
+      --orange:#ff9800;--yellow:#ffeb3b;--pregame:#ffc107;
+      --error:#f44336;--progress-bg:#444;--section-bg:#252525;
+      --outline-blue: #03a9f4; --title-color: #e657ff;
+      --tab-active: #2a2a2a;
+    }
+    
+    .tabs {
+      display: flex;
+      gap: 1rem;
+      margin-bottom: 2rem;
+      justify-content: center;
+    }
+    
+    .tab {
+      padding: 0.75rem 1.5rem;
+      background: var(--surface);
+      color: var(--text);
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: background-color 0.3s;
+    }
+    
+    .tab:hover {
+      opacity: 0.9;
+    }
+    
+    .tab.active {
+      background: var(--tab-active);
+      color: var(--title-color);
+    }
+    body{background:var(--bg);color:var(--text);
+      font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+      margin:0;padding:1rem;}
+    .container{max-width:1200px;margin:auto;padding:2rem;
+      background:var(--surface);border-radius:12px;
+      box-shadow:0 4px 20px rgba(0,0,0,0.25);}
+    h1{text-align:center;color:var(--title-color);margin-bottom:1.5rem;}
+    button{display:block;margin:0 auto 1.5rem;padding:.75rem 1.5rem;
+      background:var(--primary);color:#fff;font-weight:bold;
+      border:none;border-radius:8px;cursor:pointer;}
+    button:hover{opacity:.9;}
+    #status-message{text-align:center;margin-bottom:2rem;color:#aaa;}
+    .parlay-section{background:var(--section-bg);margin-bottom:2rem;
+      border-radius:12px;padding:1.5rem 1.5rem 1.125rem;border:2px solid var(--border);}
+    .parlay-header{background:var(--primary);color:#fff;
+      margin:-1.5rem -1.5rem 1.125rem -1.5rem;padding:1rem 1.5rem;
+      border-radius:10px 10px 0 0;display:flex; flex-wrap: wrap;
+      justify-content:space-between;align-items:flex-start;font-weight:bold;}
+    .parlay-title{display:flex;flex-direction:column;gap:0.25rem;}
+    .parlay-date{font-size:0.85rem;font-weight:normal;opacity:0.8;}
+    .game-info-wrapper{display:flex;gap:1rem;flex-wrap:wrap;}
+    .game-info{display:flex;flex-direction:column;align-items:center;
+      gap:.25rem;font-size:.9rem;border:1px solid var(--border);
+      padding:.5rem;border-radius:6px;background:rgba(0,0,0,0.2);}
+    table{width:100%;border-collapse:separate;border-spacing:0;}
+    th,td{padding:.75rem;border-bottom:1px solid var(--border);
+      vertical-align:middle;text-align:left;}
+    td { background: var(--surface); }
+    th:first-child { border-top-left-radius: 10px; }
+    th:last-child { border-top-right-radius: 10px; }
+    th:nth-child(3),td:nth-child(3),
+    th:nth-child(4),td:nth-child(4),
+    th:nth-child(5),td:nth-child(5),
+    th:nth-child(6),td:nth-child(6){text-align:center;}
+    tbody tr:last-child td { border-bottom: none; }
+    tbody tr:last-child td:first-child { border-bottom-left-radius: 10px; }
+    tbody tr:last-child td:last-child { border-bottom-right-radius: 10px; }
+    th{background:#2a2a2a;}
+    .progress-bar{background:var(--progress-bg);border-radius:13px;position:relative;height:1.5rem;border:2px solid var(--outline-blue);padding:3px;}
+    .progress-bar.pct-vlow { border-color: var(--error); }
+    .progress-bar.pct-low { border-color: var(--orange); }
+    .progress-bar.pct-mid { border-color: var(--yellow); }
+    .progress-bar.pct-full { border-color: var(--green); }
+    .progress{height:100%;transition:width .5s ease-in-out;border-radius:8px;}
+    .progress-text{position:absolute;top:0;left:0;width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:bold;}
+    .progress.pct-vlow{background:linear-gradient(to right, rgba(244, 67, 54, 0.2), rgba(244, 67, 54, 1));}
+    .progress.pct-low{background:linear-gradient(to right, rgba(255, 152, 0, 0.2), rgba(255, 152, 0, 1));}
+    .progress.pct-mid{background:linear-gradient(to right, rgba(255, 235, 59, 0.2), rgba(255, 235, 59, 1));}
+    .progress.pct-full{background:linear-gradient(to right, rgba(76, 175, 80, 0.2), rgba(76, 175, 80, 1));}
+    .badge{display:inline-block;font-size:.75rem;font-weight:bold;
+      margin-bottom:.25rem;padding:2px 6px;border-radius:4px;}
+    .status-pregame{background:var(--pregame);color:#ffffff;}
+    .status-live{background:var(--green);color:#ffffff;}
+    .status-final{background:var(--error);color:#ffffff;}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Parlay & Wager Tracker</h1>
+    <div class="tabs">
+      <button class="tab active" data-tab="current">Today's Parlays</button>
+      <button class="tab" data-tab="historical">Historical Bets</button>
+    </div>
+    <button id="refresh-button">Refresh Stats</button>
+    <div id="status-message"></div>
+    <div id="parlay-sections" class="tab-content active" data-tab="current"></div>
+    <div id="historical-sections" class="tab-content" data-tab="historical" style="display:none"></div>
+  </div>
+  <script>
+    // Helper to read query params
+    function getQueryParam(name) {
+      const params = new URLSearchParams(window.location.search);
+      return params.get(name);
+    }
+
+    // API base precedence: ?api=... (query param) -> window.API_BASE -> default localhost
+    const urlApi = getQueryParam('api');
+    const API_BASE = (urlApi ? urlApi.replace(/\/$/, '') : (window.API_BASE && window.API_BASE.replace(/\/$/, ''))) || 'http://127.0.0.1:5001';
+    const btn=document.getElementById('refresh-button'),
+      sec=document.getElementById('parlay-sections'),
+      histSec=document.getElementById('historical-sections'),
+      msg=document.getElementById('status-message'),
+      statsUrl = `${API_BASE}/stats`,
+      liveUrl = `${API_BASE}/live`,
+      histUrl = `${API_BASE}/historical`;
+    
+    // Client-side cache for faster tab switching
+    let cachedLive = null;
+    let cachedHistorical = null;
+
+    // Tab handling
+    document.querySelectorAll('.tab').forEach(tab => {
+      tab.addEventListener('click', async () => {
+        // Update active tab
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        
+        // Show/hide content
+        const tabName = tab.dataset.tab;
+        document.querySelectorAll('.tab-content').forEach(content => {
+          if (content.dataset.tab === tabName) {
+            content.style.display = 'block';
+          } else {
+            content.style.display = 'none';
+          }
+        });
+        
+        // Refresh data when switching tabs
+        await update();
+      });
+    });
+
+    // Prefetch historical data in the background so it appears instantly on switch
+    (async function prefetchHistorical(){
+      try{
+        const r = await fetch(histUrl);
+        if(r.ok){ cachedHistorical = await r.json(); console.log('Prefetched historical:', cachedHistorical); }
+      }catch(e){ console.warn('Prefetch historical failed', e); }
+    })();
+
+    function fmtType(stat){
+      const m={'passing_yards':'Passing Yards','passing_yards_alt':'Alt Passing Yards','receiving_yards':'Receiving Yards','receiving_yards_alt':'Alt Receiving Yards','rushing_yards':'Rushing Yards','rushing_yards_alt':'Alt Rushing Yards','rushing_receiving_yards':'Rush + Rec Yards','anytime_touchdown':'Anytime TD','receptions_alt':'Alt Receptions','longest_reception':'Longest Reception'};
+      return m[stat]||stat.replace(/_/g,' ').replace(/\b\w/g,l=>l.toUpperCase());
+    }
+    function getQuarter(p){return p===1?'1st Quarter':p===2?'2nd Quarter':p===3?'3rd Quarter':p===4?'4th Quarter':'Overtime';}
+
+    async function update(){
+      msg.textContent='Fetching data...';
+      try{
+        // First process any new parlays
+        await fetch(statsUrl);
+        
+        // Get active tab
+        const activeTab = document.querySelector('.tab.active').dataset.tab;
+        
+        // Only fetch data for the active tab; use cache if available
+        if(activeTab === 'current') {
+          if (cachedLive) {
+            console.log('Using cached live data');
+            render(cachedLive, sec);
+          } else {
+            const liveResponse = await fetch(liveUrl);
+            if(!liveResponse.ok) throw new Error(`Live data error: ${liveResponse.status}`);
+            const parlays = await liveResponse.json();
+            cachedLive = parlays;
+            console.log('Live parlays:', parlays);
+            render(parlays, sec);
+          }
+        } else if(activeTab === 'historical') {
+          if (cachedHistorical) {
+            console.log('Using cached historical data');
+            render(cachedHistorical, histSec);
+          } else {
+            const historicalResponse = await fetch(histUrl);
+            if(!historicalResponse.ok) throw new Error(`Historical data error: ${historicalResponse.status}`);
+            const historical = await historicalResponse.json();
+            cachedHistorical = historical;
+            console.log('Historical parlays:', historical);
+            render(historical, histSec);
+          }
+        }
+        
+        msg.textContent=`Last updated: ${new Date().toLocaleTimeString()}`;
+      }catch(e){
+        console.error('Error during update:', e);
+        msg.textContent=`Error loading data: ${e.message}`;
+      }
+    }
+
+    async function loadHistorical(){
+      msg.textContent='Loading historical bets...';
+      try{
+        console.log('Fetching from:', histUrl);
+        const r=await fetch(histUrl);
+        if(!r.ok)throw r.status;
+        const historical=await r.json();
+        console.log('Received historical data:', historical);
+        render(historical, histSec);
+        msg.textContent=`Historical data loaded: ${new Date().toLocaleTimeString()}`;
+      }catch(e){
+        console.error('Error loading historical data:', e);
+        msg.textContent='Error loading historical data: ' + e.toString();
+      }
+    }
+
+    function render(parlays, container){
+      console.log('Render called with parlays:', parlays);
+      console.log('Container:', container);
+      container.innerHTML='';
+      if (!Array.isArray(parlays)) {
+        console.error('parlays is not an array:', parlays);
+        return;
+      }
+
+      // Show a helpful empty-state when there's no data for the tab
+      if (parlays.length === 0) {
+        const empty = document.createElement('div');
+        empty.className = 'no-data';
+        const tabName = container.dataset.tab === 'historical' ? 'Historical Bets' : "Today's Parlays";
+        empty.innerHTML = `
+          <div style="text-align:center;padding:2rem;color:#bbb">
+            <strong>No parlays found</strong>
+            <div style="margin-top:.5rem">There are no ${tabName} to display right now.</div>
+            <button id="empty-refresh" style="margin-top:1rem;padding:.5rem 1rem;border-radius:6px;background:#140d52;color:#fff;border:none;cursor:pointer">Refresh</button>
+          </div>`;
+        container.appendChild(empty);
+        // wire the refresh button to re-run update()
+        const b = empty.querySelector('#empty-refresh');
+        if (b) b.addEventListener('click', update);
+        return;
+      }
+      
+      // Only render historical bets in historical section and current bets in current section
+      const isHistoricalSection = container.id === 'historical-sections';
+      
+      // Render all parlays in their respective sections
+      parlays.forEach(parlay=>{
+        console.log('Processing parlay:', parlay);
+        const section=document.createElement('div');
+        section.className='parlay-section';
+        
+        const header=document.createElement('div');
+        header.className='parlay-header';
+        
+        // Get game date for single game parlays
+        let formattedDate = '';
+        if (parlay.legs && parlay.legs[0]) {
+          // Get unique game dates from all legs
+          const uniqueDates = [...new Set(parlay.legs.map(leg => leg.game_date))];
+          
+          // If there's only one unique date, it's a single game parlay
+          if (uniqueDates.length === 1) {
+            const gameDate = new Date(uniqueDates[0]);
+            const dayOfWeek = gameDate.toLocaleDateString('en-US', { weekday: 'long' });
+            const month = gameDate.toLocaleDateString('en-US', { month: 'short' });
+            const day = gameDate.getDate();
+            const year = gameDate.getFullYear();
+            formattedDate = `${dayOfWeek} - ${month} ${day}, ${year}`;
+          }
+        }
+        
+        header.innerHTML = `
+          <div class="parlay-title">
+            ${parlay.name}
+            ${formattedDate && `<span class="parlay-date">${formattedDate}</span>`}
+          </div>
+        `;
+
+        const allGamesDiv=document.createElement('div');
+        allGamesDiv.className='game-info-wrapper';
+
+        // For non-SGPs, we want to show all relevant games
+        if (parlay.type !== 'SGP') {
+          // Create a map of unique games based on away+home team combination
+          const uniqueGames = new Map();
+          parlay.legs.forEach(leg => {
+            const gameKey = `${leg.away}-${leg.home}`;
+            const game = parlay.games.find(g => 
+              g.teams.away === leg.away && g.teams.home === leg.home
+            );
+            if (game && !uniqueGames.has(gameKey)) {
+              uniqueGames.set(gameKey, game);
+            }
+          });
+          
+          // Show all unique games involved in the parlay
+          uniqueGames.forEach(g => {
+            const stn=g.statusTypeName,isSched=stn==='STATUS_SCHEDULED',isLive=stn==='STATUS_IN_PROGRESS';
+            let gameStatus,gameCls,gameDetails;
+            if(isSched){gameStatus='🔜 Not Started';gameCls='status-pregame';gameDetails=`<div>${g.teams.away} @ ${g.teams.home}</div><div>${g.startTime}</div>`;}
+            else if(isLive){gameStatus='⏳ In Progress';gameCls='status-live';gameDetails=`<div>${getQuarter(g.period)}, ${g.clock}</div><div>${g.teams.away} ${g.score.away} @ ${g.teams.home} ${g.score.home}</div>`;}
+            else{gameStatus='FINAL';gameCls='status-final';gameDetails=`<div>${g.teams.away.substring(0,3).toUpperCase()} ${g.score.away} - ${g.score.home} ${g.teams.home.substring(0,3).toUpperCase()}</div>`;}
+            
+            const gameInfoDiv=document.createElement('div');
+            gameInfoDiv.className='game-info';
+            gameInfoDiv.innerHTML=`<div class="badge ${gameCls}">${gameStatus}</div>${gameDetails}`;
+            allGamesDiv.appendChild(gameInfoDiv);
+          });
+        } else {
+          // For SGPs, show the game info as before
+          parlay.games.forEach(g=>{
+            const stn=g.statusTypeName,isSched=stn==='STATUS_SCHEDULED',isLive=stn==='STATUS_IN_PROGRESS';
+            let gameStatus,gameCls,gameDetails;
+            if(isSched){gameStatus='🔜 Not Started';gameCls='status-pregame';gameDetails=`<div>${g.teams.away} @ ${g.teams.home}</div><div>${g.startTime}</div>`;}
+            else if(isLive){gameStatus='⏳ In Progress';gameCls='status-live';gameDetails=`<div>${getQuarter(g.period)}, ${g.clock}</div><div>${g.teams.away} ${g.score.away} @ ${g.teams.home} ${g.score.home}</div>`;}
+            else{gameStatus='FINAL';gameCls='status-final';gameDetails=`<div>${g.teams.away.substring(0,3).toUpperCase()} ${g.score.away} - ${g.score.home} ${g.teams.home.substring(0,3).toUpperCase()}</div>`;}
+            
+            const gameInfoDiv=document.createElement('div');
+            gameInfoDiv.className='game-info';
+            gameInfoDiv.innerHTML=`<div class="badge ${gameCls}">${gameStatus}</div>${gameDetails}`;
+            allGamesDiv.appendChild(gameInfoDiv);
+          });
+        }
+        header.appendChild(allGamesDiv);
+
+        const isAnyGameLive=parlay.games.some(g=>g.statusTypeName==='STATUS_IN_PROGRESS');
+        const areAllGamesFinal=parlay.games.every(g=>g.statusTypeName==='STATUS_FINAL');
+
+        const table=document.createElement('table');
+        table.innerHTML=`
+          <thead><tr>
+            <th>Player</th><th>Bet Type</th><th>Current</th>
+            <th>Target</th><th style="width:25%;">Progress</th><th>Status</th>
+          </tr></thead>
+          <tbody>
+            ${parlay.legs.map(p=>{
+              const pct = p.target > 0 ? Math.min(100, Math.round(p.current / p.target * 100)) : 0;
+              let cls = '';
+              if (areAllGamesFinal) {
+                cls = (pct === 100) ? 'pct-full' : 'pct-vlow';
+              } else {
+                if (pct === 100) {
+                  cls = 'pct-full';
+                } else if (pct >= 60) {
+                  cls = 'pct-mid';
+                } else if (pct >= 20) {
+                  cls = 'pct-low';
+                } else if (pct > 0) {
+                  cls = 'pct-vlow';
+                }
+              }
+
+              const bar = `<div class="progress-bar ${cls}">
+                           <div class="progress ${cls}" style="width:${pct}%"></div>
+                           <div class="progress-text">${pct}%</div>
+                         </div>`;
+              let txt;
+              if(!isAnyGameLive && !areAllGamesFinal)txt='🔜 Not Started';
+              else if(isAnyGameLive)txt='⏳ In Progress';
+              else txt=pct===100?'✅ Hit':'🚫 Miss';
+              return`
+                <tr>
+                  <td>${p.player}</td><td>${fmtType(p.stat)}</td>
+                  <td>${p.current}</td><td>${p.target}</td>
+                  <td>${bar}</td><td>${txt}</td>
+                </tr>`;
+            }).join('')}
+          </tbody>`;
+        
+        section.appendChild(header);
+        section.appendChild(table);
+        // Append to the container passed into render() so each tab gets its own content
+        container.appendChild(section);
+      });
+    }
+
+    btn.addEventListener('click',update);
+    update();
+  </script>
+</body>
+</html>

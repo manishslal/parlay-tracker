@@ -1,0 +1,40 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Configure Parlay App</title>
+    <style>
+      body{font-family:system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;background:#111;color:#eee;display:flex;align-items:center;justify-content:center;height:100vh;margin:0}
+      .card{background:#1a1a1a;padding:2rem;border-radius:10px;max-width:560px;width:100%;box-shadow:0 8px 30px rgba(0,0,0,0.5)}
+      input{width:100%;padding:.75rem;border-radius:8px;border:1px solid #333;background:#0f0f0f;color:#fff}
+      button{margin-top:1rem;padding:.75rem 1rem;border-radius:8px;border:none;background:#03a9f4;color:#000;font-weight:700;cursor:pointer}
+      a.small{display:inline-block;margin-top:.5rem;color:#aaa}
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <h2>Configure frontend</h2>
+      <p>Enter your backend API base URL (example: <code>https://my-parlay-app.onrender.com</code>)</p>
+      <input id="api" placeholder="https://your-backend.example.com" />
+      <button id="open">Open App</button>
+      <div style="margin-top:.5rem">Or copy this URL to share: <span id="out" style="color:#fff;word-break:break-all"></span></div>
+      <div><a class="small" href="index.html">Open app with default (localhost)</a></div>
+    </div>
+    <script>
+      const inp=document.getElementById('api'), btn=document.getElementById('open'), out=document.getElementById('out');
+      function make(){
+        const v=inp.value.trim().replace(/\/$/, '');
+        if(!v){out.textContent='index.html';return}
+        const u=`index.html?api=${encodeURIComponent(v)}`;
+        out.textContent=u;return u;
+      }
+      inp.addEventListener('input', make);
+      btn.addEventListener('click', ()=>{
+        const u=make();
+        if(u) window.location.href=u;
+        else window.location.href='index.html';
+      });
+    </script>
+  </body>
+</html>
