@@ -1,0 +1,192 @@
+[
+  {
+    "type": "SGP",
+    "name": "4-Leg SGP - Bills @ Falcons (Robinson Focus)",
+    "odds": "+192",
+    "wager": 10,
+    "returns": 19.2,
+    "legs": [
+      {
+        "game_date": "2025-10-13",
+        "away": "Buffalo Bills",
+        "home": "Atlanta Falcons",
+        "player": "Bijan Robinson",
+        "target": 80,
+        "stat": "rushing_receiving_yards"
+      },
+      {
+        "game_date": "2025-10-13",
+        "away": "Buffalo Bills",
+        "home": "Atlanta Falcons",
+        "player": "Bijan Robinson",
+        "target": 1,
+        "stat": "anytime_touchdown"
+      },
+      {
+        "game_date": "2025-10-13",
+        "away": "Buffalo Bills",
+        "home": "Atlanta Falcons",
+        "player": "Bijan Robinson",
+        "target": 3,
+        "stat": "receptions_alt"
+      },
+      {
+        "game_date": "2025-10-13",
+        "away": "Buffalo Bills",
+        "home": "Atlanta Falcons",
+        "player": "Drake London",
+        "target": 60,
+        "stat": "receiving_yards_alt"
+      }
+    ]
+  },
+  {
+    "type": "SGP",
+    "name": "2-Leg SGP - Bills @ Falcons (TD Scorers)",
+    "odds": "+765",
+    "wager": 10,
+    "returns": 76.5,
+    "legs": [
+      {
+        "game_date": "2025-10-13",
+        "away": "Buffalo Bills",
+        "home": "Atlanta Falcons",
+        "player": "Dalton Kincaid",
+        "target": 1,
+        "stat": "anytime_touchdown"
+      },
+      {
+        "game_date": "2025-10-13",
+        "away": "Buffalo Bills",
+        "home": "Atlanta Falcons",
+        "player": "Josh Allen",
+        "target": 1,
+        "stat": "anytime_touchdown"
+      }
+    ]
+  },
+  {
+    "type": "SGP",
+    "name": "4-Leg SGP - Bills @ Falcons",
+    "odds": "+656",
+    "wager": 10,
+    "returns": 65.6,
+    "legs": [
+      {
+        "game_date": "2025-10-13",
+        "away": "Buffalo Bills",
+        "home": "Atlanta Falcons",
+        "player": "Bijan Robinson",
+        "target": 3,
+        "stat": "receptions_alt"
+      },
+      {
+        "game_date": "2025-10-13",
+        "away": "Buffalo Bills",
+        "home": "Atlanta Falcons",
+        "player": "Bijan Robinson",
+        "target": 80,
+        "stat": "rushing_receiving_yards"
+      },
+      {
+        "game_date": "2025-10-13",
+        "away": "Buffalo Bills",
+        "home": "Atlanta Falcons",
+        "player": "Tyler Allgeier",
+        "target": 1,
+        "stat": "anytime_touchdown"
+      },
+      {
+        "game_date": "2025-10-13",
+        "away": "Buffalo Bills",
+        "home": "Atlanta Falcons",
+        "player": "Drake London",
+        "target": 60,
+        "stat": "receiving_yards_alt"
+      }
+    ]
+  },
+  {
+    "type": "SGP",
+    "name": "2-Leg SGP - Bills @ Falcons (Khalil Shakir)",
+    "odds": "+303",
+    "wager": 10,
+    "returns": 30.3,
+    "legs": [
+      {
+        "game_date": "2025-10-13",
+        "away": "Buffalo Bills",
+        "home": "Atlanta Falcons",
+        "player": "Khalil Shakir",
+        "target": 1,
+        "stat": "anytime_touchdown"
+      },
+      {
+        "game_date": "2025-10-13",
+        "away": "Buffalo Bills",
+        "home": "Atlanta Falcons",
+        "player": "Khalil Shakir",
+        "target": 20.5,
+        "stat": "longest_reception"
+      }
+    ]
+  },
+  {
+    "type": "SGP",
+    "name": "4-Leg SGP - Bears @ Commanders",
+    "odds": "-100",
+    "wager": 10,
+    "returns": 10.0,
+    "legs": [
+      {
+        "game_date": "2025-10-13",
+        "away": "Chicago Bears",
+        "home": "Washington Commanders",
+        "player": "Jacory Croskey-Merritt",
+        "target": 80,
+        "stat": "rushing_yards_alt"
+      },
+      {
+        "game_date": "2025-10-13",
+        "away": "Chicago Bears",
+        "home": "Washington Commanders",
+        "player": "Jacory Croskey-Merritt",
+        "target": 1,
+        "stat": "anytime_touchdown"
+      },
+      {
+        "game_date": "2025-10-13",
+        "away": "Chicago Bears",
+        "home": "Washington Commanders",
+        "player": "Caleb Williams",
+        "target": 200,
+        "stat": "passing_yards_alt"
+      },
+      {
+        "game_date": "2025-10-13",
+        "away": "Chicago Bears",
+        "home": "Washington Commanders",
+        "player": "Zach Ertz",
+        "target": 3,
+        "stat": "receptions_alt"
+      }
+    ]
+  },
+  {
+    "type": "SGP",
+    "name": "TEST 1-Leg - Bills @ Falcons (Bijan Robinson)",
+    "odds": "+500",
+    "wager": 10,
+    "returns": 50.0,
+    "legs": [
+      {
+        "game_date": "2025-10-13",
+        "away": "Buffalo Bills",
+        "home": "Atlanta Falcons",
+        "player": "Bijan Robinson",
+        "target": 80,
+        "stat": "rushing_receiving_yards"
+      }
+    ]
+  }
+]
