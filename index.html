@@ -152,10 +152,79 @@
       });
     });
 
+    // --- Admin Token Modal/Login UI ---
+function showTokenModal() {
+  let modal = document.getElementById('token-modal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'token-modal';
+    modal.style = 'position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;z-index:9999;';
+    modal.innerHTML = `
+      <div style="background:#222;padding:2rem 2.5rem;border-radius:12px;box-shadow:0 2px 16px #000;display:flex;flex-direction:column;align-items:center;min-width:300px;">
+        <h2 style='color:#e657ff;margin-bottom:1rem;'>Enter Admin Token</h2>
+        <input id='token-input' type='password' placeholder='Admin Token' style='padding:0.5rem 1rem;font-size:1.1rem;border-radius:6px;border:1px solid #888;width:100%;margin-bottom:1rem;'>
+        <button id='token-submit' style='padding:0.5rem 1.5rem;background:#140d52;color:#fff;border:none;border-radius:6px;font-weight:bold;cursor:pointer;'>Login</button>
+      </div>
+    `;
+    document.body.appendChild(modal);
+    document.getElementById('token-submit').onclick = function() {
+      const val = document.getElementById('token-input').value.trim();
+      if (val) {
+        localStorage.setItem('admin_token', val);
+        modal.remove();
+        location.reload();
+      }
+    };
+    document.getElementById('token-input').addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') document.getElementById('token-submit').click();
+    });
+  }
+}
+
+function getAdminToken() {
+  let token = localStorage.getItem('admin_token');
+  if (!token) {
+    showTokenModal();
+    throw new Error('No admin token set');
+  }
+  return token;
+}
+
+function logoutToken() {
+  localStorage.removeItem('admin_token');
+  location.reload();
+}
+
+// Add a logout button to the UI
+(function addLogoutButton(){
+  const btn = document.createElement('button');
+  btn.textContent = 'Logout';
+  btn.style = 'position:fixed;top:1rem;right:1rem;z-index:1000;background:#f44336;color:#fff;padding:0.5rem 1.2rem;border:none;border-radius:8px;font-weight:bold;cursor:pointer;opacity:0.85;';
+  btn.onclick = logoutToken;
+  document.body.appendChild(btn);
+})();
+
+    // Prompt for admin token and store in localStorage
+    function getAdminToken() {
+      let token = localStorage.getItem('admin_token');
+      if (!token) {
+        token = prompt('Enter Admin Token for backend access:');
+        if (token) localStorage.setItem('admin_token', token);
+      }
+      return token;
+    }
+
+    function fetchWithAdminToken(url, options = {}) {
+      const token = getAdminToken();
+      options.headers = options.headers || {};
+      options.headers['X-Admin-Token'] = token;
+      return fetch(url, options);
+    }
+
     // Prefetch historical data in the background so it appears instantly on switch
     (async function prefetchHistorical(){
       try{
-        const r = await fetch(histUrl);
+        const r = await fetchWithAdminToken(histUrl);
         if(r.ok){ cachedHistorical = await r.json(); console.log('Prefetched historical:', cachedHistorical); }
       }catch(e){ console.warn('Prefetch historical failed', e); }
     })();
@@ -170,7 +239,7 @@
       msg.textContent='Fetching data...';
       try{
         // First process any new parlays
-        await fetch(statsUrl);
+        await fetchWithAdminToken(statsUrl);
         
         // Get active tab
         const activeTab = document.querySelector('.tab.active').dataset.tab;
@@ -181,7 +250,7 @@
             console.log('Using cached live data');
             render(cachedLive, sec);
           } else {
-            const liveResponse = await fetch(liveUrl);
+            const liveResponse = await fetchWithAdminToken(liveUrl);
             if(!liveResponse.ok) throw new Error(`Live data error: ${liveResponse.status}`);
             const parlays = await liveResponse.json();
             cachedLive = parlays;
@@ -193,7 +262,7 @@
             console.log('Using cached historical data');
             render(cachedHistorical, histSec);
           } else {
-            const historicalResponse = await fetch(histUrl);
+            const historicalResponse = await fetchWithAdminToken(histUrl);
             if(!historicalResponse.ok) throw new Error(`Historical data error: ${historicalResponse.status}`);
             const historical = await historicalResponse.json();
             cachedHistorical = historical;
@@ -213,7 +282,7 @@
       msg.textContent='Loading historical bets...';
       try{
         console.log('Fetching from:', histUrl);
-        const r=await fetch(histUrl);
+        const r=await fetchWithAdminToken(histUrl);
         if(!r.ok)throw r.status;
         const historical=await r.json();
         console.log('Received historical data:', historical);

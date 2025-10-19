@@ -14,7 +14,7 @@ venv/
 .idea/
 
 # Data files (do NOT commit real bets)
-Data/*.json
+# Data/*.json
 
 # local python virtualenv
 .venv/

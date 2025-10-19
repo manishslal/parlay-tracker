@@ -1,0 +1,14 @@
+# Sample Render service definition (optional helper)
+# Replace 'manishslal/parlay-tracker' with your actual GitHub repo when creating the service
+services:
+  - type: web
+    name: parlay-tracker-backend
+    env: python
+    plan: free
+    repo: https://github.com/manishslal/parlay-tracker
+    branch: main
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app --bind 0.0.0.0:$PORT
+    envVars:
+      - key: ADMIN_TOKEN
+        value: "REPLACE_WITH_SECRET"

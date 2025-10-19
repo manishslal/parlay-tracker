@@ -88,8 +88,32 @@ def _compute_parlay_returns_from_odds(wager, parlay_odds=None, leg_odds_list=Non
     except Exception:
         return None
 
+
+from functools import wraps
+from flask import request
+
 app = Flask(__name__)
 CORS(app)
+
+# Decorator to require admin token for all endpoints
+def require_admin_token(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        admin_token = os.environ.get('ADMIN_TOKEN')
+        if not admin_token:
+            return jsonify({"error": "ADMIN_TOKEN not configured on server"}), 500
+        # Accept token in header X-Admin-Token or in JSON body as `token` (for POST)
+        token = request.headers.get('X-Admin-Token')
+        if not token and request.method == 'POST':
+            try:
+                body = request.get_json(force=True, silent=True) or {}
+                token = body.get('token')
+            except Exception:
+                token = None
+        if token != admin_token:
+            return jsonify({"error": "Unauthorized"}), 401
+        return f(*args, **kwargs)
+    return decorated
 
 def load_parlays():
     try:
@@ -692,14 +716,18 @@ def compute_and_persist_returns(force=False):
 
     return results
 
+
 @app.route("/live")
+@require_admin_token
 def live():
     live_parlays = load_live_parlays()
     processed = process_parlay_data(live_parlays)
     return jsonify(sort_parlays_by_date(processed))
 
 
+
 @app.route("/todays")
+@require_admin_token
 def todays():
     todays_parlays = load_parlays()
     # Return the raw today's bets (we want to show what's still in Todays_Bets.json)
@@ -707,6 +735,7 @@ def todays():
     return jsonify(sort_parlays_by_date(processed))
 
 @app.route("/historical")
+@require_admin_token
 def historical():
     try:
         app.logger.info("Starting historical endpoint processing")
@@ -751,6 +780,7 @@ def historical():
         return jsonify({"error": str(e)}), 500
 
 @app.route("/stats")
+@require_admin_token
 def stats():
     parlays = load_parlays()
     processed_parlays = process_parlay_data(parlays)
@@ -764,25 +794,14 @@ def stats():
     return jsonify(sort_parlays_by_date(processed_live))
 
 @app.route('/admin/compute_returns', methods=['POST'])
+@require_admin_token
 def admin_compute_returns():
     """Admin endpoint to compute (and optionally force) returns.
     POST JSON body: {"force": true|false}
     Returns a JSON summary of updates.
     """
     try:
-        from flask import request
-        # Require ADMIN_TOKEN environment variable to be set for admin actions
-        admin_token = os.environ.get('ADMIN_TOKEN')
-        if not admin_token:
-            app.logger.error('ADMIN_TOKEN not configured; refusing admin operation')
-            return jsonify({"error": "ADMIN_TOKEN not configured on server"}), 500
-
-        # Accept token in header X-Admin-Token or in JSON body as `token`
         body = request.get_json() or {}
-        header_token = request.headers.get('X-Admin-Token') or body.get('token')
-        if header_token != admin_token:
-            return jsonify({"error": "Unauthorized"}), 401
-
         force = bool(body.get('force', False))
         results = compute_and_persist_returns(force=force)
         return jsonify(results)
@@ -791,6 +810,7 @@ def admin_compute_returns():
         return jsonify({"error": str(e)}), 500
 
 @app.route('/')
+@require_admin_token
 def index():
     return send_from_directory('.', 'index.html')
 
