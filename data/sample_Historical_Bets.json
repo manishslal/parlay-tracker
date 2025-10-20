@@ -1,19 +1,19 @@
 [
-  {
-    "type": "SGP",
-    "name": "SAMPLE 1-Leg",
-    "odds": "+150",
-    "wager": 10,
-    "returns": "",
-    "legs": [
-      {
-        "game_date": "2025-10-13",
-        "away": "Sample Away",
-        "home": "Sample Home",
-        "player": "Sample Player",
-        "target": 10,
-        "stat": "rushing_yards"
-      }
-    ]
-  }
+    {
+        "type": "SGP",
+        "name": "SAMPLE 1-Leg",
+        "odds": "+150",
+        "wager": 10,
+        "returns": "",
+        "legs": [
+            {
+                "game_date": "2025-10-13",
+                "away": "Sample Away",
+                "home": "Sample Home",
+                "player": "Sample Player",
+                "target": 10,
+                "stat": "rushing_yards"
+            }
+        ]
+    }
 ]

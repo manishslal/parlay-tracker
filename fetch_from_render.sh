@@ -4,17 +4,17 @@
 ADMIN_TOKEN="mySuperSecretToken123"
 BACKEND_URL="https://parlay-tracker-backend.onrender.com"
 
-echo "📥 Fetching current parlay state from Render..."
+echo "� Fetching current state from Render backend..."
 
-# Fetch all three endpoints
-echo "Fetching Todays Bets..."
-curl -s -H "X-Admin-Token: $ADMIN_TOKEN" "$BACKEND_URL/todays" > data/Todays_Bets.json
+# Download each endpoint with admin token and pretty-print with Python
+curl -s -H "X-Admin-Token: mySuperSecretToken123" \
+  "${RENDER_URL}/todays" | python3 -m json.tool > "$DATA_DIR/Todays_Bets.json"
 
-echo "Fetching Live Bets..."
-curl -s -H "X-Admin-Token: $ADMIN_TOKEN" "$BACKEND_URL/live" > data/Live_Bets.json
+curl -s -H "X-Admin-Token: mySuperSecretToken123" \
+  "${RENDER_URL}/live" | python3 -m json.tool > "$DATA_DIR/Live_Bets.json"
 
-echo "Fetching Historical Bets..."
-curl -s -H "X-Admin-Token: $ADMIN_TOKEN" "$BACKEND_URL/historical" > data/Historical_Bets.json
+curl -s -H "X-Admin-Token: mySuperSecretToken123" \
+  "${RENDER_URL}/historical" | python3 -m json.tool > "$DATA_DIR/Historical_Bets.json"
 
 echo ""
 echo "✅ Downloaded current state from Render"
