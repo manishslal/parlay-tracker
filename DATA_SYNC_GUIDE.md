@@ -68,6 +68,41 @@ git push
 - **`Live_Bets.json`**: Auto-populated by Render when games are in progress. Don't edit manually.
 - **`Historical_Bets.json`**: Auto-populated by Render when games are complete. Don't edit manually.
 
+## Returns Calculation
+
+### When Returns Are Calculated Automatically:
+1. **On Render startup** (every time service restarts or deploys)
+2. **When parlays move** from Todays → Live → Historical
+3. Only calculates **missing or empty** returns (won't overwrite existing values)
+
+### How to Manually Add Odds and Calculate Returns:
+1. **Edit the JSON file** (e.g., `data/Historical_Bets.json`):
+   ```json
+   {
+     "name": "My Parlay",
+     "type": "SGP",
+     "odds": "+650",
+     "wager": 10,
+     "returns": "",
+     "legs": [...]
+   }
+   ```
+2. **Push to GitHub**: `git add data/*.json && git commit -m "Add odds" && git push`
+3. **Wait** ~2 minutes for Render to restart and auto-calculate
+4. **Or manually trigger**: `./calculate_returns.sh`
+5. **Fetch results**: `./fetch_from_render.sh`
+
+### Odds Format:
+- **Positive**: `"+650"` (underdog, multiply wager by 6.5)
+- **Negative**: `"-110"` (favorite, divide 100 by odds)
+- **Per-leg odds**: Can also add `"odds"` to individual legs for automatic calculation
+
+### Force Recalculation:
+If you want to overwrite existing returns:
+```bash
+./calculate_returns.sh force
+```
+
 ## Troubleshooting
 
 ### "My parlay disappeared!"
