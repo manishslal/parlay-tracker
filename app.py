@@ -869,8 +869,8 @@ def stats():
     parlays = load_parlays()
     processed_parlays = process_parlay_data(parlays)
     
-    # Process parlays and move them to appropriate files
-    process_parlays(processed_parlays)
+    # DON'T process/move parlays on every stats request - that clears Live_Bets.json!
+    # process_parlays(processed_parlays)
     
     # Return processed live parlays for display
     live_parlays = load_live_parlays()
