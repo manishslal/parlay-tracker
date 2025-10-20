@@ -58,10 +58,21 @@
     .parlay-header{background:var(--primary);color:#fff;
       margin:-1.5rem -1.5rem 1.125rem -1.5rem;padding:1rem 1.5rem;
       border-radius:10px 10px 0 0;display:flex; flex-wrap: wrap;
-      justify-content:space-between;align-items:flex-start;font-weight:bold;}
-    .parlay-title{display:flex;flex-direction:column;gap:0.25rem;}
+      justify-content:space-between;align-items:flex-start;font-weight:bold;
+      position:relative;}
+    .winning-overlay{
+      position:absolute;
+      top:0.5rem;
+      left:0.75rem;
+      right:0.75rem;
+      bottom:0.5rem;
+      background:rgba(255, 251, 0, 0.755);
+      border-radius:8px;
+      pointer-events:none;
+      z-index:0;}
+    .parlay-title{display:flex;flex-direction:column;gap:0.25rem;position:relative;z-index:1;}
     .parlay-date{font-size:0.85rem;font-weight:normal;opacity:0.8;}
-    .game-info-wrapper{display:flex;gap:1rem;flex-wrap:wrap;}
+    .game-info-wrapper{display:flex;gap:1rem;flex-wrap:wrap;position:relative;z-index:1;}
     .game-info{display:flex;flex-direction:column;align-items:center;
       gap:.25rem;font-size:.9rem;border:1px solid var(--border);
       padding:.5rem;border-radius:6px;background:rgba(0,0,0,0.2);}
@@ -122,6 +133,14 @@
         padding: 0.75rem 1rem;
         flex-direction: column;
         gap: 0.5rem;
+      }
+      
+      /* Adjust winning overlay for mobile padding */
+      .winning-overlay {
+        top: 0.375rem;
+        left: 0.5rem;
+        right: 0.5rem;
+        bottom: 0.375rem;
       }
       
       /* Make table responsive - wrap on mobile */
@@ -503,6 +522,13 @@ function logoutToken() {
         // Enhance parlay name with team matchup if applicable
         const displayName = enhanceParlayName(parlay);
         
+        // Check if all legs are at 100% (winning bet)
+        const allLegsComplete = parlay.legs && parlay.legs.length > 0 && 
+          parlay.legs.every(leg => {
+            const pct = leg.target > 0 ? Math.min(100, Math.round(leg.current / leg.target * 100)) : 0;
+            return pct === 100;
+          });
+        
         // Get game date for single game parlays
         let formattedDate = '';
         if (parlay.legs && parlay.legs[0]) {
@@ -521,6 +547,7 @@ function logoutToken() {
         }
         
         header.innerHTML = `
+          ${allLegsComplete ? '<div class="winning-overlay"></div>' : ''}
           <div class="parlay-title">
             ${displayName}
             ${formattedDate && `<span class="parlay-date">${formattedDate}</span>`}
