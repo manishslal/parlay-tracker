@@ -104,6 +104,13 @@ git push
 - **bet_id**: Unique bet identifier from the betting site
 - **legs**: Array of individual bet legs
 
+### Date Format Standard:
+- **Format**: `YYYY-MM-DD` (e.g., "2025-10-20")
+- **Why**: Human-readable, ISO 8601 standard, consistent with Historical_Bets
+- **Usage**: Used in all `game_date` fields within legs
+- **Backend**: Automatically converts to YYYYMMDD for ESPN API calls
+- **Legacy**: Frontend supports both formats (YYYYMMDD and YYYY-MM-DD) for backwards compatibility
+
 ### Odds Format:
 - **Positive**: `"+650"` (underdog, multiply wager by 6.5)
 - **Negative**: `"-110"` (favorite, divide 100 by odds)
