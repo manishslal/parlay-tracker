@@ -62,7 +62,8 @@
                     "TEAM_PROPS": [
                         "team_total_points (requires 'team' field)",
                         "first_team_to_score (no target needed)",
-                        "last_team_to_score (no target needed)"
+                        "last_team_to_score (no target needed)",
+                        "moneyline (requires 'team' field, target=1)"
                     ],
                     "GAME_PROPS": [
                         "total_points",

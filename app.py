@@ -555,6 +555,24 @@ def calculate_bet_value(bet, game_data):
     if stat == "will_be_overtime":
         return 1 if game_data.get("period", 0) > 4 else 0
 
+    # --- Moneyline (Team to Win) ---
+    if stat == "moneyline":
+        # Requires "team" field in bet to specify which team to bet on
+        if "team" not in bet:
+            return 0
+        
+        bet_team = bet["team"]
+        home_team = game_data["teams"]["home"]
+        away_team = game_data["teams"]["away"]
+        
+        # Determine if the bet team won
+        if bet_team == home_team:
+            return 1 if home_score > away_score else 0
+        elif bet_team == away_team:
+            return 1 if away_score > home_score else 0
+        else:
+            return 0
+
     return 0 # Default for unhandled stats
 
 def fetch_game_details_from_espn(game_date, away_team, home_team):

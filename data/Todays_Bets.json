@@ -1,6 +1,6 @@
 [
   {
-    "name": "MNF 2 Leg SGP",
+    "name": "MNF 3 Leg SGP",
     "type": "SGP",
     "odds": "+390",
     "wager": 10,
@@ -23,6 +23,14 @@
         "player": "Cade Otton",
         "target": 4,
         "stat": "receptions"
+      },
+      {
+        "game_date": "20251020",
+        "away": "Tampa Bay Buccaneers",
+        "home": "Detroit Lions",
+        "team": "Detroit Lions",
+        "target": 1,
+        "stat": "moneyline"
       }
     ]
   },
