@@ -131,12 +131,16 @@ def initialize_parlay_files():
         live_parlays = load_live_parlays()
         historical_parlays = load_historical_bets()
 
-        # Clear only live parlays list to rebuild it
-        live_parlays = []
+        # Don't clear live parlays - we want to keep them and just check their status
+        # live_parlays = []  # REMOVED: This was clearing live bets on every restart!
 
         # Create set of existing historical parlay IDs to prevent duplicates
         existing_historical = {f"{p['name']}_{p['legs'][0]['game_date']}" 
                              for p in historical_parlays if p.get('legs')}
+        
+        # Create set of existing live parlay IDs
+        existing_live = {f"{p['name']}_{p['legs'][0]['game_date']}" 
+                        for p in live_parlays if p.get('legs')}
 
         # Process each parlay from today's file
         new_today_parlays = []
@@ -184,7 +188,7 @@ def initialize_parlay_files():
 
             # Add to appropriate list based on status
             if all_games_complete:
-                if parlay_id not in {f"{p['name']}_{p['legs'][0]['game_date']}" for p in historical_parlays}:
+                if parlay_id not in existing_historical:
                     # compute returns if coming from today's
                     returns = parlay.get('returns')
                     # Treat None or empty-string as missing and compute
@@ -195,9 +199,9 @@ def initialize_parlay_files():
                     parlay['returns'] = returns
                     historical_parlays.append(parlay)
             elif any_game_active:
-                if parlay_id not in {f"{p['name']}_{p['legs'][0]['game_date']}" for p in live_parlays}:
+                if parlay_id not in existing_live:
                     returns = parlay.get('returns')
-                    if returns is None:
+                    if returns is None or (isinstance(returns, str) and str(returns).strip() == ""):
                         returns = _compute_parlay_returns_from_odds(parlay_wager, parlay_odds, leg_odds)
                         if returns is not None:
                             returns = f"{returns:.2f}"
@@ -205,6 +209,41 @@ def initialize_parlay_files():
                     live_parlays.append(parlay)
             else:
                 new_today_parlays.append(parlay)
+
+        # Also check existing live parlays - they might have finished
+        remaining_live_parlays = []
+        for parlay in live_parlays:
+            if not parlay.get('legs'):
+                remaining_live_parlays.append(parlay)
+                continue
+            
+            # Check if all games are complete
+            all_games_complete = True
+            for leg in parlay['legs']:
+                game_date = leg.get('game_date')
+                if not game_date:
+                    continue
+                
+                events = get_events(game_date)
+                for event in events:
+                    team_names = {c['team']['displayName'] for c in event['competitions'][0]['competitors']}
+                    if leg['away'] in team_names and leg['home'] in team_names:
+                        status = event['status']['type']['name']
+                        if status != 'STATUS_FINAL':
+                            all_games_complete = False
+                            break
+                
+                if not all_games_complete:
+                    break
+            
+            # If complete, move to historical; otherwise keep in live
+            parlay_id = f"{parlay['name']}_{parlay['legs'][0]['game_date']}"
+            if all_games_complete and parlay_id not in existing_historical:
+                historical_parlays.append(parlay)
+            else:
+                remaining_live_parlays.append(parlay)
+        
+        live_parlays = remaining_live_parlays
 
         # Sort all lists by date
         historical_parlays = sort_parlays_by_date(historical_parlays)
