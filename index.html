@@ -104,8 +104,8 @@
     .badge{display:inline-block;font-size:.75rem;font-weight:bold;
       margin-bottom:.25rem;padding:2px 6px;border-radius:4px;}
     .status-pregame{background:var(--pregame);color:#ffffff;}
-    .status-live{background:var(--green);color:#ffffff;}
-    .status-final{background:var(--error);color:#ffffff;}
+    .status-live{background:var(--error);color:#ffffff;}
+    .status-final{background:#808080;color:#ffffff;}
     
     /* Mobile Responsive Styles */
     @media (max-width: 768px) {
@@ -604,7 +604,7 @@ function logoutToken() {
                 const countdown = getCountdown(g.startDateTime);
                 gameDetails=`<div>${g.teams.away} @ ${g.teams.home}</div><div>${countdown || g.startTime}</div>`;
               }
-              else if(isLive){gameStatus='⏳ In Progress';gameCls='status-live';gameDetails=`<div>${getQuarter(g.period)}, ${g.clock}</div><div>${g.teams.away.substring(0,3).toUpperCase()} ${g.score.away} @ ${g.teams.home.substring(0,3).toUpperCase()} ${g.score.home}</div>`;}
+              else if(isLive){gameStatus='LIVE';gameCls='status-live';gameDetails=`<div>${getQuarter(g.period)}, ${g.clock}</div><div>${g.teams.away.substring(0,3).toUpperCase()} ${g.score.away} @ ${g.teams.home.substring(0,3).toUpperCase()} ${g.score.home}</div>`;}
               else{gameStatus='FINAL';gameCls='status-final';gameDetails=`<div>${g.teams.away.substring(0,3).toUpperCase()} ${g.score.away} - ${g.score.home} ${g.teams.home.substring(0,3).toUpperCase()}</div>`;}
               
               const gameInfoDiv=document.createElement('div');
@@ -623,7 +623,7 @@ function logoutToken() {
                 const countdown = getCountdown(g.startDateTime);
                 gameDetails=`<div>${g.teams.away} @ ${g.teams.home}</div><div>${countdown || g.startTime}</div>`;
               }
-              else if(isLive){gameStatus='⏳ In Progress';gameCls='status-live';gameDetails=`<div>${getQuarter(g.period)}, ${g.clock}</div><div>${g.teams.away.substring(0,3).toUpperCase()} ${g.score.away} @ ${g.teams.home.substring(0,3).toUpperCase()} ${g.score.home}</div>`;}
+              else if(isLive){gameStatus='LIVE';gameCls='status-live';gameDetails=`<div>${getQuarter(g.period)}, ${g.clock}</div><div>${g.teams.away.substring(0,3).toUpperCase()} ${g.score.away} @ ${g.teams.home.substring(0,3).toUpperCase()} ${g.score.home}</div>`;}
               else{gameStatus='FINAL';gameCls='status-final';gameDetails=`<div>${g.teams.away.substring(0,3).toUpperCase()} ${g.score.away} - ${g.score.home} ${g.teams.home.substring(0,3).toUpperCase()}</div>`;}
               
               const gameInfoDiv=document.createElement('div');
