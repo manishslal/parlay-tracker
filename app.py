@@ -270,10 +270,12 @@ def initialize_parlay_files():
         live_parlays = sort_parlays_by_date(live_parlays)
         new_today_parlays = sort_parlays_by_date(new_today_parlays)
 
-        # Save all files (new naming convention)
-        save_parlays(historical_parlays, data_path("Historical_Bets.json"))
-        save_parlays(live_parlays, data_path("Live_Bets.json"))
-        save_parlays(new_today_parlays, data_path("Todays_Bets.json"))
+        # DON'T save files on initialization - files are the source of truth
+        # Only save Historical and Todays if there were actual changes from processing
+        # NEVER overwrite Live_Bets.json on startup - it should only be modified via API
+        # save_parlays(historical_parlays, data_path("Historical_Bets.json"))
+        # save_parlays(live_parlays, data_path("Live_Bets.json"))
+        # save_parlays(new_today_parlays, data_path("Todays_Bets.json"))
 
         # Compute and persist any missing returns on startup (idempotent)
         try:
