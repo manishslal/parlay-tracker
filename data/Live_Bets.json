@@ -1,1 +1,64 @@
-[]
+[
+  {
+    "name": "MNF 3 Leg SGP",
+    "type": "SGP",
+    "odds": "+390",
+    "wager": 10,
+    "returns": "39.00",
+    "betting_site": "FanDuel",
+    "bet_id": "0/1368367/0000042",
+    "legs": [
+      {
+        "game_date": "2025-10-20",
+        "away": "Tampa Bay Buccaneers",
+        "home": "Detroit Lions",
+        "player": "Baker Mayfield",
+        "target": 2,
+        "stat": "passing_touchdowns"
+      },
+      {
+        "game_date": "2025-10-20",
+        "away": "Tampa Bay Buccaneers",
+        "home": "Detroit Lions",
+        "player": "Cade Otton",
+        "target": 4,
+        "stat": "receptions"
+      },
+      {
+        "game_date": "2025-10-20",
+        "away": "Tampa Bay Buccaneers",
+        "home": "Detroit Lions",
+        "team": "Detroit Lions",
+        "target": 1,
+        "stat": "moneyline"
+      }
+    ]
+  },
+  {
+    "name": "MNF TD Parlay",
+    "type": "SGP",
+    "odds": "+794",
+    "wager": 10,
+    "returns": "79.40",
+    "betting_site": "FanDuel",
+    "bet_id": "0/1368367/0000041",
+    "legs": [
+      {
+        "game_date": "2025-10-20",
+        "away": "Tampa Bay Buccaneers",
+        "home": "Detroit Lions",
+        "player": "Sam LaPorta",
+        "target": 1,
+        "stat": "anytime_touchdown"
+      },
+      {
+        "game_date": "2025-10-20",
+        "away": "Tampa Bay Buccaneers",
+        "home": "Detroit Lions",
+        "player": "Cade Otton",
+        "target": 1,
+        "stat": "anytime_touchdown"
+      }
+    ]
+  }
+]
