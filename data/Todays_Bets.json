@@ -1,1 +1,67 @@
-[]
+[
+  {
+    "type": "Parlay",
+    "name": "7 Pick SGP Parlay",
+    "odds": "+397",
+    "wager": 10.00,
+    "returns": 49.70,
+    "legs": [
+      {
+        "game_date": "2025-10-19",
+        "away": "Atlanta Falcons",
+        "home": "San Francisco 49ers",
+        "player": "Bijan Robinson",
+        "target": 1,
+  "stat": "anytime_touchdown"
+      },
+      {
+        "game_date": "2025-10-19",
+        "away": "Atlanta Falcons",
+        "home": "San Francisco 49ers",
+        "player": "Mac Jones",
+        "target": 200,
+        "stat": "passing_yards"
+      },
+      {
+        "game_date": "2025-10-19",
+        "away": "Atlanta Falcons",
+        "home": "San Francisco 49ers",
+        "player": "Michael Penix Jr.",
+        "target": 180,
+        "stat": "passing_yards"
+      },
+      {
+        "game_date": "2025-10-19",
+        "away": "Atlanta Falcons",
+        "home": "San Francisco 49ers",
+        "player": "Michael Penix Jr.",
+        "target": 1,
+        "stat": "passing_touchdowns"
+      },
+      {
+        "game_date": "2025-10-19",
+        "away": "Atlanta Falcons",
+        "home": "San Francisco 49ers",
+        "player": "Drake London",
+        "target": 50,
+        "stat": "receiving_yards"
+      },
+      {
+        "game_date": "2025-10-19",
+        "away": "Atlanta Falcons",
+        "home": "San Francisco 49ers",
+        "player": "Bijan Robinson",
+        "target": 90,
+  "stat": "rushing_receiving_yards"
+      },
+      {
+        "game_date": "2025-10-19",
+        "away": "Atlanta Falcons",
+        "home": "San Francisco 49ers",
+        "player": "Christian McCaffrey",
+        "target": 40,
+        "stat": "rushing_yards"
+      }
+    ]
+  }
+]
