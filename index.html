@@ -549,21 +549,31 @@ function logoutToken() {
         let formattedDate = '';
         if (parlay.legs && parlay.legs[0]) {
           // Get unique game dates from all legs
-          const uniqueDates = [...new Set(parlay.legs.map(leg => leg.game_date))];
+          const uniqueDates = [...new Set(parlay.legs.map(leg => leg.game_date))].filter(d => d);
           
           // If there's only one unique date, it's a single game parlay
-          if (uniqueDates.length === 1) {
-            const dateStr = uniqueDates[0]; // Format: YYYYMMDD
-            // Parse YYYYMMDD format
-            const year = dateStr.substring(0, 4);
-            const month = dateStr.substring(4, 6);
-            const day = dateStr.substring(6, 8);
-            const gameDate = new Date(`${year}-${month}-${day}`);
-            const dayOfWeek = gameDate.toLocaleDateString('en-US', { weekday: 'long' });
-            const monthName = gameDate.toLocaleDateString('en-US', { month: 'short' });
-            const dayNum = gameDate.getDate();
-            const yearNum = gameDate.getFullYear();
-            formattedDate = `${dayOfWeek} - ${monthName} ${dayNum}, ${yearNum}`;
+          if (uniqueDates.length === 1 && uniqueDates[0]) {
+            const dateStr = String(uniqueDates[0]); // Format: YYYYMMDD
+            try {
+              // Parse YYYYMMDD format
+              if (dateStr.length === 8) {
+                const year = dateStr.substring(0, 4);
+                const month = dateStr.substring(4, 6);
+                const day = dateStr.substring(6, 8);
+                const gameDate = new Date(`${year}-${month}-${day}`);
+                
+                // Check if date is valid
+                if (!isNaN(gameDate.getTime())) {
+                  const dayOfWeek = gameDate.toLocaleDateString('en-US', { weekday: 'long' });
+                  const monthName = gameDate.toLocaleDateString('en-US', { month: 'short' });
+                  const dayNum = gameDate.getDate();
+                  const yearNum = gameDate.getFullYear();
+                  formattedDate = `${dayOfWeek} - ${monthName} ${dayNum}, ${yearNum}`;
+                }
+              }
+            } catch (e) {
+              console.error('Error parsing date:', dateStr, e);
+            }
           }
         }
         
@@ -577,6 +587,9 @@ function logoutToken() {
 
         const allGamesDiv=document.createElement('div');
         allGamesDiv.className='game-info-wrapper';
+
+        // Debug logging
+        console.log('Parlay:', parlay.name, 'has games:', parlay.games ? parlay.games.length : 'undefined');
 
         // Show scoreboard if games data exists
         if (parlay.games && parlay.games.length > 0) {
