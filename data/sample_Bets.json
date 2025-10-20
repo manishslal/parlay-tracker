@@ -1,10 +1,12 @@
 [
     {
-        "type": "SGP",
         "name": "SAMPLE 1-Leg",
+        "type": "SGP",
         "odds": "+150",
         "wager": 10,
         "returns": "",
+        "betting_site": "",
+        "bet_id": "",
         "legs": [
             {
                 "game_date": "2025-10-13",

@@ -2,9 +2,11 @@
     {
         "name": "7 Pick SGP Parlay",
         "type": "Parlay",
-        "odds": "",
-        "wager": "",
-        "returns": "",
+        "odds": "+397",
+        "wager": "10",
+        "returns": 39.7,
+        "betting_site": "",
+        "bet_id": "",
         "legs": [
             {
                 "game_date": "2025-10-19",
@@ -67,9 +69,11 @@
     {
         "name": "4-Leg SGP - Bills @ Falcons (Robinson Focus)",
         "type": "SGP",
-        "odds": "",
-        "wager": "",
-        "returns": "",
+        "odds": "+192",
+        "wager": "10",
+        "returns": 19.2,
+        "betting_site": "",
+        "bet_id": "",
         "legs": [
             {
                 "game_date": "2025-10-13",
@@ -108,9 +112,11 @@
     {
         "name": "2-Leg SGP - Bills @ Falcons (TD Scorers)",
         "type": "SGP",
-        "odds": "",
-        "wager": "",
-        "returns": "",
+        "odds": "+765",
+        "wager": "10",
+        "returns": 76.5,
+        "betting_site": "",
+        "bet_id": "",
         "legs": [
             {
                 "game_date": "2025-10-13",
@@ -133,9 +139,11 @@
     {
         "name": "4-Leg SGP - Bills @ Falcons",
         "type": "SGP",
-        "odds": "",
-        "wager": "",
-        "returns": "",
+        "odds": "+656",
+        "wager": "10",
+        "returns": 65.6,
+        "betting_site": "",
+        "bet_id": "",
         "legs": [
             {
                 "game_date": "2025-10-13",
@@ -174,9 +182,11 @@
     {
         "name": "2-Leg SGP - Bills @ Falcons (Khalil Shakir)",
         "type": "SGP",
-        "odds": "",
-        "wager": "",
-        "returns": "",
+        "odds": "+303",
+        "wager": "10",
+        "returns": 30.3,
+        "betting_site": "",
+        "bet_id": "",
         "legs": [
             {
                 "game_date": "2025-10-13",
@@ -199,9 +209,11 @@
     {
         "name": "4-Leg SGP - Bears @ Commanders",
         "type": "SGP",
-        "odds": "",
-        "wager": "",
-        "returns": "",
+        "odds": "+516",
+        "wager": "10",
+        "returns": 51.6,
+        "betting_site": "",
+        "bet_id": "",
         "legs": [
             {
                 "game_date": "2025-10-13",
@@ -243,6 +255,8 @@
         "odds": "",
         "wager": "",
         "returns": "",
+        "betting_site": "",
+        "bet_id": "",
         "legs": [
             {
                 "game_date": "2025-10-13",

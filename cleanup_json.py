@@ -24,6 +24,10 @@ def cleanup_parlay(parlay):
     returns = parlay.get("returns", "")
     cleaned["returns"] = "" if returns is None else returns
     
+    # Add new tracking fields
+    cleaned["betting_site"] = parlay.get("betting_site", "")
+    cleaned["bet_id"] = parlay.get("bet_id", "")
+    
     # Add legs array
     cleaned["legs"] = []
     

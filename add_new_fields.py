@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Script to add odds, wager, and returns fields to all parlays in JSON files.
+Script to add betting_site and bet_id fields to all parlays in JSON files.
 """
 
 import json
@@ -8,15 +8,15 @@ import os
 
 DATA_DIR = "./Data"
 
-def add_betting_fields(parlay):
-    """Add odds, wager, returns, betting_site, and bet_id fields if they don't exist."""
-    # Add fields in specific order after 'type'
+def add_new_fields(parlay):
+    """Add betting_site and bet_id fields if they don't exist."""
+    # Maintain field order: name, type, odds, wager, returns, betting_site, bet_id, legs
     result = {
         "name": parlay.get("name", "Unknown Bet"),
         "type": parlay.get("type", "Wager")
     }
     
-    # Add betting fields with empty string defaults
+    # Add existing betting fields
     result["odds"] = parlay.get("odds", "")
     result["wager"] = parlay.get("wager", "")
     
@@ -24,7 +24,7 @@ def add_betting_fields(parlay):
     returns = parlay.get("returns", "")
     result["returns"] = "" if returns is None else returns
     
-    # Add tracking fields
+    # Add new fields with empty string defaults
     result["betting_site"] = parlay.get("betting_site", "")
     result["bet_id"] = parlay.get("bet_id", "")
     
@@ -34,7 +34,7 @@ def add_betting_fields(parlay):
     return result
 
 def update_file(filepath):
-    """Add betting fields to all parlays in a file."""
+    """Add new fields to all parlays in a file."""
     print(f"Updating {filepath}...")
     
     try:
@@ -46,7 +46,7 @@ def update_file(filepath):
             return
         
         # Update each parlay
-        updated_data = [add_betting_fields(parlay) for parlay in data]
+        updated_data = [add_new_fields(parlay) for parlay in data]
         
         # Write back with proper formatting
         with open(filepath, 'w') as f:
@@ -58,13 +58,14 @@ def update_file(filepath):
         print(f"  ❌ Error: {e}")
 
 def main():
-    print("🔧 Adding betting fields (odds, wager, returns) to all parlays...")
+    print("🔧 Adding betting_site and bet_id fields to all parlays...")
     print()
     
     files_to_update = [
         "Todays_Bets.json",
         "Live_Bets.json", 
-        "Historical_Bets.json"
+        "Historical_Bets.json",
+        "sample_Bets.json"
     ]
     
     for filename in files_to_update:
