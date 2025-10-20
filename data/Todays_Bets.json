@@ -9,7 +9,7 @@
     "bet_id": "0/1368367/0000042",
     "legs": [
       {
-        "game_date": "20251020",
+        "game_date": "2025-10-20",
         "away": "Tampa Bay Buccaneers",
         "home": "Detroit Lions",
         "player": "Baker Mayfield",
@@ -17,7 +17,7 @@
         "stat": "passing_touchdowns"
       },
       {
-        "game_date": "20251020",
+        "game_date": "2025-10-20",
         "away": "Tampa Bay Buccaneers",
         "home": "Detroit Lions",
         "player": "Cade Otton",
@@ -25,7 +25,7 @@
         "stat": "receptions"
       },
       {
-        "game_date": "20251020",
+        "game_date": "2025-10-20",
         "away": "Tampa Bay Buccaneers",
         "home": "Detroit Lions",
         "team": "Detroit Lions",
@@ -44,7 +44,7 @@
     "bet_id": "0/1368367/0000041",
     "legs": [
       {
-        "game_date": "20251020",
+        "game_date": "2025-10-20",
         "away": "Tampa Bay Buccaneers",
         "home": "Detroit Lions",
         "player": "Sam LaPorta",
@@ -52,7 +52,7 @@
         "stat": "anytime_touchdown"
       },
       {
-        "game_date": "20251020",
+        "game_date": "2025-10-20",
         "away": "Tampa Bay Buccaneers",
         "home": "Detroit Lions",
         "player": "Cade Otton",

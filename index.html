@@ -553,23 +553,29 @@ function logoutToken() {
           
           // If there's only one unique date, it's a single game parlay
           if (uniqueDates.length === 1 && uniqueDates[0]) {
-            const dateStr = String(uniqueDates[0]); // Format: YYYYMMDD
+            const dateStr = String(uniqueDates[0]);
             try {
-              // Parse YYYYMMDD format
-              if (dateStr.length === 8) {
+              let gameDate;
+              
+              // Handle both formats: YYYY-MM-DD (new standard) and YYYYMMDD (legacy)
+              if (dateStr.includes('-')) {
+                // YYYY-MM-DD format
+                gameDate = new Date(dateStr);
+              } else if (dateStr.length === 8) {
+                // YYYYMMDD format (legacy)
                 const year = dateStr.substring(0, 4);
                 const month = dateStr.substring(4, 6);
                 const day = dateStr.substring(6, 8);
-                const gameDate = new Date(`${year}-${month}-${day}`);
-                
-                // Check if date is valid
-                if (!isNaN(gameDate.getTime())) {
-                  const dayOfWeek = gameDate.toLocaleDateString('en-US', { weekday: 'long' });
-                  const monthName = gameDate.toLocaleDateString('en-US', { month: 'short' });
-                  const dayNum = gameDate.getDate();
-                  const yearNum = gameDate.getFullYear();
-                  formattedDate = `${dayOfWeek} - ${monthName} ${dayNum}, ${yearNum}`;
-                }
+                gameDate = new Date(`${year}-${month}-${day}`);
+              }
+              
+              // Check if date is valid
+              if (gameDate && !isNaN(gameDate.getTime())) {
+                const dayOfWeek = gameDate.toLocaleDateString('en-US', { weekday: 'long' });
+                const monthName = gameDate.toLocaleDateString('en-US', { month: 'short' });
+                const dayNum = gameDate.getDate();
+                const yearNum = gameDate.getFullYear();
+                formattedDate = `${dayOfWeek} - ${monthName} ${dayNum}, ${yearNum}`;
               }
             } catch (e) {
               console.error('Error parsing date:', dateStr, e);
