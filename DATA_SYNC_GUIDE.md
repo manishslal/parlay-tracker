@@ -29,7 +29,13 @@ This pulls the latest from GitHub to your local machine.
 ```
 This downloads the current state from Render and optionally commits it to GitHub.
 
-### 3. After Adding New Parlays Locally: Push to GitHub
+### 3. If JSON Files Get Corrupted: Clean Up
+```bash
+python3 cleanup_json.py
+```
+This removes any contaminated data (like `"games"` keys added by the backend) and restores files to their original simple format.
+
+### 4. After Adding New Parlays Locally: Push to GitHub
 ```bash
 git add data/Todays_Bets.json
 git commit -m "Add new parlay"
@@ -76,6 +82,12 @@ git push
 - Push your changes: `git push`
 - Wait 2 minutes for auto-deploy
 - Check deploy status: https://dashboard.render.com/
+
+### "JSON files have extra 'games' data!"
+- This happens when processed data (with ESPN stats) gets saved back to files
+- Run `python3 cleanup_json.py` to remove contaminated data
+- Files should only contain: `name`, `type`, `legs`, `odds`, `wager`, `returns`
+- The backend adds `"games"` temporarily for frontend display, but it shouldn't be persisted
 
 ## Quick Reference
 
