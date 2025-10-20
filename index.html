@@ -390,7 +390,7 @@ function logoutToken() {
             const stn=g.statusTypeName,isSched=stn==='STATUS_SCHEDULED',isLive=stn==='STATUS_IN_PROGRESS';
             let gameStatus,gameCls,gameDetails;
             if(isSched){gameStatus='🔜 Not Started';gameCls='status-pregame';gameDetails=`<div>${g.teams.away} @ ${g.teams.home}</div><div>${g.startTime}</div>`;}
-            else if(isLive){gameStatus='⏳ In Progress';gameCls='status-live';gameDetails=`<div>${getQuarter(g.period)}, ${g.clock}</div><div>${g.teams.away} ${g.score.away} @ ${g.teams.home} ${g.score.home}</div>`;}
+            else if(isLive){gameStatus='⏳ In Progress';gameCls='status-live';gameDetails=`<div>${getQuarter(g.period)}, ${g.clock}</div><div>${g.teams.away.substring(0,3).toUpperCase()} ${g.score.away} @ ${g.teams.home.substring(0,3).toUpperCase()} ${g.score.home}</div>`;}
             else{gameStatus='FINAL';gameCls='status-final';gameDetails=`<div>${g.teams.away.substring(0,3).toUpperCase()} ${g.score.away} - ${g.score.home} ${g.teams.home.substring(0,3).toUpperCase()}</div>`;}
             
             const gameInfoDiv=document.createElement('div');
@@ -404,7 +404,7 @@ function logoutToken() {
             const stn=g.statusTypeName,isSched=stn==='STATUS_SCHEDULED',isLive=stn==='STATUS_IN_PROGRESS';
             let gameStatus,gameCls,gameDetails;
             if(isSched){gameStatus='🔜 Not Started';gameCls='status-pregame';gameDetails=`<div>${g.teams.away} @ ${g.teams.home}</div><div>${g.startTime}</div>`;}
-            else if(isLive){gameStatus='⏳ In Progress';gameCls='status-live';gameDetails=`<div>${getQuarter(g.period)}, ${g.clock}</div><div>${g.teams.away} ${g.score.away} @ ${g.teams.home} ${g.score.home}</div>`;}
+            else if(isLive){gameStatus='⏳ In Progress';gameCls='status-live';gameDetails=`<div>${getQuarter(g.period)}, ${g.clock}</div><div>${g.teams.away.substring(0,3).toUpperCase()} ${g.score.away} @ ${g.teams.home.substring(0,3).toUpperCase()} ${g.score.home}</div>`;}
             else{gameStatus='FINAL';gameCls='status-final';gameDetails=`<div>${g.teams.away.substring(0,3).toUpperCase()} ${g.score.away} - ${g.score.home} ${g.teams.home.substring(0,3).toUpperCase()}</div>`;}
             
             const gameInfoDiv=document.createElement('div');
