@@ -733,12 +733,9 @@ def process_parlay_data(parlays):
                 app.logger.warning(f"No game data found for {game_key}")
                 leg["current"] = 0
 
-        processed_parlay = {
-            "name": parlay.get("name", "Unknown Bet"),
-            "type": parlay.get("type", "Wager"),
-            "legs": parlay.get("legs", []),
-            "games": list(parlay_games.values())
-        }
+        # Copy all original parlay fields and add games
+        processed_parlay = parlay.copy()
+        processed_parlay["games"] = list(parlay_games.values())
         processed_parlays.append(processed_parlay)
     
     return processed_parlays
