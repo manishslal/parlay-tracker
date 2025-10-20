@@ -447,9 +447,11 @@ function logoutToken() {
                            <div class="progress-text">${pct}%</div>
                          </div>`;
               let txt;
-              if(!isAnyGameLive && !areAllGamesFinal)txt='🔜 Not Started';
+              // Show Hit if 100% reached, even during live game
+              if(pct===100)txt='✅ Hit';
+              else if(!isAnyGameLive && !areAllGamesFinal)txt='🔜 Not Started';
               else if(isAnyGameLive)txt='⏳ In Progress';
-              else txt=pct===100?'✅ Hit':'🚫 Miss';
+              else txt='🚫 Miss';
               return`
                 <tr>
                   <td>${p.player}</td><td>${fmtType(p.stat)}</td>
