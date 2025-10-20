@@ -100,7 +100,7 @@
   <div class="container">
     <h1>Parlay & Wager Tracker</h1>
     <div class="tabs">
-      <button class="tab active" data-tab="current">Today's Parlays</button>
+      <button class="tab active" data-tab="current">Live Bets</button>
       <button class="tab" data-tab="historical">Historical Bets</button>
     </div>
     <button id="refresh-button">Refresh Stats</button>
@@ -246,17 +246,28 @@ function logoutToken() {
         
         // Only fetch data for the active tab; use cache if available
         if(activeTab === 'current') {
-          if (cachedLive) {
-            console.log('Using cached live data');
-            render(cachedLive, sec);
-          } else {
-            const liveResponse = await fetchWithAdminToken(liveUrl);
-            if(!liveResponse.ok) throw new Error(`Live data error: ${liveResponse.status}`);
-            const parlays = await liveResponse.json();
-            cachedLive = parlays;
-            console.log('Live parlays:', parlays);
-            render(parlays, sec);
-          }
+          // Fetch both todays and live bets and combine them
+          const todaysUrl = `${API_BASE}/todays`;
+          const [todaysResponse, liveResponse] = await Promise.all([
+            fetchWithAdminToken(todaysUrl),
+            fetchWithAdminToken(liveUrl)
+          ]);
+          
+          if(!todaysResponse.ok) throw new Error(`Todays data error: ${todaysResponse.status}`);
+          if(!liveResponse.ok) throw new Error(`Live data error: ${liveResponse.status}`);
+          
+          const todaysParlays = await todaysResponse.json();
+          const liveParlays = await liveResponse.json();
+          
+          // Combine both arrays
+          const combinedParlays = [...todaysParlays, ...liveParlays];
+          cachedLive = combinedParlays;
+          
+          console.log('Todays parlays:', todaysParlays);
+          console.log('Live parlays:', liveParlays);
+          console.log('Combined parlays:', combinedParlays);
+          
+          render(combinedParlays, sec);
         } else if(activeTab === 'historical') {
           if (cachedHistorical) {
             console.log('Using cached historical data');
@@ -307,7 +318,7 @@ function logoutToken() {
       if (parlays.length === 0) {
         const empty = document.createElement('div');
         empty.className = 'no-data';
-        const tabName = container.dataset.tab === 'historical' ? 'Historical Bets' : "Today's Parlays";
+        const tabName = container.dataset.tab === 'historical' ? 'Historical Bets' : "Live Bets";
         empty.innerHTML = `
           <div style="text-align:center;padding:2rem;color:#bbb">
             <strong>No parlays found</strong>
