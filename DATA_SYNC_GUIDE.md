@@ -84,6 +84,8 @@ git push
      "odds": "+650",
      "wager": 10,
      "returns": "",
+     "betting_site": "DraftKings",
+     "bet_id": "ABC123456",
      "legs": [...]
    }
    ```
@@ -91,6 +93,16 @@ git push
 3. **Wait** ~2 minutes for Render to restart and auto-calculate
 4. **Or manually trigger**: `./calculate_returns.sh`
 5. **Fetch results**: `./fetch_from_render.sh`
+
+### Parlay Fields Explained:
+- **name**: Display name of the parlay
+- **type**: "SGP" (Same Game Parlay), "Parlay", "Wager", etc.
+- **odds**: American odds format ("+650" or "-110")
+- **wager**: Amount wagered (number or string)
+- **returns**: Calculated profit (auto-calculated by backend)
+- **betting_site**: Name of betting platform (e.g., "DraftKings", "FanDuel")
+- **bet_id**: Unique bet identifier from the betting site
+- **legs**: Array of individual bet legs
 
 ### Odds Format:
 - **Positive**: `"+650"` (underdog, multiply wager by 6.5)
