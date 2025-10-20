@@ -1,4 +1,5 @@
-# app.py
+# app.py - Parlay Tracker Backend
+# Force redeploy: 2025-10-20 19:30
 from flask import Flask, jsonify, send_from_directory
 from flask_cors import CORS
 import requests
