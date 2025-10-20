@@ -95,6 +95,105 @@
     .status-pregame{background:var(--pregame);color:#ffffff;}
     .status-live{background:var(--green);color:#ffffff;}
     .status-final{background:var(--error);color:#ffffff;}
+    
+    /* Mobile Responsive Styles */
+    @media (max-width: 768px) {
+      body {
+        padding: 0.5rem;
+        zoom: 1; /* Reset zoom on mobile for better readability */
+      }
+      
+      .container {
+        padding: 1rem;
+        border-radius: 8px;
+      }
+      
+      h1 {
+        font-size: 1.5rem;
+      }
+      
+      .parlay-section {
+        padding: 1rem;
+        overflow-x: hidden; /* Prevent horizontal scroll */
+      }
+      
+      .parlay-header {
+        margin: -1rem -1rem 1rem -1rem;
+        padding: 0.75rem 1rem;
+        flex-direction: column;
+        gap: 0.5rem;
+      }
+      
+      /* Make table responsive - wrap on mobile */
+      table {
+        display: block;
+        overflow-x: auto;
+        white-space: nowrap;
+        -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+      }
+      
+      thead, tbody, tr {
+        display: table;
+        width: 100%;
+        table-layout: fixed;
+      }
+      
+      th, td {
+        padding: 0.5rem 0.25rem;
+        font-size: 0.85rem;
+        word-wrap: break-word;
+        white-space: normal;
+      }
+      
+      /* Reduce width of certain columns on mobile */
+      th:nth-child(1), td:nth-child(1) { width: 25%; } /* Player */
+      th:nth-child(2), td:nth-child(2) { width: 20%; } /* Stat Type */
+      th:nth-child(3), td:nth-child(3) { width: 12%; } /* Target */
+      th:nth-child(4), td:nth-child(4) { width: 12%; } /* Current */
+      th:nth-child(5), td:nth-child(5) { width: 18%; } /* Progress */
+      th:nth-child(6), td:nth-child(6) { width: 13%; } /* Status */
+      
+      .progress-bar {
+        height: 1.25rem;
+        font-size: 0.75rem;
+      }
+      
+      .game-info-wrapper {
+        flex-direction: column;
+        gap: 0.5rem;
+      }
+      
+      .tabs {
+        gap: 0.5rem;
+      }
+      
+      .tab {
+        padding: 0.5rem 1rem;
+        font-size: 0.9rem;
+      }
+      
+      button {
+        padding: 0.5rem 1rem;
+        font-size: 0.9rem;
+      }
+    }
+    
+    /* Extra small screens */
+    @media (max-width: 480px) {
+      h1 {
+        font-size: 1.25rem;
+      }
+      
+      th, td {
+        padding: 0.4rem 0.2rem;
+        font-size: 0.75rem;
+      }
+      
+      .progress-bar {
+        height: 1rem;
+        font-size: 0.65rem;
+      }
+    }
   </style>
 </head>
 <body>
