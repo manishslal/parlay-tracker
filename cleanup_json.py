@@ -13,17 +13,19 @@ def cleanup_parlay(parlay):
     """Remove 'games' key and 'current' from legs, keep only essential fields."""
     cleaned = {
         "name": parlay.get("name", "Unknown Bet"),
-        "type": parlay.get("type", "Wager"),
-        "legs": []
+        "type": parlay.get("type", "Wager")
     }
     
-    # Add optional fields if they exist
-    if "odds" in parlay:
-        cleaned["odds"] = parlay["odds"]
-    if "wager" in parlay:
-        cleaned["wager"] = parlay["wager"]
-    if "returns" in parlay:
-        cleaned["returns"] = parlay["returns"]
+    # Always add betting fields (use existing values or default to empty string)
+    cleaned["odds"] = parlay.get("odds", "")
+    cleaned["wager"] = parlay.get("wager", "")
+    
+    # Handle returns - convert None/null to empty string
+    returns = parlay.get("returns", "")
+    cleaned["returns"] = "" if returns is None else returns
+    
+    # Add legs array
+    cleaned["legs"] = []
     
     # Clean up legs - remove 'current', 'parlay_name', keep essential fields
     for leg in parlay.get("legs", []):
