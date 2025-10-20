@@ -628,6 +628,7 @@ def fetch_game_details_from_espn(game_date, away_team, home_team):
             "espn_game_id": ev["id"],
             "teams": {"away": away["team"]["displayName"], "home": home["team"]["displayName"]},
             "startTime": ev.get("date", "").split("T")[1][:5] + " ET" if "T" in ev.get("date", "") else "",
+            "startDateTime": ev.get("date", ""),  # Full ISO datetime for countdown calculations
             "game_date": game_date,
             "statusTypeName": ev["status"]["type"]["name"],
             "period": ev["status"].get("period", 0),

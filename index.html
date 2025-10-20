@@ -349,10 +349,26 @@ function logoutToken() {
     })();
 
     function fmtType(stat){
-      const m={'passing_yards':'Passing Yards','passing_yards_alt':'Alt Passing Yards','receiving_yards':'Receiving Yards','receiving_yards_alt':'Alt Receiving Yards','rushing_yards':'Rushing Yards','rushing_yards_alt':'Alt Rushing Yards','rushing_receiving_yards':'Rush + Rec Yards','anytime_touchdown':'Anytime TD','receptions_alt':'Alt Receptions','longest_reception':'Longest Reception'};
+      const m={'passing_yards':'Passing Yards','passing_yards_alt':'Alt Passing Yards','receiving_yards':'Receiving Yards','receiving_yards_alt':'Alt Receiving Yards','rushing_yards':'Rushing Yards','rushing_yards_alt':'Alt Rushing Yards','rushing_receiving_yards':'Rush + Rec Yards','anytime_touchdown':'Anytime TD','receptions_alt':'Alt Receptions','longest_reception':'Longest Reception','moneyline':'Moneyline'};
       return m[stat]||stat.replace(/_/g,' ').replace(/\b\w/g,l=>l.toUpperCase());
     }
     function getQuarter(p){return p===1?'1st Quarter':p===2?'2nd Quarter':p===3?'3rd Quarter':p===4?'4th Quarter':'Overtime';}
+
+    // Calculate countdown to game start
+    function getCountdown(startDateTime) {
+      if (!startDateTime) return '';
+      
+      const now = new Date();
+      const gameStart = new Date(startDateTime);
+      const diffMs = gameStart - now;
+      
+      if (diffMs <= 0) return 'Starting soon';
+      
+      const hours = Math.floor(diffMs / (1000 * 60 * 60));
+      const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+      
+      return `Game starts in ${hours}h ${minutes}m`;
+    }
 
     function enhanceParlayName(parlay) {
       // If parlay doesn't have legs, return original name
@@ -562,47 +578,60 @@ function logoutToken() {
         const allGamesDiv=document.createElement('div');
         allGamesDiv.className='game-info-wrapper';
 
-        // For non-SGPs, we want to show all relevant games
-        if (parlay.type !== 'SGP') {
-          // Create a map of unique games based on away+home team combination
-          const uniqueGames = new Map();
-          parlay.legs.forEach(leg => {
-            const gameKey = `${leg.away}-${leg.home}`;
-            const game = parlay.games.find(g => 
-              g.teams.away === leg.away && g.teams.home === leg.home
-            );
-            if (game && !uniqueGames.has(gameKey)) {
-              uniqueGames.set(gameKey, game);
-            }
-          });
-          
-          // Show all unique games involved in the parlay
-          uniqueGames.forEach(g => {
-            const stn=g.statusTypeName,isSched=stn==='STATUS_SCHEDULED',isLive=stn==='STATUS_IN_PROGRESS';
-            let gameStatus,gameCls,gameDetails;
-            if(isSched){gameStatus='🔜 Not Started';gameCls='status-pregame';gameDetails=`<div>${g.teams.away} @ ${g.teams.home}</div><div>${g.startTime}</div>`;}
-            else if(isLive){gameStatus='⏳ In Progress';gameCls='status-live';gameDetails=`<div>${getQuarter(g.period)}, ${g.clock}</div><div>${g.teams.away.substring(0,3).toUpperCase()} ${g.score.away} @ ${g.teams.home.substring(0,3).toUpperCase()} ${g.score.home}</div>`;}
-            else{gameStatus='FINAL';gameCls='status-final';gameDetails=`<div>${g.teams.away.substring(0,3).toUpperCase()} ${g.score.away} - ${g.score.home} ${g.teams.home.substring(0,3).toUpperCase()}</div>`;}
+        // Show scoreboard if games data exists
+        if (parlay.games && parlay.games.length > 0) {
+          // For non-SGPs, we want to show all relevant games
+          if (parlay.type !== 'SGP') {
+            // Create a map of unique games based on away+home team combination
+            const uniqueGames = new Map();
+            parlay.legs.forEach(leg => {
+              const gameKey = `${leg.away}-${leg.home}`;
+              const game = parlay.games.find(g => 
+                g.teams.away === leg.away && g.teams.home === leg.home
+              );
+              if (game && !uniqueGames.has(gameKey)) {
+                uniqueGames.set(gameKey, game);
+              }
+            });
             
-            const gameInfoDiv=document.createElement('div');
-            gameInfoDiv.className='game-info';
-            gameInfoDiv.innerHTML=`<div class="badge ${gameCls}">${gameStatus}</div>${gameDetails}`;
-            allGamesDiv.appendChild(gameInfoDiv);
-          });
-        } else {
-          // For SGPs, show the game info as before
-          parlay.games.forEach(g=>{
-            const stn=g.statusTypeName,isSched=stn==='STATUS_SCHEDULED',isLive=stn==='STATUS_IN_PROGRESS';
-            let gameStatus,gameCls,gameDetails;
-            if(isSched){gameStatus='🔜 Not Started';gameCls='status-pregame';gameDetails=`<div>${g.teams.away} @ ${g.teams.home}</div><div>${g.startTime}</div>`;}
-            else if(isLive){gameStatus='⏳ In Progress';gameCls='status-live';gameDetails=`<div>${getQuarter(g.period)}, ${g.clock}</div><div>${g.teams.away.substring(0,3).toUpperCase()} ${g.score.away} @ ${g.teams.home.substring(0,3).toUpperCase()} ${g.score.home}</div>`;}
-            else{gameStatus='FINAL';gameCls='status-final';gameDetails=`<div>${g.teams.away.substring(0,3).toUpperCase()} ${g.score.away} - ${g.score.home} ${g.teams.home.substring(0,3).toUpperCase()}</div>`;}
-            
-            const gameInfoDiv=document.createElement('div');
-            gameInfoDiv.className='game-info';
-            gameInfoDiv.innerHTML=`<div class="badge ${gameCls}">${gameStatus}</div>${gameDetails}`;
-            allGamesDiv.appendChild(gameInfoDiv);
-          });
+            // Show all unique games involved in the parlay
+            uniqueGames.forEach(g => {
+              const stn=g.statusTypeName,isSched=stn==='STATUS_SCHEDULED',isLive=stn==='STATUS_IN_PROGRESS';
+              let gameStatus,gameCls,gameDetails;
+              if(isSched){
+                gameStatus='🔜 Not Started';
+                gameCls='status-pregame';
+                const countdown = getCountdown(g.startDateTime);
+                gameDetails=`<div>${g.teams.away} @ ${g.teams.home}</div><div>${countdown || g.startTime}</div>`;
+              }
+              else if(isLive){gameStatus='⏳ In Progress';gameCls='status-live';gameDetails=`<div>${getQuarter(g.period)}, ${g.clock}</div><div>${g.teams.away.substring(0,3).toUpperCase()} ${g.score.away} @ ${g.teams.home.substring(0,3).toUpperCase()} ${g.score.home}</div>`;}
+              else{gameStatus='FINAL';gameCls='status-final';gameDetails=`<div>${g.teams.away.substring(0,3).toUpperCase()} ${g.score.away} - ${g.score.home} ${g.teams.home.substring(0,3).toUpperCase()}</div>`;}
+              
+              const gameInfoDiv=document.createElement('div');
+              gameInfoDiv.className='game-info';
+              gameInfoDiv.innerHTML=`<div class="badge ${gameCls}">${gameStatus}</div>${gameDetails}`;
+              allGamesDiv.appendChild(gameInfoDiv);
+            });
+          } else {
+            // For SGPs, show the game info as before
+            parlay.games.forEach(g=>{
+              const stn=g.statusTypeName,isSched=stn==='STATUS_SCHEDULED',isLive=stn==='STATUS_IN_PROGRESS';
+              let gameStatus,gameCls,gameDetails;
+              if(isSched){
+                gameStatus='🔜 Not Started';
+                gameCls='status-pregame';
+                const countdown = getCountdown(g.startDateTime);
+                gameDetails=`<div>${g.teams.away} @ ${g.teams.home}</div><div>${countdown || g.startTime}</div>`;
+              }
+              else if(isLive){gameStatus='⏳ In Progress';gameCls='status-live';gameDetails=`<div>${getQuarter(g.period)}, ${g.clock}</div><div>${g.teams.away.substring(0,3).toUpperCase()} ${g.score.away} @ ${g.teams.home.substring(0,3).toUpperCase()} ${g.score.home}</div>`;}
+              else{gameStatus='FINAL';gameCls='status-final';gameDetails=`<div>${g.teams.away.substring(0,3).toUpperCase()} ${g.score.away} - ${g.score.home} ${g.teams.home.substring(0,3).toUpperCase()}</div>`;}
+              
+              const gameInfoDiv=document.createElement('div');
+              gameInfoDiv.className='game-info';
+              gameInfoDiv.innerHTML=`<div class="badge ${gameCls}">${gameStatus}</div>${gameDetails}`;
+              allGamesDiv.appendChild(gameInfoDiv);
+            });
+          }
         }
         header.appendChild(allGamesDiv);
 
