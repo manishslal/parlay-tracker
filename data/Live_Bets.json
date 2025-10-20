@@ -7,7 +7,7 @@
     "returns": 49.7,
     "legs": [
       {
-        "game_date": "2025-10-20",
+        "game_date": "2025-10-19",
         "away": "Atlanta Falcons",
         "home": "San Francisco 49ers",
         "player": "Bijan Robinson",
@@ -15,7 +15,7 @@
         "stat": "anytime_touchdown"
       },
       {
-        "game_date": "2025-10-20",
+        "game_date": "2025-10-19",
         "away": "Atlanta Falcons",
         "home": "San Francisco 49ers",
         "player": "Mac Jones",
@@ -23,7 +23,7 @@
         "stat": "passing_yards"
       },
       {
-        "game_date": "2025-10-20",
+        "game_date": "2025-10-19",
         "away": "Atlanta Falcons",
         "home": "San Francisco 49ers",
         "player": "Michael Penix Jr.",
@@ -31,7 +31,7 @@
         "stat": "passing_yards"
       },
       {
-        "game_date": "2025-10-20",
+        "game_date": "2025-10-19",
         "away": "Atlanta Falcons",
         "home": "San Francisco 49ers",
         "player": "Michael Penix Jr.",
@@ -39,7 +39,7 @@
         "stat": "passing_touchdowns"
       },
       {
-        "game_date": "2025-10-20",
+        "game_date": "2025-10-19",
         "away": "Atlanta Falcons",
         "home": "San Francisco 49ers",
         "player": "Drake London",
@@ -47,7 +47,7 @@
         "stat": "receiving_yards"
       },
       {
-        "game_date": "2025-10-20",
+        "game_date": "2025-10-19",
         "away": "Atlanta Falcons",
         "home": "San Francisco 49ers",
         "player": "Bijan Robinson",
@@ -55,7 +55,7 @@
         "stat": "rushing_receiving_yards"
       },
       {
-        "game_date": "2025-10-20",
+        "game_date": "2025-10-19",
         "away": "Atlanta Falcons",
         "home": "San Francisco 49ers",
         "player": "Christian McCaffrey",
