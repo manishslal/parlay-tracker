@@ -190,6 +190,8 @@ def initialize_parlay_files():
                     # Treat None or empty-string as missing and compute
                     if returns is None or (isinstance(returns, str) and str(returns).strip() == ""):
                         returns = _compute_parlay_returns_from_odds(parlay_wager, parlay_odds, leg_odds)
+                        if returns is not None:
+                            returns = f"{returns:.2f}"
                     parlay['returns'] = returns
                     historical_parlays.append(parlay)
             elif any_game_active:
@@ -197,6 +199,8 @@ def initialize_parlay_files():
                     returns = parlay.get('returns')
                     if returns is None:
                         returns = _compute_parlay_returns_from_odds(parlay_wager, parlay_odds, leg_odds)
+                        if returns is not None:
+                            returns = f"{returns:.2f}"
                     parlay['returns'] = returns
                     live_parlays.append(parlay)
             else:
@@ -333,6 +337,8 @@ def process_parlays(current_parlays):
                 # Treat None or empty-string as missing and compute
                 if returns is None or (isinstance(returns, str) and str(returns).strip() == ""):
                     returns = _compute_parlay_returns_from_odds(parlay_wager, parlay_odds, leg_odds)
+                    if returns is not None:
+                        returns = f"{returns:.2f}"
                     parlay['returns'] = returns
                 historical.append(parlay)
                 existing_historical.add(parlay_id)
@@ -346,6 +352,8 @@ def process_parlays(current_parlays):
                 # Treat None or empty-string as missing and compute
                 if returns is None or (isinstance(returns, str) and str(returns).strip() == ""):
                     returns = _compute_parlay_returns_from_odds(parlay_wager, parlay_odds, leg_odds)
+                    if returns is not None:
+                        returns = f"{returns:.2f}"
                     parlay['returns'] = returns
                 live.append(parlay)
                 processed_live.add(parlay_id)
@@ -699,9 +707,9 @@ def compute_and_persist_returns(force=False):
             if force or current is None or (isinstance(current, str) and str(current).strip() == ""):
                 val = _compute_parlay_returns_from_odds(parlay_wager, parlay_odds, leg_odds)
                 if val is not None:
-                    # ensure 2 decimal places
+                    # ensure 2 decimal places and format as string
                     val = round(float(val), 2)
-                    parlay['returns'] = val
+                    parlay['returns'] = f"{val:.2f}"
                     updated.append((parlay.get('name'), val))
 
         # write back
