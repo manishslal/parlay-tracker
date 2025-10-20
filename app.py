@@ -7,7 +7,7 @@ from datetime import datetime
 import json
 
 # Data directory for JSON fixtures
-DATA_DIR = os.path.join(os.path.dirname(__file__), "Data")
+DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
 
 def data_path(filename):
     return os.path.join(DATA_DIR, filename)
