@@ -367,8 +367,7 @@ def process_parlays(current_parlays):
     return new_today_parlays
 
 def is_past_date(game_date_str):
-    # For testing purposes, use a fixed date after the games
-    today = datetime.strptime("2025-10-14", "%Y-%m-%d").date()
+    today = datetime.now().date()
     game_date = datetime.strptime(game_date_str, "%Y-%m-%d").date()
     return game_date < today
 
