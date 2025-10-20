@@ -235,6 +235,62 @@ function logoutToken() {
     }
     function getQuarter(p){return p===1?'1st Quarter':p===2?'2nd Quarter':p===3?'3rd Quarter':p===4?'4th Quarter':'Overtime';}
 
+    function enhanceParlayName(parlay) {
+      // If parlay doesn't have legs, return original name
+      if (!parlay.legs || parlay.legs.length === 0) {
+        return parlay.name;
+      }
+
+      // Get unique teams from all legs
+      const allTeams = new Set();
+      parlay.legs.forEach(leg => {
+        if (leg.away) allTeams.add(leg.away);
+        if (leg.home) allTeams.add(leg.home);
+      });
+
+      // Only proceed if exactly 2 teams are involved
+      if (allTeams.size !== 2) {
+        return parlay.name;
+      }
+
+      // Get away and home teams from the first leg
+      const away = parlay.legs[0].away;
+      const home = parlay.legs[0].home;
+
+      // Convert full team names to abbreviations
+      const teamAbbrevMap = {
+        'Atlanta Falcons': 'Falcons', 'Buffalo Bills': 'Bills', 'Carolina Panthers': 'Panthers',
+        'Chicago Bears': 'Bears', 'Cincinnati Bengals': 'Bengals', 'Cleveland Browns': 'Browns',
+        'Dallas Cowboys': 'Cowboys', 'Denver Broncos': 'Broncos', 'Detroit Lions': 'Lions',
+        'Green Bay Packers': 'Packers', 'Houston Texans': 'Texans', 'Indianapolis Colts': 'Colts',
+        'Jacksonville Jaguars': 'Jaguars', 'Kansas City Chiefs': 'Chiefs', 'Las Vegas Raiders': 'Raiders',
+        'Los Angeles Chargers': 'Chargers', 'Los Angeles Rams': 'Rams', 'Miami Dolphins': 'Dolphins',
+        'Minnesota Vikings': 'Vikings', 'New England Patriots': 'Patriots', 'New Orleans Saints': 'Saints',
+        'New York Giants': 'Giants', 'New York Jets': 'Jets', 'Philadelphia Eagles': 'Eagles',
+        'Pittsburgh Steelers': 'Steelers', 'San Francisco 49ers': '49ers', 'Seattle Seahawks': 'Seahawks',
+        'Tampa Bay Buccaneers': 'Buccaneers', 'Tennessee Titans': 'Titans', 'Washington Commanders': 'Commanders',
+        'Arizona Cardinals': 'Cardinals', 'Baltimore Ravens': 'Ravens'
+      };
+
+      const awayAbbrev = teamAbbrevMap[away] || away;
+      const homeAbbrev = teamAbbrevMap[home] || home;
+      const matchup = `${awayAbbrev} @ ${homeAbbrev}`;
+
+      // Check if the matchup or team names are already in the parlay name
+      const nameContainsMatchup = parlay.name.includes('@') || 
+                                   parlay.name.includes(awayAbbrev) || 
+                                   parlay.name.includes(homeAbbrev) ||
+                                   parlay.name.includes(away) ||
+                                   parlay.name.includes(home);
+
+      // If matchup info not already in name, append it
+      if (!nameContainsMatchup) {
+        return `${parlay.name} - ${matchup}`;
+      }
+
+      return parlay.name;
+    }
+
     async function update(){
       msg.textContent='Fetching data...';
       try{
@@ -344,6 +400,9 @@ function logoutToken() {
         const header=document.createElement('div');
         header.className='parlay-header';
         
+        // Enhance parlay name with team matchup if applicable
+        const displayName = enhanceParlayName(parlay);
+        
         // Get game date for single game parlays
         let formattedDate = '';
         if (parlay.legs && parlay.legs[0]) {
@@ -363,7 +422,7 @@ function logoutToken() {
         
         header.innerHTML = `
           <div class="parlay-title">
-            ${parlay.name}
+            ${displayName}
             ${formattedDate && `<span class="parlay-date">${formattedDate}</span>`}
           </div>
         `;
