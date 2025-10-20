@@ -115,9 +115,9 @@
       return params.get(name);
     }
 
-    // API base precedence: ?api=... (query param) -> window.API_BASE -> default localhost
+    // API base precedence: ?api=... (query param) -> window.API_BASE -> default Render backend
     const urlApi = getQueryParam('api');
-    const API_BASE = (urlApi ? urlApi.replace(/\/$/, '') : (window.API_BASE && window.API_BASE.replace(/\/$/, ''))) || 'http://127.0.0.1:5001';
+    const API_BASE = (urlApi ? urlApi.replace(/\/$/, '') : (window.API_BASE && window.API_BASE.replace(/\/$/, ''))) || 'https://parlay-tracker-backend.onrender.com';
     const btn=document.getElementById('refresh-button'),
       sec=document.getElementById('parlay-sections'),
       histSec=document.getElementById('historical-sections'),
