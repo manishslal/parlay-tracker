@@ -14,7 +14,61 @@
                 "home": "Sample Home",
                 "player": "Sample Player",
                 "target": 10,
-                "stat": "rushing_yards"
+                "stat": "rushing_yards",
+                "_STAT_OPTIONS": {
+                    "_comment": "Valid stat types for ESPN DB integration:",
+                    "PASSING": [
+                        "passing_yards",
+                        "passing_yards_alt",
+                        "pass_attempts",
+                        "pass_completions",
+                        "passing_touchdowns",
+                        "interceptions_thrown",
+                        "longest_pass_completion"
+                    ],
+                    "RUSHING": [
+                        "rushing_yards",
+                        "rushing_yards_alt",
+                        "rushing_attempts",
+                        "rushing_touchdowns",
+                        "longest_rush"
+                    ],
+                    "RECEIVING": [
+                        "receiving_yards",
+                        "receiving_yards_alt",
+                        "receptions",
+                        "receptions_alt",
+                        "receiving_touchdowns",
+                        "longest_reception"
+                    ],
+                    "COMBINED": [
+                        "rushing_receiving_yards"
+                    ],
+                    "TOUCHDOWNS": [
+                        "anytime_touchdown",
+                        "player_to_score_2_touchdowns",
+                        "player_to_score_3_touchdowns",
+                        "first_touchdown_scorer",
+                        "last_touchdown_scorer"
+                    ],
+                    "DEFENSIVE": [
+                        "sacks",
+                        "tackles_assists"
+                    ],
+                    "KICKING": [
+                        "field_goals_made",
+                        "kicking_points"
+                    ],
+                    "TEAM_PROPS": [
+                        "team_total_points (requires 'team' field)",
+                        "first_team_to_score (no target needed)",
+                        "last_team_to_score (no target needed)"
+                    ],
+                    "GAME_PROPS": [
+                        "total_points",
+                        "will_be_overtime"
+                    ]
+                }
             }
         ]
     }
