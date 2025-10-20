@@ -537,12 +537,17 @@ function logoutToken() {
           
           // If there's only one unique date, it's a single game parlay
           if (uniqueDates.length === 1) {
-            const gameDate = new Date(uniqueDates[0]);
+            const dateStr = uniqueDates[0]; // Format: YYYYMMDD
+            // Parse YYYYMMDD format
+            const year = dateStr.substring(0, 4);
+            const month = dateStr.substring(4, 6);
+            const day = dateStr.substring(6, 8);
+            const gameDate = new Date(`${year}-${month}-${day}`);
             const dayOfWeek = gameDate.toLocaleDateString('en-US', { weekday: 'long' });
-            const month = gameDate.toLocaleDateString('en-US', { month: 'short' });
-            const day = gameDate.getDate();
-            const year = gameDate.getFullYear();
-            formattedDate = `${dayOfWeek} - ${month} ${day}, ${year}`;
+            const monthName = gameDate.toLocaleDateString('en-US', { month: 'short' });
+            const dayNum = gameDate.getDate();
+            const yearNum = gameDate.getFullYear();
+            formattedDate = `${dayOfWeek} - ${monthName} ${dayNum}, ${yearNum}`;
           }
         }
         
@@ -601,8 +606,9 @@ function logoutToken() {
         }
         header.appendChild(allGamesDiv);
 
-        const isAnyGameLive=parlay.games.some(g=>g.statusTypeName==='STATUS_IN_PROGRESS');
-        const areAllGamesFinal=parlay.games.every(g=>g.statusTypeName==='STATUS_FINAL');
+        const isAnyGameLive = parlay.games && parlay.games.some(g=>g.statusTypeName==='STATUS_IN_PROGRESS');
+        const areAllGamesFinal = parlay.games && parlay.games.every(g=>g.statusTypeName==='STATUS_FINAL');
+        const areAllGamesScheduled = parlay.games && parlay.games.every(g=>g.statusTypeName==='STATUS_SCHEDULED');
 
         const table=document.createElement('table');
         table.innerHTML=`
@@ -636,12 +642,12 @@ function logoutToken() {
               let txt;
               // Show Hit if 100% reached, even during live game
               if(pct===100)txt='✅ Hit';
-              else if(!isAnyGameLive && !areAllGamesFinal)txt='🔜 Not Started';
+              else if(areAllGamesScheduled || (!isAnyGameLive && !areAllGamesFinal))txt='🔜 Not Started';
               else if(isAnyGameLive)txt='⏳ In Progress';
               else txt='🚫 Miss';
               return`
                 <tr>
-                  <td>${p.player}</td><td>${fmtType(p.stat)}</td>
+                  <td>${p.player || p.team || 'N/A'}</td><td>${fmtType(p.stat)}</td>
                   <td>${current}</td><td>${p.target}</td>
                   <td>${bar}</td><td>${txt}</td>
                 </tr>`;
