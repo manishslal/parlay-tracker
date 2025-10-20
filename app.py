@@ -16,6 +16,18 @@ def data_path(filename):
 # Ensure data directory exists
 os.makedirs(DATA_DIR, exist_ok=True)
 
+# Log data directory contents on startup
+try:
+    data_files = os.listdir(DATA_DIR)
+    print(f"[STARTUP] Data directory ({DATA_DIR}) contains: {data_files}")
+    for fname in data_files:
+        fpath = os.path.join(DATA_DIR, fname)
+        if os.path.isfile(fpath):
+            size = os.path.getsize(fpath)
+            print(f"[STARTUP]   {fname}: {size} bytes")
+except Exception as e:
+    print(f"[STARTUP] Error listing data directory: {e}")
+
 
 def _parse_american_odds(odds):
     """Parse American odds like +150 or -120 and return decimal multiplier (including stake).
@@ -131,6 +143,13 @@ def initialize_parlay_files():
         today_parlays = load_parlays()
         live_parlays = load_live_parlays()
         historical_parlays = load_historical_bets()
+        
+        # DEBUG: Log what we loaded
+        app.logger.info(f"[INIT] Loaded {len(today_parlays)} from Todays_Bets.json")
+        app.logger.info(f"[INIT] Loaded {len(live_parlays)} from Live_Bets.json")
+        app.logger.info(f"[INIT] Loaded {len(historical_parlays)} from Historical_Bets.json")
+        if live_parlays:
+            app.logger.info(f"[INIT] Live parlays: {[p.get('name') for p in live_parlays]}")
 
         # Don't clear live parlays - we want to keep them and just check their status
         # live_parlays = []  # REMOVED: This was clearing live bets on every restart!
