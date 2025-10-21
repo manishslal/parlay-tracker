@@ -657,7 +657,7 @@ function logoutToken() {
         }
         header.appendChild(allGamesDiv);
 
-        const isAnyGameLive = parlay.games && parlay.games.some(g=>g.statusTypeName==='STATUS_IN_PROGRESS');
+        const isAnyGameLive = parlay.games && parlay.games.some(g=>g.statusTypeName==='STATUS_IN_PROGRESS' || g.statusTypeName==='STATUS_HALFTIME');
         const areAllGamesFinal = parlay.games && parlay.games.every(g=>g.statusTypeName==='STATUS_FINAL');
         const areAllGamesScheduled = parlay.games && parlay.games.every(g=>g.statusTypeName==='STATUS_SCHEDULED');
 
