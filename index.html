@@ -105,6 +105,7 @@
       margin-bottom:.25rem;padding:2px 6px;border-radius:4px;}
     .status-pregame{background:var(--pregame);color:#ffffff;}
     .status-live{background:var(--error);color:#ffffff;}
+    .status-halftime{background:transparent;color:#ffffff;border:1px solid #ffffff;}
     .status-final{background:#808080;color:#ffffff;}
     
     /* Mobile Responsive Styles */
@@ -615,7 +616,7 @@ function logoutToken() {
             
             // Show all unique games involved in the parlay
             uniqueGames.forEach(g => {
-              const stn=g.statusTypeName,isSched=stn==='STATUS_SCHEDULED',isLive=stn==='STATUS_IN_PROGRESS';
+              const stn=g.statusTypeName,isSched=stn==='STATUS_SCHEDULED',isLive=stn==='STATUS_IN_PROGRESS',isHalftime=stn==='STATUS_HALFTIME';
               let gameStatus,gameCls,gameDetails;
               if(isSched){
                 gameStatus='🔜 Not Started';
@@ -623,6 +624,7 @@ function logoutToken() {
                 const countdown = getCountdown(g.startDateTime);
                 gameDetails=`<div>${g.teams.away} @ ${g.teams.home}</div><div>${countdown || g.startTime}</div>`;
               }
+              else if(isHalftime){gameStatus='HALF';gameCls='status-halftime';gameDetails=`<div>${getQuarter(g.period)}</div><div>${g.teams.away.substring(0,3).toUpperCase()} ${g.score.away} - ${g.score.home} ${g.teams.home.substring(0,3).toUpperCase()}</div>`;}
               else if(isLive){gameStatus='LIVE';gameCls='status-live';gameDetails=`<div>${getQuarter(g.period)}, ${g.clock}</div><div>${g.teams.away.substring(0,3).toUpperCase()} ${g.score.away} - ${g.score.home} ${g.teams.home.substring(0,3).toUpperCase()}</div>`;}
               else{gameStatus='FINAL';gameCls='status-final';gameDetails=`<div>${g.teams.away.substring(0,3).toUpperCase()} ${g.score.away} - ${g.score.home} ${g.teams.home.substring(0,3).toUpperCase()}</div>`;}
               
@@ -634,7 +636,7 @@ function logoutToken() {
           } else {
             // For SGPs, show the game info as before
             parlay.games.forEach(g=>{
-              const stn=g.statusTypeName,isSched=stn==='STATUS_SCHEDULED',isLive=stn==='STATUS_IN_PROGRESS';
+              const stn=g.statusTypeName,isSched=stn==='STATUS_SCHEDULED',isLive=stn==='STATUS_IN_PROGRESS',isHalftime=stn==='STATUS_HALFTIME';
               let gameStatus,gameCls,gameDetails;
               if(isSched){
                 gameStatus='🔜 Not Started';
@@ -642,6 +644,7 @@ function logoutToken() {
                 const countdown = getCountdown(g.startDateTime);
                 gameDetails=`<div>${g.teams.away} @ ${g.teams.home}</div><div>${countdown || g.startTime}</div>`;
               }
+              else if(isHalftime){gameStatus='HALF';gameCls='status-halftime';gameDetails=`<div>${getQuarter(g.period)}</div><div>${g.teams.away.substring(0,3).toUpperCase()} ${g.score.away} - ${g.score.home} ${g.teams.home.substring(0,3).toUpperCase()}</div>`;}
               else if(isLive){gameStatus='LIVE';gameCls='status-live';gameDetails=`<div>${getQuarter(g.period)}, ${g.clock}</div><div>${g.teams.away.substring(0,3).toUpperCase()} ${g.score.away} - ${g.score.home} ${g.teams.home.substring(0,3).toUpperCase()}</div>`;}
               else{gameStatus='FINAL';gameCls='status-final';gameDetails=`<div>${g.teams.away.substring(0,3).toUpperCase()} ${g.score.away} - ${g.score.home} ${g.teams.home.substring(0,3).toUpperCase()}</div>`;}
               
