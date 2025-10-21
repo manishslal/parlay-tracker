@@ -866,6 +866,10 @@ def historical():
 @app.route("/stats")
 @require_admin_token
 def stats():
+    # Clear game data cache to force fresh ESPN API calls
+    global game_data_cache
+    game_data_cache = {}
+    
     parlays = load_parlays()
     processed_parlays = process_parlay_data(parlays)
     
