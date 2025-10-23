@@ -121,7 +121,8 @@
     
     /* Mobile-specific layout classes (hidden on desktop) */
     .mobile-line-1,
-    .mobile-line-2 {
+    .mobile-line-2,
+    .mobile-line-2-header {
       display: none;
     }
     
@@ -135,6 +136,25 @@
       justify-content: space-between;
       align-items: center;
       font-weight: 500;
+    }
+    
+    .mobile-line-2-header {
+      grid-template-columns: auto 1fr auto;
+      gap: 0.5rem;
+      align-items: center;
+      font-size: 0.45rem;
+      text-transform: uppercase;
+      color: rgba(255, 255, 255, 0.6);
+      margin-bottom: 0.25rem;
+      text-align: center;
+    }
+    
+    .mobile-line-2-header span:first-child {
+      text-align: left;
+    }
+    
+    .mobile-line-2-header span:last-child {
+      text-align: right;
     }
     
     .mobile-line-2 {
@@ -249,6 +269,11 @@
       .mobile-line-1 {
         display: flex !important;
         font-size: 0.9rem;
+      }
+      
+      .mobile-line-2-header {
+        display: grid !important;
+        font-size: 0.45rem;
       }
       
       .mobile-line-2 {
@@ -428,7 +453,7 @@ function logoutToken() {
     })();
 
     function fmtType(stat){
-      const m={'passing_yards':'Passing Yards','passing_yards_alt':'Alt Passing Yards','receiving_yards':'Receiving Yards','receiving_yards_alt':'Alt Receiving Yards','rushing_yards':'Rushing Yards','rushing_yards_alt':'Alt Rushing Yards','rushing_receiving_yards':'Rush + Rec Yards','anytime_touchdown':'Anytime TD','receptions_alt':'Alt Receptions','longest_reception':'Longest Reception','moneyline':'Moneyline','spread':'Spread'};
+      const m={'passing_yards':'Pass Yds','passing_yards_alt':'Alt Pass Yds','receiving_yards':'Rec Yds','receiving_yards_alt':'Alt Rec Yds','rushing_yards':'Rush Yds','rushing_yards_alt':'Alt Rush Yds','rushing_receiving_yards':'Rush + Rec Yds','anytime_touchdown':'Anytime TD','passing_touchdowns':'Pass TDs','rushing_touchdowns':'Rush TDs','receptions':'Receptions','receptions_alt':'Alt Receptions','longest_reception':'Longest Rec','moneyline':'Moneyline','spread':'Spread'};
       return m[stat]||stat.replace(/_/g,' ').replace(/\b\w/g,l=>l.toUpperCase());
     }
     function getQuarter(p){return p===1?'1st Quarter':p===2?'2nd Quarter':p===3?'3rd Quarter':p===4?'4th Quarter':'Overtime';}
@@ -831,10 +856,11 @@ function logoutToken() {
                 if (p.stat === 'moneyline') {
                   targetDisplay = 'Win';
                   if (gameData && gameData.statusTypeName !== 'STATUS_SCHEDULED') {
+                    const isFinal = gameData.statusTypeName === 'STATUS_FINAL';
                     if (scoreDiff > 0) {
-                      currentDisplay = `Winning by ${scoreDiff}`;
+                      currentDisplay = isFinal ? 'Win' : `Winning by ${scoreDiff}`;
                     } else if (scoreDiff < 0) {
-                      currentDisplay = `Losing by ${Math.abs(scoreDiff)}`;
+                      currentDisplay = isFinal ? 'Loss' : `Losing by ${Math.abs(scoreDiff)}`;
                     } else {
                       currentDisplay = 'Tied';
                     }
@@ -846,8 +872,12 @@ function logoutToken() {
                 // For spread: format target with +/- sign
                 if (p.stat === 'spread') {
                   targetDisplay = p.target > 0 ? `+${p.target}` : `${p.target}`;
-                  // Current shows 0 or 1 for spread
-                  currentDisplay = current;
+                  // Current shows Win/Loss for final games, 0/1 otherwise
+                  if (gameData && gameData.statusTypeName === 'STATUS_FINAL') {
+                    currentDisplay = current === 1 ? 'Win' : 'Loss';
+                  } else {
+                    currentDisplay = current;
+                  }
                 }
                 
               } else {
@@ -889,11 +919,16 @@ function logoutToken() {
                 <tr>
                   <td>
                     <div class="mobile-line-1">
-                      <span><strong>${playerOrTeam}</strong> - ${mobileTargetDisplay}+ ${statType}</span>
+                      <span><strong>${playerOrTeam}</strong> - ${statType}</span>
                       <span>${txt}</span>
                     </div>
                   </td>
                   <td>
+                    <div class="mobile-line-2-header">
+                      <span>Current</span>
+                      <span>Progress</span>
+                      <span>Target</span>
+                    </div>
                     <div class="mobile-line-2">
                       <span>${mobileCurrentDisplay}</span>
                       <span>${progressCol}</span>
