@@ -81,5 +81,99 @@
         "stat": "spread"
       }
     ]
+  },
+  {
+    "type": "Same Game Parlay",
+    "name": "TNF SGP",
+    "odds": "+353",
+    "wager": 10.00,
+    "returns": 45.35,
+    "bet_id": "O/0240915/0000059",
+    "betting_site": "FanDuel",
+    "legs": [
+      {
+        "game_date": "2025-10-23",
+        "away": "Minnesota Vikings",
+        "home": "Los Angeles Chargers",
+        "player": "Jordan Addison",
+        "target": 40,
+        "stat": "receiving_yards"
+      },
+      {
+        "game_date": "2025-10-23",
+        "away": "Minnesota Vikings",
+        "home": "Los Angeles Chargers",
+        "player": "Carson Wentz",
+        "target": 200,
+        "stat": "passing_yards"
+      },
+      {
+        "game_date": "2025-10-23",
+        "away": "Minnesota Vikings",
+        "home": "Los Angeles Chargers",
+        "player": "Justin Herbert",
+        "target": 200,
+        "stat": "passing_yards"
+      },
+      {
+        "game_date": "2025-10-23",
+        "away": "Minnesota Vikings",
+        "home": "Los Angeles Chargers",
+        "player": "Justin Jefferson",
+        "target": 50,
+        "stat": "receiving_yards"
+      },
+      {
+        "game_date": "2025-10-23",
+        "away": "Minnesota Vikings",
+        "home": "Los Angeles Chargers",
+        "player": "T.J. Hockenson",
+        "target": 25,
+        "stat": "receiving_yards"
+      }
+    ]
+  },
+  {
+    "type": "Parlay",
+    "name": "4 Picks (All-In) SGP",
+    "odds": "+1200",
+    "wager": 5.00,
+    "returns": null,
+    "bet_id": null,
+    "betting_site": "Dabble",
+    "legs": [
+      {
+        "game_date": "2025-10-23",
+        "away": "MIN",
+        "home": "LAC",
+        "player": "T.J. Hockenson",
+        "target": 30.5,
+        "stat": "receiving_yards"
+      },
+      {
+        "game_date": "2025-10-23",
+        "away": "MIN",
+        "home": "LAC",
+        "player": "Justin Jefferson",
+        "target": 0.5,
+        "stat": "anytime_td_scorer"
+      },
+      {
+        "game_date": "2025-10-23",
+        "away": "MIN",
+        "home": "LAC",
+        "player": "Quentin Johnston",
+        "target": 21.5,
+        "stat": "longest_reception"
+      },
+      {
+        "game_date": "2025-10-23",
+        "away": "MIN",
+        "home": "LAC",
+        "player": "Ladd McConkey",
+        "target": 56.5,
+        "stat": "receiving_yards"
+      }
+    ]
   }
 ]
