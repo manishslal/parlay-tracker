@@ -722,11 +722,10 @@ function logoutToken() {
         msg.textContent = 'Moving completed games...';
         moveBtn.disabled = true;
         
-        const response = await fetch(`${API_BASE}/admin/move_completed`, {
+        const response = await fetchWithAdminToken(`${API_BASE}/admin/move_completed`, {
           method: 'POST',
           headers: {
-            'Content-Type': 'application/json',
-            'X-Admin-Token': ADMIN_TOKEN
+            'Content-Type': 'application/json'
           }
         });
         
