@@ -351,7 +351,7 @@ function logoutToken() {
     })();
 
     function fmtType(stat){
-      const m={'passing_yards':'Passing Yards','passing_yards_alt':'Alt Passing Yards','receiving_yards':'Receiving Yards','receiving_yards_alt':'Alt Receiving Yards','rushing_yards':'Rushing Yards','rushing_yards_alt':'Alt Rushing Yards','rushing_receiving_yards':'Rush + Rec Yards','anytime_touchdown':'Anytime TD','receptions_alt':'Alt Receptions','longest_reception':'Longest Reception','moneyline':'Moneyline'};
+      const m={'passing_yards':'Passing Yards','passing_yards_alt':'Alt Passing Yards','receiving_yards':'Receiving Yards','receiving_yards_alt':'Alt Receiving Yards','rushing_yards':'Rushing Yards','rushing_yards_alt':'Alt Rushing Yards','rushing_receiving_yards':'Rush + Rec Yards','anytime_touchdown':'Anytime TD','receptions_alt':'Alt Receptions','longest_reception':'Longest Reception','moneyline':'Moneyline','spread':'Spread'};
       return m[stat]||stat.replace(/_/g,' ').replace(/\b\w/g,l=>l.toUpperCase());
     }
     function getQuarter(p){return p===1?'1st Quarter':p===2?'2nd Quarter':p===3?'3rd Quarter':p===4?'4th Quarter':'Overtime';}
@@ -672,36 +672,58 @@ function logoutToken() {
             ${parlay.legs.map(p=>{
               const current = p.current ?? 0; // Handle undefined/null as 0
               const pct = p.target > 0 ? Math.min(100, Math.round(current / p.target * 100)) : 0;
-              let cls = '';
-              if (areAllGamesFinal) {
-                cls = (pct === 100) ? 'pct-full' : 'pct-vlow';
+              
+              // Check if this is a spread or moneyline bet (no progress bar)
+              const isSpreadOrML = p.stat === 'spread' || p.stat === 'moneyline';
+              
+              let progressCol = '';
+              if (isSpreadOrML) {
+                // For spread/moneyline, show score differential text instead of bar
+                const scoreDiff = p.score_diff ?? 0;
+                const diffDisplay = scoreDiff > 0 ? `+${scoreDiff}` : `${scoreDiff}`;
+                const teamName = p.team || 'Team';
+                const shortTeam = teamName.split(' ').pop(); // Get last word (e.g., "Lions" from "Detroit Lions")
+                progressCol = `<div style="text-align:center;padding:0.5rem;font-weight:bold;color:${scoreDiff > 0 ? 'var(--green)' : scoreDiff < 0 ? 'var(--error)' : '#fff'}">${shortTeam} ${diffDisplay}</div>`;
               } else {
-                if (pct === 100) {
-                  cls = 'pct-full';
-                } else if (pct >= 60) {
-                  cls = 'pct-mid';
-                } else if (pct >= 20) {
-                  cls = 'pct-low';
-                } else if (pct > 0) {
-                  cls = 'pct-vlow';
+                // Regular progress bar for numeric stats
+                let cls = '';
+                if (areAllGamesFinal) {
+                  cls = (pct === 100) ? 'pct-full' : 'pct-vlow';
+                } else {
+                  if (pct === 100) {
+                    cls = 'pct-full';
+                  } else if (pct >= 60) {
+                    cls = 'pct-mid';
+                  } else if (pct >= 20) {
+                    cls = 'pct-low';
+                  } else if (pct > 0) {
+                    cls = 'pct-vlow';
+                  }
                 }
-              }
-
-              const bar = `<div class="progress-bar ${cls}">
+                progressCol = `<div class="progress-bar ${cls}">
                            <div class="progress ${cls}" style="width:${pct}%"></div>
                            <div class="progress-text">${pct}%</div>
                          </div>`;
+              }
+              
               let txt;
-              // Show Hit if 100% reached, even during live game
-              if(pct===100)txt='✅ Hit';
+              // Show Hit if 100% reached (for numeric) or current=1 (for spread/ML), even during live game
+              if(isSpreadOrML ? current===1 : pct===100) txt='✅ Hit';
               else if(areAllGamesScheduled || (!isAnyGameLive && !areAllGamesFinal))txt='🔜 Not Started';
               else if(isAnyGameLive)txt='⏳ In Progress';
               else txt='🚫 Miss';
+              
+              // Format target for spread (show as +/- value)
+              let targetDisplay = p.target;
+              if (p.stat === 'spread') {
+                targetDisplay = p.target > 0 ? `+${p.target}` : `${p.target}`;
+              }
+              
               return`
                 <tr>
                   <td>${p.player || p.team || 'N/A'}</td><td>${fmtType(p.stat)}</td>
-                  <td>${current}</td><td>${p.target}</td>
-                  <td>${bar}</td><td>${txt}</td>
+                  <td>${current}</td><td>${targetDisplay}</td>
+                  <td>${progressCol}</td><td>${txt}</td>
                 </tr>`;
             }).join('')}
           </tbody>`;

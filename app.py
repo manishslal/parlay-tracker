@@ -633,6 +633,34 @@ def calculate_bet_value(bet, game_data):
             return 1 if away_score > home_score else 0
         else:
             return 0
+    
+    # --- Spread (Point Spread Betting) ---
+    if stat == "spread":
+        # Requires "team" field and "target" field (the spread value)
+        # Example: team="Lions", target=-7 means Lions must win by more than 7
+        # Example: team="Lions", target=7 means Lions can lose by up to 7 and still cover
+        if "team" not in bet:
+            return 0
+        
+        bet_team = bet["team"]
+        home_team = game_data["teams"]["home"]
+        away_team = game_data["teams"]["away"]
+        spread = bet.get("target", 0)
+        
+        # Calculate the score difference from bet team's perspective
+        if bet_team == home_team:
+            score_diff = home_score - away_score
+        elif bet_team == away_team:
+            score_diff = away_score - home_score
+        else:
+            return 0
+        
+        # For spread: if target is -7, team needs to win by more than 7
+        # If target is +7, team can lose by up to 7 and still cover
+        # The bet wins if: score_diff > spread (for negative spreads)
+        # or score_diff >= -spread (for positive spreads)
+        # Simplified: score_diff + spread > 0
+        return 1 if score_diff + spread > 0 else 0
 
     return 0 # Default for unhandled stats
 
@@ -747,6 +775,23 @@ def process_parlay_data(parlays):
                 try:
                     leg["current"] = calculate_bet_value(leg, game_data)
                     app.logger.info(f"Calculated value for {leg['player']} - {leg['stat']}: {leg['current']}")
+                    
+                    # Add score differential for spread/moneyline bets
+                    if leg["stat"] in ["spread", "moneyline"]:
+                        home_score = game_data.get("score", {}).get("home", 0)
+                        away_score = game_data.get("score", {}).get("away", 0)
+                        home_team = game_data.get("teams", {}).get("home", "")
+                        away_team = game_data.get("teams", {}).get("away", "")
+                        
+                        # Calculate from bet team's perspective
+                        bet_team = leg.get("team", "")
+                        if bet_team == home_team:
+                            leg["score_diff"] = home_score - away_score
+                        elif bet_team == away_team:
+                            leg["score_diff"] = away_score - home_score
+                        else:
+                            leg["score_diff"] = 0
+                            
                 except Exception as e:
                     app.logger.error(f"Error calculating bet value: {str(e)}")
                     leg["current"] = 0
