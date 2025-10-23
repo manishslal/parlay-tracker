@@ -166,43 +166,47 @@
     /* Mobile Responsive Styles */
     @media (max-width: 768px) {
       body {
-        padding: 0.5rem;
+        padding: 0;
         zoom: 1; /* Reset zoom on mobile for better readability */
       }
       
       .container {
-        padding: 1rem;
-        border-radius: 8px;
+        padding: 0.5rem;
+        border-radius: 0;
       }
       
       h1 {
         font-size: 1.5rem;
+        padding: 0 0.5rem;
       }
       
       .parlay-section {
-        padding: 1rem;
+        padding: 1rem 0.5rem;
         overflow-x: hidden; /* Prevent horizontal scroll */
+        margin: 0.5rem 0;
+        border-radius: 8px;
       }
       
       .parlay-header {
-        margin: -1rem -1rem 1rem -1rem;
-        padding: 0.75rem 1rem;
+        margin: -1rem -0.5rem 1rem -0.5rem;
+        padding: 0.75rem 0.5rem;
         flex-direction: column;
         gap: 0.5rem;
       }
       
       .parlay-footer {
-        margin: 1rem -1rem -1rem -1rem;
-        padding: 0.75rem 1rem;
+        margin: 1rem -0.5rem -1rem -0.5rem;
+        padding: 0.75rem 0.5rem;
         font-size: 0.7rem;
       }
       
       /* Adjust winning overlay for mobile padding */
       .winning-overlay {
-        top: 0.375rem;
-        left: 0.5rem;
-        right: 0.5rem;
-        bottom: 0.375rem;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        border-radius: 8px;
       }
 
       /* Compact scoreboards - 3 per row */
@@ -239,8 +243,8 @@
       
       tr {
         display: block;
-        margin-bottom: 1rem;
-        padding: 0.75rem;
+        margin-bottom: 0.5rem;
+        padding: 0.5rem;
         background: var(--surface);
         border-radius: 8px;
         border: 1px solid var(--border);
@@ -248,7 +252,7 @@
       
       td {
         display: block;
-        padding: 0.25rem 0;
+        padding: 0.15rem 0;
         border: none;
         background: transparent;
         text-align: left !important;
@@ -287,11 +291,16 @@
       }
 
       .progress-bar {
-        height: 6px;
+        height: 2.5rem;
+      }
+      
+      .progress-bar .progress-text {
+        font-size: 0.75rem;
       }
       
       .tabs {
         gap: 0.5rem;
+        padding: 0 0.5rem;
       }
       
       .tab {
@@ -302,6 +311,15 @@
       button {
         padding: 0.5rem 1rem;
         font-size: 0.9rem;
+      }
+      
+      #refresh-button,
+      #move-completed-button {
+        margin-left: 0.5rem !important;
+      }
+      
+      #status-message {
+        margin: 0 0.5rem;
       }
     }
     
@@ -919,14 +937,14 @@ function logoutToken() {
                 <tr>
                   <td>
                     <div class="mobile-line-1">
-                      <span><strong>${playerOrTeam}</strong> - ${statType}</span>
+                      <span><strong>${playerOrTeam}</strong><span style="font-weight:normal;"> - ${statType}</span></span>
                       <span>${txt}</span>
                     </div>
                   </td>
                   <td>
                     <div class="mobile-line-2-header">
                       <span>Current</span>
-                      <span>Progress</span>
+                      <span></span>
                       <span>Target</span>
                     </div>
                     <div class="mobile-line-2">
