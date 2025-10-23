@@ -960,8 +960,22 @@ def admin_move_completed():
     except Exception as e:
         app.logger.error(f"Error in admin_move_completed: {str(e)}")
         return jsonify({"error": str(e)}), 500
+
+@app.route('/admin/export_files', methods=['GET'])
+@require_admin_token
+def admin_export_files():
+    """Admin endpoint to export all data files as JSON.
+    Returns all three files (Live, Todays, Historical) in one response.
+    Use this to sync remote state back to local.
+    """
+    try:
+        return jsonify({
+            "live_bets": load_live_parlays(),
+            "todays_bets": load_parlays(),
+            "historical_bets": load_historical_bets()
+        })
     except Exception as e:
-        app.logger.error(f"Admin compute failed: {e}")
+        app.logger.error(f"Error in admin_export_files: {str(e)}")
         return jsonify({"error": str(e)}), 500
 
 @app.route('/')
