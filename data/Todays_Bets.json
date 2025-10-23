@@ -1,1 +1,85 @@
-[]
+[
+  {
+    "type": "Parlay",
+    "name": "9 Pick ML Parlay - Week 8",
+    "odds": "+2746",
+    "wager": 5.00,
+    "returns": 175.30,
+    "bet_id": "DK638968421983149956",
+    "betting_site": "DraftKings",
+    "legs": [
+      {
+        "game_date": "2025-10-23",
+        "away": "Minnesota Vikings",
+        "home": "Los Angeles Chargers",
+        "team": "Los Angeles Chargers",
+        "target": 1,
+        "stat": "moneyline"
+      },
+      {
+        "game_date": "2025-10-26",
+        "away": "Buffalo Bills",
+        "home": "Carolina Panthers",
+        "team": "Buffalo Bills",
+        "target": 1,
+        "stat": "moneyline"
+      },
+      {
+        "game_date": "2025-10-26",
+        "away": "New York Jets",
+        "home": "Cincinnati Bengals",
+        "team": "Cincinnati Bengals",
+        "target": 1,
+        "stat": "moneyline"
+      },
+      {
+        "game_date": "2025-10-26",
+        "away": "Cleveland Browns",
+        "home": "New England Patriots",
+        "team": "New England Patriots",
+        "target": 1,
+        "stat": "moneyline"
+      },
+      {
+        "game_date": "2025-10-26",
+        "away": "San Francisco 49ers",
+        "home": "Houston Texans",
+        "team": "San Francisco 49ers",
+        "target": 1,
+        "stat": "moneyline"
+      },
+      {
+        "game_date": "2025-10-26",
+        "away": "Miami Dolphins",
+        "home": "Atlanta Falcons",
+        "team": "Atlanta Falcons",
+        "target": 1,
+        "stat": "moneyline"
+      },
+      {
+        "game_date": "2025-10-26",
+        "away": "Tampa Bay Buccaneers",
+        "home": "New Orleans Saints",
+        "team": "Tampa Bay Buccaneers",
+        "target": 1,
+        "stat": "moneyline"
+      },
+      {
+        "game_date": "2025-10-27",
+        "away": "Washington Commanders",
+        "home": "Kansas City Chiefs",
+        "team": "Kansas City Chiefs",
+        "target": 1,
+        "stat": "moneyline"
+      },
+      {
+        "game_date": "2025-10-26",
+        "away": "Dallas Cowboys",
+        "home": "Denver Broncos",
+        "team": "Dallas Cowboys",
+        "target": 3.5,
+        "stat": "spread"
+      }
+    ]
+  }
+]
