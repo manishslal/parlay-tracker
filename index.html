@@ -224,6 +224,7 @@
       <button class="tab" data-tab="historical">Historical Bets</button>
     </div>
     <button id="refresh-button">Refresh Stats</button>
+    <button id="move-completed-button" style="margin-left: 10px;">Move Completed to History</button>
     <div id="status-message"></div>
     <div id="parlay-sections" class="tab-content active" data-tab="current"></div>
     <div id="historical-sections" class="tab-content" data-tab="historical" style="display:none"></div>
@@ -713,6 +714,39 @@ function logoutToken() {
     }
 
     btn.addEventListener('click',update);
+    
+    // Move completed games button
+    const moveBtn = document.getElementById('move-completed-button');
+    moveBtn.addEventListener('click', async () => {
+      try {
+        msg.textContent = 'Moving completed games...';
+        moveBtn.disabled = true;
+        
+        const response = await fetch(`${API_BASE}/admin/move_completed`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Admin-Token': ADMIN_TOKEN
+          }
+        });
+        
+        if (!response.ok) throw new Error(`Move failed: ${response.status}`);
+        
+        const result = await response.json();
+        msg.textContent = `Moved ${result.moved_count} parlay(s) to history. ${result.remaining_live} still live.`;
+        
+        // Clear caches and refresh
+        cachedLive = null;
+        cachedHistorical = null;
+        await update();
+      } catch (e) {
+        console.error('Error moving completed:', e);
+        msg.textContent = `Error: ${e.message}`;
+      } finally {
+        moveBtn.disabled = false;
+      }
+    });
+    
     update();
   </script>
 </body>

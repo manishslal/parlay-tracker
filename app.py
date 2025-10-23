@@ -894,6 +894,73 @@ def admin_compute_returns():
         results = compute_and_persist_returns(force=force)
         return jsonify(results)
     except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/admin/move_completed', methods=['POST'])
+@require_admin_token
+def admin_move_completed():
+    """Admin endpoint to move completed games from Live_Bets to Historical_Bets.
+    Checks ESPN API to see which games are STATUS_FINAL and moves them.
+    Returns a JSON summary of what was moved.
+    """
+    try:
+        live_parlays = load_live_parlays()
+        historical_parlays = load_historical_bets()
+        
+        moved_parlays = []
+        remaining_live = []
+        
+        # Create set of existing historical parlay IDs to prevent duplicates
+        existing_historical = {f"{p['name']}_{p['legs'][0]['game_date']}" 
+                             for p in historical_parlays if p.get('legs')}
+        
+        # Check each live parlay
+        for parlay in live_parlays:
+            if not parlay.get('legs'):
+                remaining_live.append(parlay)
+                continue
+            
+            # Check if all games are complete
+            all_games_complete = True
+            for leg in parlay['legs']:
+                game_date = leg.get('game_date')
+                if not game_date:
+                    continue
+                
+                events = get_events(game_date)
+                for event in events:
+                    team_names = {c['team']['displayName'] for c in event['competitions'][0]['competitors']}
+                    if leg['away'] in team_names and leg['home'] in team_names:
+                        status = event['status']['type']['name']
+                        if status != 'STATUS_FINAL':
+                            all_games_complete = False
+                            break
+                
+                if not all_games_complete:
+                    break
+            
+            # Move to historical if complete
+            parlay_id = f"{parlay['name']}_{parlay['legs'][0]['game_date']}"
+            if all_games_complete and parlay_id not in existing_historical:
+                historical_parlays.append(parlay)
+                moved_parlays.append(parlay['name'])
+                app.logger.info(f"Moving completed parlay to historical: {parlay['name']}")
+            else:
+                remaining_live.append(parlay)
+        
+        # Save updated files
+        save_parlays(sort_parlays_by_date(historical_parlays), data_path("Historical_Bets.json"))
+        save_parlays(sort_parlays_by_date(remaining_live), data_path("Live_Bets.json"))
+        
+        return jsonify({
+            "moved": moved_parlays,
+            "moved_count": len(moved_parlays),
+            "remaining_live": len(remaining_live)
+        })
+    except Exception as e:
+        app.logger.error(f"Error in admin_move_completed: {str(e)}")
+        return jsonify({"error": str(e)}), 500
+    except Exception as e:
         app.logger.error(f"Admin compute failed: {e}")
         return jsonify({"error": str(e)}), 500
 
