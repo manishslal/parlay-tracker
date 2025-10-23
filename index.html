@@ -356,6 +356,24 @@ function logoutToken() {
     }
     function getQuarter(p){return p===1?'1st Quarter':p===2?'2nd Quarter':p===3?'3rd Quarter':p===4?'4th Quarter':'Overtime';}
 
+    // Get 3-letter team abbreviation from full team name
+    function getTeamAbbr(teamName) {
+      const abbrevMap = {
+        'Arizona Cardinals': 'ARI', 'Atlanta Falcons': 'ATL', 'Baltimore Ravens': 'BAL',
+        'Buffalo Bills': 'BUF', 'Carolina Panthers': 'CAR', 'Chicago Bears': 'CHI',
+        'Cincinnati Bengals': 'CIN', 'Cleveland Browns': 'CLE', 'Dallas Cowboys': 'DAL',
+        'Denver Broncos': 'DEN', 'Detroit Lions': 'DET', 'Green Bay Packers': 'GB',
+        'Houston Texans': 'HOU', 'Indianapolis Colts': 'IND', 'Jacksonville Jaguars': 'JAX',
+        'Kansas City Chiefs': 'KC', 'Las Vegas Raiders': 'LV', 'Los Angeles Chargers': 'LAC',
+        'Los Angeles Rams': 'LAR', 'Miami Dolphins': 'MIA', 'Minnesota Vikings': 'MIN',
+        'New England Patriots': 'NE', 'New Orleans Saints': 'NO', 'New York Giants': 'NYG',
+        'New York Jets': 'NYJ', 'Philadelphia Eagles': 'PHI', 'Pittsburgh Steelers': 'PIT',
+        'San Francisco 49ers': 'SF', 'Seattle Seahawks': 'SEA', 'Tampa Bay Buccaneers': 'TB',
+        'Tennessee Titans': 'TEN', 'Washington Commanders': 'WAS'
+      };
+      return abbrevMap[teamName] || teamName.substring(0, 3).toUpperCase();
+    }
+
     // Calculate countdown to game start
     function getCountdown(startDateTime) {
       if (!startDateTime) return '';
@@ -366,10 +384,18 @@ function logoutToken() {
       
       if (diffMs <= 0) return 'Starting soon';
       
-      const hours = Math.floor(diffMs / (1000 * 60 * 60));
+      const totalHours = Math.floor(diffMs / (1000 * 60 * 60));
       const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
       
-      return `Game starts in ${hours}h ${minutes}m`;
+      // If less than 24 hours, show hours and minutes
+      if (totalHours < 24) {
+        return `Starts in ${totalHours}h ${minutes}m`;
+      }
+      
+      // If 24 hours or more, show days and hours (no minutes)
+      const days = Math.floor(totalHours / 24);
+      const hours = totalHours % 24;
+      return `Starts in ${days}d ${hours}h`;
     }
 
     function enhanceParlayName(parlay) {
@@ -623,7 +649,7 @@ function logoutToken() {
                 gameStatus='🔜 Not Started';
                 gameCls='status-pregame';
                 const countdown = getCountdown(g.startDateTime);
-                gameDetails=`<div>${g.teams.away} @ ${g.teams.home}</div><div>${countdown || g.startTime}</div>`;
+                gameDetails=`<div>${getTeamAbbr(g.teams.away)} @ ${getTeamAbbr(g.teams.home)}</div><div>${countdown || g.startTime}</div>`;
               }
               else if(isHalftime){gameStatus='HALF';gameCls='status-halftime';gameDetails=`<div>${getQuarter(g.period)}</div><div>${g.teams.away.substring(0,3).toUpperCase()} ${g.score.away} - ${g.score.home} ${g.teams.home.substring(0,3).toUpperCase()}</div>`;}
               else if(isLive){gameStatus='LIVE';gameCls='status-live';gameDetails=`<div>${getQuarter(g.period)}, ${g.clock}</div><div>${g.teams.away.substring(0,3).toUpperCase()} ${g.score.away} - ${g.score.home} ${g.teams.home.substring(0,3).toUpperCase()}</div>`;}
@@ -643,7 +669,7 @@ function logoutToken() {
                 gameStatus='🔜 Not Started';
                 gameCls='status-pregame';
                 const countdown = getCountdown(g.startDateTime);
-                gameDetails=`<div>${g.teams.away} @ ${g.teams.home}</div><div>${countdown || g.startTime}</div>`;
+                gameDetails=`<div>${getTeamAbbr(g.teams.away)} @ ${getTeamAbbr(g.teams.home)}</div><div>${countdown || g.startTime}</div>`;
               }
               else if(isHalftime){gameStatus='HALF';gameCls='status-halftime';gameDetails=`<div>${getQuarter(g.period)}</div><div>${g.teams.away.substring(0,3).toUpperCase()} ${g.score.away} - ${g.score.home} ${g.teams.home.substring(0,3).toUpperCase()}</div>`;}
               else if(isLive){gameStatus='LIVE';gameCls='status-live';gameDetails=`<div>${getQuarter(g.period)}, ${g.clock}</div><div>${g.teams.away.substring(0,3).toUpperCase()} ${g.score.away} - ${g.score.home} ${g.teams.home.substring(0,3).toUpperCase()}</div>`;}
@@ -676,14 +702,62 @@ function logoutToken() {
               // Check if this is a spread or moneyline bet (no progress bar)
               const isSpreadOrML = p.stat === 'spread' || p.stat === 'moneyline';
               
+              // Get game data for this leg
+              const gameData = parlay.games ? parlay.games.find(g => 
+                g.teams.away === p.away && g.teams.home === p.home
+              ) : null;
+              
               let progressCol = '';
+              let currentDisplay = current;
+              let targetDisplay = p.target;
+              
               if (isSpreadOrML) {
-                // For spread/moneyline, show score differential text instead of bar
+                // For spread/moneyline, show score with team names only
                 const scoreDiff = p.score_diff ?? 0;
-                const diffDisplay = scoreDiff > 0 ? `+${scoreDiff}` : `${scoreDiff}`;
-                const teamName = p.team || 'Team';
-                const shortTeam = teamName.split(' ').pop(); // Get last word (e.g., "Lions" from "Detroit Lions")
-                progressCol = `<div style="text-align:center;padding:0.5rem;font-weight:bold;color:${scoreDiff > 0 ? 'var(--green)' : scoreDiff < 0 ? 'var(--error)' : '#fff'}">${shortTeam} ${diffDisplay}</div>`;
+                const betTeam = p.team || '';
+                const betTeamName = betTeam.split(' ').pop(); // Get last word (e.g., "Cowboys")
+                
+                // Find opponent team name
+                let opponentTeamName = '';
+                if (gameData) {
+                  const isHome = betTeam === gameData.teams.home;
+                  const opponentFull = isHome ? gameData.teams.away : gameData.teams.home;
+                  opponentTeamName = opponentFull.split(' ').pop();
+                  
+                  // Get actual scores
+                  const betTeamScore = isHome ? gameData.score.home : gameData.score.away;
+                  const oppTeamScore = isHome ? gameData.score.away : gameData.score.home;
+                  
+                  // Show score in format: "Cowboys 21 - 7 Falcons" (bet team always on left)
+                  progressCol = `<div style="text-align:center;padding:0.5rem;font-weight:bold;">${betTeamName} ${betTeamScore} - ${oppTeamScore} ${opponentTeamName}</div>`;
+                } else {
+                  // No game data yet (scheduled game)
+                  progressCol = `<div style="text-align:center;padding:0.5rem;">-</div>`;
+                }
+                
+                // For moneyline: current shows winning/losing status, target shows "Win"
+                if (p.stat === 'moneyline') {
+                  targetDisplay = 'Win';
+                  if (gameData && gameData.statusTypeName !== 'STATUS_SCHEDULED') {
+                    if (scoreDiff > 0) {
+                      currentDisplay = `Winning by ${scoreDiff}`;
+                    } else if (scoreDiff < 0) {
+                      currentDisplay = `Losing by ${Math.abs(scoreDiff)}`;
+                    } else {
+                      currentDisplay = 'Tied';
+                    }
+                  } else {
+                    currentDisplay = '-';
+                  }
+                }
+                
+                // For spread: format target with +/- sign
+                if (p.stat === 'spread') {
+                  targetDisplay = p.target > 0 ? `+${p.target}` : `${p.target}`;
+                  // Current shows 0 or 1 for spread
+                  currentDisplay = current;
+                }
+                
               } else {
                 // Regular progress bar for numeric stats
                 let cls = '';
@@ -713,16 +787,10 @@ function logoutToken() {
               else if(isAnyGameLive)txt='⏳ In Progress';
               else txt='🚫 Miss';
               
-              // Format target for spread (show as +/- value)
-              let targetDisplay = p.target;
-              if (p.stat === 'spread') {
-                targetDisplay = p.target > 0 ? `+${p.target}` : `${p.target}`;
-              }
-              
               return`
                 <tr>
                   <td>${p.player || p.team || 'N/A'}</td><td>${fmtType(p.stat)}</td>
-                  <td>${current}</td><td>${targetDisplay}</td>
+                  <td>${currentDisplay}</td><td>${targetDisplay}</td>
                   <td>${progressCol}</td><td>${txt}</td>
                 </tr>`;
             }).join('')}
