@@ -54,7 +54,7 @@
     button:hover{opacity:.9;}
     #status-message{text-align:center;margin-bottom:2rem;color:#aaa;}
     .parlay-section{background:var(--section-bg);margin-bottom:2rem;
-      border-radius:12px;padding:1.5rem 1.5rem 1.125rem;border:2px solid var(--border);}
+      border-radius:12px;padding:1.5rem 1.5rem 1.125rem;border:2px solid #cccccc;}
     .parlay-header{background:var(--primary);color:#fff;
       margin:-1.5rem -1.5rem 1.125rem -1.5rem;padding:1rem 1.5rem;
       border-radius:10px 10px 0 0;display:flex; flex-wrap: wrap;
@@ -183,8 +183,9 @@
       .parlay-section {
         padding: 1rem 0.5rem;
         overflow-x: hidden; /* Prevent horizontal scroll */
-        margin: 0.5rem 0;
+        margin: 1.5rem 0;
         border-radius: 8px;
+        border-color: rgba(204, 204, 204, 0.5);
       }
       
       .parlay-header {
@@ -219,8 +220,9 @@
         font-size: 0.65rem;
         padding: 0.35rem 0.5rem;
         gap: 0.15rem;
-        min-width: calc(33.333% - 0.35rem); /* Fit 3 per row */
-        flex: 0 0 auto;
+        flex: 0 0 calc(33.333% - 0.35rem); /* Fit 3 per row */
+        max-width: calc(33.333% - 0.35rem);
+        box-sizing: border-box;
       }
       
       .game-info .badge {
@@ -445,18 +447,15 @@ function logoutToken() {
   document.body.appendChild(btn);
 })();
 
-    // Prompt for admin token and store in localStorage
-    function getAdminToken() {
-      let token = localStorage.getItem('admin_token');
-      if (!token) {
-        token = prompt('Enter Admin Token for backend access:');
-        if (token) localStorage.setItem('admin_token', token);
-      }
-      return token;
-    }
-
     function fetchWithAdminToken(url, options = {}) {
-      const token = getAdminToken();
+      let token;
+      try {
+        token = getAdminToken();
+      } catch (e) {
+        // If no token, the modal will be shown and error thrown
+        // Return a rejected promise so the caller can handle it
+        return Promise.reject(e);
+      }
       options.headers = options.headers || {};
       options.headers['X-Admin-Token'] = token;
       return fetch(url, options);
