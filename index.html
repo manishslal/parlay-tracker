@@ -703,6 +703,9 @@ function logoutToken() {
         return;
       }
 
+      // Check if this is the historical section
+      const isHistoricalSection = container.id === 'historical-sections' || container.dataset.tab === 'historical';
+      
       // Sort parlays by earliest game date
       const sortedParlays = [...parlays].sort((a, b) => {
         // Find earliest date in each parlay
@@ -717,7 +720,10 @@ function logoutToken() {
         
         const dateA = getEarliestDate(a);
         const dateB = getEarliestDate(b);
-        return dateA - dateB;
+        
+        // For historical: latest games first (descending)
+        // For live: earliest games first (ascending)
+        return isHistoricalSection ? dateB - dateA : dateA - dateB;
       });
 
       // Show a helpful empty-state when there's no data for the tab
@@ -738,10 +744,7 @@ function logoutToken() {
         return;
       }
       
-      // Only render historical bets in historical section and current bets in current section
-      const isHistoricalSection = container.id === 'historical-sections';
-      
-      // Render all parlays in their respective sections
+      // Render all parlays in their respective sections (isHistoricalSection already defined above for sorting)
       sortedParlays.forEach(parlay=>{
         console.log('Processing parlay:', parlay);
         const section=document.createElement('div');
