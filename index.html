@@ -993,12 +993,27 @@ function logoutToken() {
               }
               
               let txt;
-              // Show Hit if 100% reached (for numeric) or current=1 (for spread/ML), even during live game
-              if(isSpreadOrML ? current===1 : pct===100) txt='✅ Hit';
+              // Determine win/loss for spread/moneyline based on actual game result
+              let isWinningBet = false;
+              if (isSpreadOrML && gameData) {
+                const scoreDiff = p.score_diff ?? 0;
+                if (p.stat === 'moneyline') {
+                  // Moneyline: just need to win
+                  isWinningBet = scoreDiff > 0;
+                } else if (p.stat === 'spread') {
+                  // Spread: score_diff must beat the spread
+                  isWinningBet = scoreDiff > p.target;
+                }
+              }
+              
+              // Show Hit if 100% reached (for numeric) or winning (for spread/ML), even during live game
+              if(isSpreadOrML ? isWinningBet : pct===100) txt='✅ Hit';
               else if(gameData && gameData.statusTypeName === 'STATUS_SCHEDULED') txt='🔜 Not Started';
               else if(gameData && (gameData.statusTypeName === 'STATUS_IN_PROGRESS' || gameData.statusTypeName === 'STATUS_HALFTIME')) txt='⏳ In Progress';
               else if(!gameData && (areAllGamesScheduled || (!isAnyGameLive && !areAllGamesFinal))) txt='🔜 Not Started';
-              else txt='🚫 Miss';
+              else if(isSpreadOrML && gameData && gameData.statusTypeName === 'STATUS_FINAL') txt='🚫 Miss'; // Only show miss if game is final
+              else if(!isSpreadOrML && areAllGamesFinal) txt='🚫 Miss'; // For numeric stats, show miss if all games final
+              else txt='⏳ In Progress'; // Default to in progress
               
               // Format for mobile display
               const playerOrTeam = p.player || p.team || 'N/A';
