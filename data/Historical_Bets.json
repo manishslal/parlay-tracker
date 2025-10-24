@@ -387,5 +387,3144 @@
     "returns": "",
     "type": "SGP",
     "wager": ""
+  },
+  {
+    "bet_id": "O/1368367/0000029",
+    "betting_site": "FanDuel",
+    "legs": [
+      {
+        "target": 1,
+        "stat": "moneyline",
+        "current": 0,
+        "team": "Philadelphia Eagles",
+        "away": "Dallas Cowboys",
+        "home": "Philadelphia Eagles",
+        "game_date": "2025-09-04"
+      },
+      {
+        "target": 1,
+        "stat": "anytime_touchdown",
+        "current": 0,
+        "player": "Saquon Barkley",
+        "away": "Dallas Cowboys",
+        "home": "Philadelphia Eagles",
+        "game_date": "2025-09-04"
+      },
+      {
+        "target": 50.0,
+        "stat": "receiving_yards",
+        "current": 0,
+        "player": "A.J. Brown",
+        "away": "Dallas Cowboys",
+        "home": "Philadelphia Eagles",
+        "game_date": "2025-09-04"
+      },
+      {
+        "target": 30.0,
+        "stat": "receiving_yards",
+        "current": 0,
+        "player": "DeVonta Smith",
+        "away": "Dallas Cowboys",
+        "home": "Philadelphia Eagles",
+        "game_date": "2025-09-04"
+      }
+    ],
+    "name": "09/04 SGP",
+    "odds": "+322",
+    "wager": 10.0,
+    "type": "SGP",
+    "returns": "32.20"
+  },
+  {
+    "bet_id": "O/1368367/0000030",
+    "betting_site": "FanDuel",
+    "legs": [
+      {
+        "target": 100.0,
+        "stat": "rushing_yards",
+        "current": 0,
+        "player": "Saquon Barkley",
+        "away": "Dallas Cowboys",
+        "home": "Philadelphia Eagles",
+        "game_date": "2025-09-04"
+      },
+      {
+        "target": 50.0,
+        "stat": "receiving_yards",
+        "current": 0,
+        "player": "George Pickens",
+        "away": "Pittsburgh Steelers",
+        "home": "New York Jets",
+        "game_date": "2025-09-07"
+      },
+      {
+        "target": 50.0,
+        "stat": "receiving_yards",
+        "current": 0,
+        "player": "CeeDee Lamb",
+        "away": "Dallas Cowboys",
+        "home": "Philadelphia Eagles",
+        "game_date": "2025-09-04"
+      },
+      {
+        "target": 3.0,
+        "stat": "receptions",
+        "current": 0,
+        "player": "Jake Ferguson",
+        "away": "Dallas Cowboys",
+        "home": "Philadelphia Eagles",
+        "game_date": "2025-09-04"
+      },
+      {
+        "target": 3.0,
+        "stat": "receptions",
+        "current": 0,
+        "player": "Dallas Goedert",
+        "away": "Dallas Cowboys",
+        "home": "Philadelphia Eagles",
+        "game_date": "2025-09-04"
+      }
+    ],
+    "name": "09/04 Parlay",
+    "odds": "+688",
+    "wager": 5.0,
+    "type": "Parlay",
+    "returns": "34.40"
+  },
+  {
+    "bet_id": "O/1368367/0000031",
+    "betting_site": "FanDuel",
+    "legs": [
+      {
+        "target": 100.0,
+        "stat": "rushing_yards",
+        "current": 0,
+        "player": "Saquon Barkley",
+        "away": "Dallas Cowboys",
+        "home": "Philadelphia Eagles",
+        "game_date": "2025-09-04"
+      },
+      {
+        "target": 50.0,
+        "stat": "receiving_yards",
+        "current": 0,
+        "player": "George Pickens",
+        "away": "Pittsburgh Steelers",
+        "home": "New York Jets",
+        "game_date": "2025-09-07"
+      },
+      {
+        "target": 50.0,
+        "stat": "receiving_yards",
+        "current": 0,
+        "player": "CeeDee Lamb",
+        "away": "Dallas Cowboys",
+        "home": "Philadelphia Eagles",
+        "game_date": "2025-09-04"
+      },
+      {
+        "target": 3.0,
+        "stat": "receptions",
+        "current": 0,
+        "player": "Jake Ferguson",
+        "away": "Dallas Cowboys",
+        "home": "Philadelphia Eagles",
+        "game_date": "2025-09-04"
+      },
+      {
+        "target": 3.0,
+        "stat": "receptions",
+        "current": 0,
+        "player": "Dallas Goedert",
+        "away": "Dallas Cowboys",
+        "home": "Philadelphia Eagles",
+        "game_date": "2025-09-04"
+      }
+    ],
+    "name": "09/04 Parlay",
+    "odds": "+695",
+    "wager": 5.0,
+    "type": "Parlay",
+    "returns": "34.75"
+  },
+  {
+    "bet_id": "O/1368367/0000032",
+    "betting_site": "FanDuel",
+    "legs": [
+      {
+        "target": 5.0,
+        "stat": "rushing_yards",
+        "current": 0,
+        "player": "Saquon Barkley",
+        "away": "Dallas Cowboys",
+        "home": "Philadelphia Eagles",
+        "game_date": "2025-09-04"
+      },
+      {
+        "target": 5.0,
+        "stat": "rushing_yards",
+        "current": 0,
+        "player": "Javonte Williams",
+        "away": "Tennessee Titans",
+        "home": "Denver Broncos",
+        "game_date": "2025-09-07"
+      }
+    ],
+    "name": "09/04 Parlay",
+    "odds": "+750",
+    "wager": 10.0,
+    "type": "Parlay",
+    "returns": "75.00"
+  },
+  {
+    "bet_id": "DK638926171300468480",
+    "betting_site": "DraftKings",
+    "legs": [
+      {
+        "target": 1,
+        "stat": "anytime_touchdown",
+        "current": 0,
+        "player": "A.J. Brown",
+        "away": "Dallas Cowboys",
+        "home": "Philadelphia Eagles",
+        "game_date": "2025-09-04"
+      },
+      {
+        "target": 1,
+        "stat": "anytime_touchdown",
+        "current": 0,
+        "player": "Devonta Smith",
+        "away": "Dallas Cowboys",
+        "home": "Philadelphia Eagles",
+        "game_date": "2025-09-04"
+      }
+    ],
+    "name": "09/04 SGP",
+    "odds": "+380",
+    "wager": 4.8,
+    "type": "SGP",
+    "returns": "18.24"
+  },
+  {
+    "bet_id": "DK638926174744164449",
+    "betting_site": "DraftKings",
+    "legs": [
+      {
+        "target": 1,
+        "stat": "anytime_touchdown",
+        "current": 0,
+        "player": "Saquon Barkley",
+        "away": "Dallas Cowboys",
+        "home": "Philadelphia Eagles",
+        "game_date": "2025-09-04"
+      }
+    ],
+    "name": "09/04 SGP",
+    "odds": "+1200",
+    "wager": 5.0,
+    "type": "SGP",
+    "returns": "60.00"
+  },
+  {
+    "bet_id": "O/0240915/0000029",
+    "betting_site": "FanDuel",
+    "legs": [
+      {
+        "target": 1,
+        "stat": "anytime_touchdown",
+        "current": 0,
+        "player": "Terry McLaurin",
+        "away": "New York Giants",
+        "home": "Washington Commanders",
+        "game_date": "2025-09-07"
+      },
+      {
+        "target": 25.0,
+        "stat": "receiving_yards",
+        "current": 0,
+        "player": "Terry McLaurin",
+        "away": "New York Giants",
+        "home": "Washington Commanders",
+        "game_date": "2025-09-07"
+      },
+      {
+        "target": 50.0,
+        "stat": "receiving_yards",
+        "current": 0,
+        "player": "Malik Nabers",
+        "away": "New York Giants",
+        "home": "Washington Commanders",
+        "game_date": "2025-09-07"
+      },
+      {
+        "target": 175.0,
+        "stat": "passing_yards",
+        "current": 0,
+        "player": "Jayden Daniels",
+        "away": "New York Giants",
+        "home": "Washington Commanders",
+        "game_date": "2025-09-07"
+      },
+      {
+        "target": 1,
+        "stat": "moneyline",
+        "current": 0,
+        "team": "Washington Commanders",
+        "away": "New York Giants",
+        "home": "Washington Commanders",
+        "game_date": "2025-09-07"
+      }
+    ],
+    "name": "09/07 SGP",
+    "odds": "+509",
+    "wager": 5.0,
+    "type": "SGP",
+    "returns": "25.45"
+  },
+  {
+    "bet_id": "O/0240915/0000030",
+    "betting_site": "FanDuel",
+    "legs": [
+      {
+        "target": 40.0,
+        "stat": "receiving_yards",
+        "current": 0,
+        "player": "Terry McLaurin",
+        "away": "New York Giants",
+        "home": "Washington Commanders",
+        "game_date": "2025-09-07"
+      },
+      {
+        "target": 50.0,
+        "stat": "receiving_yards",
+        "current": 0,
+        "player": "Malik Nabers",
+        "away": "New York Giants",
+        "home": "Washington Commanders",
+        "game_date": "2025-09-07"
+      },
+      {
+        "target": 175.0,
+        "stat": "passing_yards",
+        "current": 0,
+        "player": "Jayden Daniels",
+        "away": "New York Giants",
+        "home": "Washington Commanders",
+        "game_date": "2025-09-07"
+      },
+      {
+        "target": 175.0,
+        "stat": "passing_yards",
+        "current": 0,
+        "player": "Russel Wilson",
+        "away": "Pittsburgh Steelers",
+        "home": "New York Jets",
+        "game_date": "2025-09-07"
+      },
+      {
+        "target": 1,
+        "stat": "moneyline",
+        "current": 0,
+        "team": "Washington Commanders",
+        "away": "New York Giants",
+        "home": "Washington Commanders",
+        "game_date": "2025-09-07"
+      }
+    ],
+    "name": "09/07 Parlay",
+    "odds": "+247",
+    "wager": 5.0,
+    "type": "Parlay",
+    "returns": "12.35"
+  },
+  {
+    "bet_id": "O/0240915/0000033",
+    "betting_site": "FanDuel",
+    "legs": [
+      {
+        "target": 1,
+        "stat": "anytime_touchdown",
+        "current": 0,
+        "player": "Lamar Jackson",
+        "away": "Baltimore Ravens",
+        "home": "Buffalo Bills",
+        "game_date": "2025-09-07"
+      }
+    ],
+    "name": "09/07 SGP",
+    "odds": "+210",
+    "wager": 10.0,
+    "type": "SGP",
+    "returns": "21.00"
+  },
+  {
+    "bet_id": "O/0240915/0000032",
+    "betting_site": "FanDuel",
+    "legs": [
+      {
+        "target": 1,
+        "stat": "anytime_touchdown",
+        "current": 0,
+        "player": "Josh Allen",
+        "away": "Baltimore Ravens",
+        "home": "Buffalo Bills",
+        "game_date": "2025-09-07"
+      }
+    ],
+    "name": "09/07 SGP",
+    "odds": "-105",
+    "wager": 10.0,
+    "type": "SGP"
+  },
+  {
+    "bet_id": "O/0240915/0000031",
+    "betting_site": "FanDuel",
+    "legs": [
+      {
+        "target": 200.0,
+        "stat": "passing_yards",
+        "current": 0,
+        "player": "Josh Allen",
+        "away": "Baltimore Ravens",
+        "home": "Buffalo Bills",
+        "game_date": "2025-09-07"
+      },
+      {
+        "target": 0,
+        "stat": "rushing_yards",
+        "current": 0,
+        "player": "Lamar Jackson",
+        "away": "Baltimore Ravens",
+        "home": "Buffalo Bills",
+        "game_date": "2025-09-07"
+      },
+      {
+        "target": 30.0,
+        "stat": "receiving_yards",
+        "current": 0,
+        "player": "Zay Flowers",
+        "away": "Baltimore Ravens",
+        "home": "Buffalo Bills",
+        "game_date": "2025-09-07"
+      },
+      {
+        "target": 25.0,
+        "stat": "receiving_yards",
+        "current": 0,
+        "player": "Khalil Shakir",
+        "away": "Baltimore Ravens",
+        "home": "Buffalo Bills",
+        "game_date": "2025-09-07"
+      },
+      {
+        "target": 1,
+        "stat": "anytime_touchdown",
+        "current": 0,
+        "player": "James Cook",
+        "away": "Baltimore Ravens",
+        "home": "Buffalo Bills",
+        "game_date": "2025-09-07"
+      }
+    ],
+    "name": "09/07 SGP",
+    "odds": "+501",
+    "wager": 10.0,
+    "type": "SGP",
+    "returns": "50.10"
+  },
+  {
+    "bet_id": "O/0240915/0000036",
+    "betting_site": "FanDuel",
+    "legs": [
+      {
+        "target": 2.0,
+        "stat": "passing_touchdowns",
+        "current": 0,
+        "player": "Josh Allen",
+        "away": "Baltimore Ravens",
+        "home": "Buffalo Bills",
+        "game_date": "2025-09-07"
+      },
+      {
+        "target": 3.0,
+        "stat": "receptions",
+        "current": 0,
+        "player": "Dalton Kincaid",
+        "away": "Baltimore Ravens",
+        "home": "Buffalo Bills",
+        "game_date": "2025-09-07"
+      },
+      {
+        "target": 1,
+        "stat": "anytime_touchdown",
+        "current": 0,
+        "player": "Dalton Kincaid",
+        "away": "Baltimore Ravens",
+        "home": "Buffalo Bills",
+        "game_date": "2025-09-07"
+      }
+    ],
+    "name": "09/07 SGP",
+    "odds": "+423",
+    "wager": 10.0,
+    "type": "SGP",
+    "returns": "42.30"
+  },
+  {
+    "bet_id": "O/0240915/0000034",
+    "betting_site": "FanDuel",
+    "legs": [
+      {
+        "target": 5.0,
+        "stat": "passing_touchdowns",
+        "current": 0,
+        "player": "Lamar Jackson",
+        "away": "Baltimore Ravens",
+        "home": "Buffalo Bills",
+        "game_date": "2025-09-07"
+      }
+    ],
+    "name": "09/07 SGP",
+    "odds": "-122",
+    "wager": 5.0,
+    "type": "SGP"
+  },
+  {
+    "bet_id": "O/0240915/0000035",
+    "betting_site": "FanDuel",
+    "legs": [
+      {
+        "target": 1,
+        "stat": "anytime_touchdown",
+        "current": 0,
+        "player": "Derrick Henry",
+        "away": "Baltimore Ravens",
+        "home": "Buffalo Bills",
+        "game_date": "2025-09-07"
+      },
+      {
+        "target": 4.0,
+        "stat": "receptions",
+        "current": 0,
+        "player": "Mark Andrews",
+        "away": "Baltimore Ravens",
+        "home": "Buffalo Bills",
+        "game_date": "2025-09-07"
+      }
+    ],
+    "name": "09/07 SGP",
+    "odds": "+159",
+    "wager": 10.0,
+    "type": "SGP",
+    "returns": "15.90"
+  },
+  {
+    "bet_id": "O/0240915/0000037",
+    "betting_site": "FanDuel",
+    "legs": [
+      {
+        "target": 1,
+        "stat": "anytime_touchdown",
+        "current": 0,
+        "player": "Aaron Jones",
+        "away": "Minnesota Vikings",
+        "home": "Chicago Bears",
+        "game_date": "2025-09-08"
+      },
+      {
+        "target": 40.0,
+        "stat": "rushing_yards",
+        "current": 0,
+        "player": "Aaron Jones",
+        "away": "Minnesota Vikings",
+        "home": "Chicago Bears",
+        "game_date": "2025-09-08"
+      },
+      {
+        "target": 2.0,
+        "stat": "receptions",
+        "current": 0,
+        "player": "Aaron Jones",
+        "away": "Minnesota Vikings",
+        "home": "Chicago Bears",
+        "game_date": "2025-09-08"
+      }
+    ],
+    "name": "09/08 SGP",
+    "odds": "+297",
+    "wager": 5.0,
+    "type": "SGP",
+    "returns": "14.85"
+  },
+  {
+    "bet_id": "O/0240915/0000038",
+    "betting_site": "FanDuel",
+    "legs": [
+      {
+        "target": 1,
+        "stat": "anytime_touchdown",
+        "current": 0,
+        "player": "Aaron Jones",
+        "away": "Minnesota Vikings",
+        "home": "Chicago Bears",
+        "game_date": "2025-09-08"
+      },
+      {
+        "target": 40.0,
+        "stat": "rushing_yards",
+        "current": 0,
+        "player": "Aaron Jones",
+        "away": "Minnesota Vikings",
+        "home": "Chicago Bears",
+        "game_date": "2025-09-08"
+      },
+      {
+        "target": 2.0,
+        "stat": "receptions",
+        "current": 0,
+        "player": "Aaron Jones",
+        "away": "Minnesota Vikings",
+        "home": "Chicago Bears",
+        "game_date": "2025-09-08"
+      }
+    ],
+    "name": "09/08 SGP",
+    "odds": "+297",
+    "wager": 5.0,
+    "type": "SGP",
+    "returns": "14.85"
+  },
+  {
+    "bet_id": "O/0240915/0000039",
+    "betting_site": "FanDuel",
+    "legs": [
+      {
+        "target": 1,
+        "stat": "anytime_touchdown",
+        "current": 0,
+        "player": "Aaron Jones",
+        "away": "Minnesota Vikings",
+        "home": "Chicago Bears",
+        "game_date": "2025-09-08"
+      },
+      {
+        "target": 1,
+        "stat": "anytime_touchdown",
+        "current": 0,
+        "player": "D'Andre Swift",
+        "away": "Minnesota Vikings",
+        "home": "Chicago Bears",
+        "game_date": "2025-09-08"
+      },
+      {
+        "target": 1,
+        "stat": "anytime_touchdown",
+        "current": 0,
+        "player": "T.J. Hockenson",
+        "away": "Minnesota Vikings",
+        "home": "Chicago Bears",
+        "game_date": "2025-09-08"
+      }
+    ],
+    "name": "09/08 SGP",
+    "odds": "+2746",
+    "wager": 10.0,
+    "type": "SGP",
+    "returns": "274.60"
+  },
+  {
+    "bet_id": "DK638929734797786019",
+    "betting_site": "DraftKings",
+    "legs": [
+      {
+        "target": 1,
+        "stat": "anytime_touchdown",
+        "current": 0,
+        "player": "Justin Jefferson",
+        "away": "Minnesota Vikings",
+        "home": "Chicago Bears",
+        "game_date": "2025-09-08"
+      },
+      {
+        "target": 180.0,
+        "stat": "passing_yards",
+        "current": 0,
+        "player": "J.J. McCarthy",
+        "away": "Minnesota Vikings",
+        "home": "Chicago Bears",
+        "game_date": "2025-09-08"
+      },
+      {
+        "target": 170.0,
+        "stat": "passing_yards",
+        "current": 0,
+        "player": "Caleb Williams",
+        "away": "Minnesota Vikings",
+        "home": "Chicago Bears",
+        "game_date": "2025-09-08"
+      },
+      {
+        "target": 60.0,
+        "stat": "receiving_yards",
+        "current": 0,
+        "player": "Justin Jefferson",
+        "away": "Minnesota Vikings",
+        "home": "Chicago Bears",
+        "game_date": "2025-09-08"
+      },
+      {
+        "target": 25.0,
+        "stat": "receiving_yards",
+        "current": 0,
+        "player": "T.J. Hockenson",
+        "away": "Minnesota Vikings",
+        "home": "Chicago Bears",
+        "game_date": "2025-09-08"
+      }
+    ],
+    "name": "09/08 SGP",
+    "odds": "+355",
+    "wager": 4.8,
+    "type": "SGP",
+    "returns": "17.04"
+  },
+  {
+    "bet_id": "DK638929693228150392",
+    "betting_site": "DraftKings",
+    "legs": [
+      {
+        "target": 1,
+        "stat": "moneyline",
+        "current": 0,
+        "team": "Chicago Bears",
+        "away": "Minnesota Vikings",
+        "home": "Chicago Bears",
+        "game_date": "2025-09-08"
+      },
+      {
+        "target": 1,
+        "stat": "anytime_touchdown",
+        "current": 0,
+        "player": "D'Andre Swift",
+        "away": "Minnesota Vikings",
+        "home": "Chicago Bears",
+        "game_date": "2025-09-08"
+      },
+      {
+        "target": 1,
+        "stat": "anytime_touchdown",
+        "current": 0,
+        "player": "Aaron Jones",
+        "away": "Minnesota Vikings",
+        "home": "Chicago Bears",
+        "game_date": "2025-09-08"
+      },
+      {
+        "target": 50.0,
+        "stat": "receiving_yards",
+        "current": 0,
+        "player": "Justin Jefferson",
+        "away": "Minnesota Vikings",
+        "home": "Chicago Bears",
+        "game_date": "2025-09-08"
+      },
+      {
+        "target": 50.0,
+        "stat": "receiving_yards",
+        "current": 0,
+        "player": "D.J. Moore",
+        "away": "Minnesota Vikings",
+        "home": "Chicago Bears",
+        "game_date": "2025-09-08"
+      }
+    ],
+    "name": "09/08 SGP",
+    "odds": "+2500",
+    "wager": 10.0,
+    "type": "SGP",
+    "returns": "250.00"
+  },
+  {
+    "bet_id": "DK638932329442198194",
+    "betting_site": "DraftKings",
+    "legs": [
+      {
+        "target": 1,
+        "stat": "moneyline",
+        "current": 0,
+        "team": "Washington Commanders",
+        "away": "Washington Commanders",
+        "home": "Green Bay Packers",
+        "game_date": "2025-09-11"
+      },
+      {
+        "target": 1,
+        "stat": "anytime_touchdown",
+        "current": 0,
+        "player": "Tucker Kraft",
+        "away": "Washington Commanders",
+        "home": "Green Bay Packers",
+        "game_date": "2025-09-11"
+      }
+    ],
+    "name": "09/11 SGP",
+    "odds": "+800",
+    "wager": 10.0,
+    "type": "SGP",
+    "returns": "80.00"
+  },
+  {
+    "bet_id": "O/0240915/0000041",
+    "betting_site": "FanDuel",
+    "legs": [
+      {
+        "target": 1,
+        "stat": "anytime_touchdown",
+        "current": 0,
+        "player": "Kyren Williams",
+        "away": "Los Angeles Rams",
+        "home": "Tennessee Titans",
+        "game_date": "2025-09-14"
+      },
+      {
+        "target": 1,
+        "stat": "anytime_touchdown",
+        "current": 0,
+        "player": "Derrick Henry",
+        "away": "Cleveland Browns",
+        "home": "Baltimore Ravens",
+        "game_date": "2025-09-14"
+      },
+      {
+        "target": 1,
+        "stat": "anytime_touchdown",
+        "current": 0,
+        "player": "James Cook",
+        "away": "Buffalo Bills",
+        "home": "New York Jets",
+        "game_date": "2025-09-14"
+      }
+    ],
+    "name": "09/14 Parlay",
+    "odds": "+431",
+    "wager": 10.0,
+    "type": "Parlay",
+    "returns": "43.10"
+  },
+  {
+    "bet_id": "O/0240915/0000042",
+    "betting_site": "FanDuel",
+    "legs": [
+      {
+        "target": 200.0,
+        "stat": "passing_yards",
+        "current": 0,
+        "player": "Geno Smith",
+        "away": "Unknown Team",
+        "home": "Unknown Team",
+        "game_date": "2025-09-15"
+      },
+      {
+        "target": 200.0,
+        "stat": "passing_yards",
+        "current": 0,
+        "player": "Justin Herbert",
+        "away": "Los Angeles Chargers",
+        "home": "Las Vegas Raiders",
+        "game_date": "2025-09-15"
+      },
+      {
+        "target": 1,
+        "stat": "anytime_touchdown",
+        "current": 0,
+        "player": "Jakobi Meyers",
+        "away": "Los Angeles Chargers",
+        "home": "Las Vegas Raiders",
+        "game_date": "2025-09-15"
+      },
+      {
+        "target": 4.0,
+        "stat": "receptions",
+        "current": 0,
+        "player": "Keenan Allen",
+        "away": "Unknown Team",
+        "home": "Unknown Team",
+        "game_date": "2025-09-15"
+      },
+      {
+        "target": 5.0,
+        "stat": "passing_touchdowns",
+        "current": 0,
+        "player": "Justin Herbert",
+        "away": "Los Angeles Chargers",
+        "home": "Las Vegas Raiders",
+        "game_date": "2025-09-15"
+      }
+    ],
+    "name": "09/15 Parlay",
+    "odds": "+631",
+    "wager": 10.0,
+    "type": "Parlay",
+    "returns": "63.10"
+  },
+  {
+    "bet_id": "O/0240915/0000043",
+    "betting_site": "FanDuel",
+    "legs": [
+      {
+        "target": 1,
+        "stat": "moneyline",
+        "current": 0,
+        "team": "Las Vegas Raiders",
+        "away": "Los Angeles Chargers",
+        "home": "Las Vegas Raiders",
+        "game_date": "2025-09-15"
+      }
+    ],
+    "name": "09/15 SGP",
+    "odds": "+152",
+    "wager": 10.0,
+    "type": "SGP",
+    "returns": "15.20"
+  },
+  {
+    "bet_id": "O/0240915/0000040",
+    "betting_site": "FanDuel",
+    "legs": [
+      {
+        "target": 1,
+        "stat": "moneyline",
+        "current": 0,
+        "team": "Dallas Cowboys",
+        "away": "Unknown Team",
+        "home": "Unknown Team",
+        "game_date": "2025-09-15"
+      },
+      {
+        "target": 1,
+        "stat": "moneyline",
+        "current": 0,
+        "team": "Cincinnati Bengals",
+        "away": "Unknown Team",
+        "home": "Unknown Team",
+        "game_date": "2025-09-15"
+      },
+      {
+        "target": 1,
+        "stat": "moneyline",
+        "current": 0,
+        "team": "Baltimore Ravens",
+        "away": "Unknown Team",
+        "home": "Unknown Team",
+        "game_date": "2025-09-15"
+      },
+      {
+        "target": 1,
+        "stat": "moneyline",
+        "current": 0,
+        "team": "Los Angeles Chargers",
+        "away": "Los Angeles Chargers",
+        "home": "Las Vegas Raiders",
+        "game_date": "2025-09-15"
+      },
+      {
+        "target": 1,
+        "stat": "moneyline",
+        "current": 0,
+        "team": "Buffalo Bills",
+        "away": "Miami Dolphins",
+        "home": "Buffalo Bills",
+        "game_date": "2025-09-18"
+      }
+    ],
+    "name": "09/15 Parlay",
+    "odds": "+452",
+    "wager": 10.0,
+    "type": "Parlay",
+    "returns": "45.20"
+  },
+  {
+    "bet_id": "O/1368367/0000033",
+    "betting_site": "FanDuel",
+    "legs": [
+      {
+        "target": 1,
+        "stat": "moneyline",
+        "current": 0,
+        "team": "Buffalo Bills",
+        "away": "Miami Dolphins",
+        "home": "Buffalo Bills",
+        "game_date": "2025-09-18"
+      },
+      {
+        "target": 1,
+        "stat": "anytime_touchdown",
+        "current": 0,
+        "player": "Josh Allen",
+        "away": "Miami Dolphins",
+        "home": "Buffalo Bills",
+        "game_date": "2025-09-18"
+      }
+    ],
+    "name": "09/18 SGP",
+    "odds": "-116",
+    "wager": 10.0,
+    "type": "SGP"
+  },
+  {
+    "bet_id": "O/0240915/0000044",
+    "betting_site": "FanDuel",
+    "legs": [
+      {
+        "target": 1,
+        "stat": "moneyline",
+        "current": 0,
+        "team": "Kansas City Chiefs",
+        "away": "Kansas City Chiefs",
+        "home": "New York Giants",
+        "game_date": "2025-09-21"
+      },
+      {
+        "target": 2.0,
+        "stat": "passing_touchdowns",
+        "current": 0,
+        "player": "Patrick Mahomes",
+        "away": "Kansas City Chiefs",
+        "home": "New York Giants",
+        "game_date": "2025-09-21"
+      },
+      {
+        "target": 50.0,
+        "stat": "receiving_yards",
+        "current": 0,
+        "player": "Malik Nabers",
+        "away": "Kansas City Chiefs",
+        "home": "New York Giants",
+        "game_date": "2025-09-21"
+      },
+      {
+        "target": 150.0,
+        "stat": "passing_yards",
+        "current": 0,
+        "player": "Russell Wilson",
+        "away": "Pittsburgh Steelers",
+        "home": "New England Patriots",
+        "game_date": "2025-09-21"
+      },
+      {
+        "target": 175.0,
+        "stat": "passing_yards",
+        "current": 0,
+        "player": "Patrick Mahomes",
+        "away": "Kansas City Chiefs",
+        "home": "New York Giants",
+        "game_date": "2025-09-21"
+      }
+    ],
+    "name": "09/21 Parlay",
+    "odds": "+325",
+    "wager": 10.0,
+    "type": "Parlay",
+    "returns": "32.50"
+  },
+  {
+    "bet_id": "O/1119460/0000003",
+    "betting_site": "FanDuel",
+    "legs": [
+      {
+        "target": 1,
+        "stat": "moneyline",
+        "current": 0,
+        "team": "Philadelphia Eagles",
+        "away": "Los Angeles Rams",
+        "home": "Philadelphia Eagles",
+        "game_date": "2025-09-21"
+      },
+      {
+        "target": 1,
+        "stat": "moneyline",
+        "current": 0,
+        "team": "Tampa Bay Buccaneers",
+        "away": "New York Jets",
+        "home": "Tampa Bay Buccaneers",
+        "game_date": "2025-09-21"
+      },
+      {
+        "target": 1,
+        "stat": "moneyline",
+        "current": 0,
+        "team": "Green Bay Packers",
+        "away": "Green Bay Packers",
+        "home": "Cleveland Browns",
+        "game_date": "2025-09-21"
+      },
+      {
+        "target": 1,
+        "stat": "moneyline",
+        "current": 0,
+        "team": "Atlanta Falcons",
+        "away": "Atlanta Falcons",
+        "home": "Carolina Panthers",
+        "game_date": "2025-09-21"
+      },
+      {
+        "target": 1,
+        "stat": "moneyline",
+        "current": 0,
+        "team": "Indianapolis Colts",
+        "away": "Indianapolis Colts",
+        "home": "Tennessee Titans",
+        "game_date": "2025-09-21"
+      },
+      {
+        "target": 1,
+        "stat": "moneyline",
+        "current": 0,
+        "team": "Pittsburgh Steelers",
+        "away": "Pittsburgh Steelers",
+        "home": "New England Patriots",
+        "game_date": "2025-09-21"
+      }
+    ],
+    "name": "09/21 Parlay",
+    "odds": "+1053",
+    "wager": 10.0,
+    "type": "Parlay",
+    "returns": "105.30"
+  },
+  {
+    "bet_id": "O/1119460/0000002",
+    "betting_site": "FanDuel",
+    "legs": [
+      {
+        "target": 1,
+        "stat": "moneyline",
+        "current": 0,
+        "team": "Philadelphia Eagles",
+        "away": "Los Angeles Rams",
+        "home": "Philadelphia Eagles",
+        "game_date": "2025-09-21"
+      },
+      {
+        "target": 1,
+        "stat": "moneyline",
+        "current": 0,
+        "team": "Tampa Bay Buccaneers",
+        "away": "New York Jets",
+        "home": "Tampa Bay Buccaneers",
+        "game_date": "2025-09-21"
+      },
+      {
+        "target": 1,
+        "stat": "moneyline",
+        "current": 0,
+        "team": "Green Bay Packers",
+        "away": "Green Bay Packers",
+        "home": "Cleveland Browns",
+        "game_date": "2025-09-21"
+      },
+      {
+        "target": 1,
+        "stat": "moneyline",
+        "current": 0,
+        "team": "Atlanta Falcons",
+        "away": "Atlanta Falcons",
+        "home": "Carolina Panthers",
+        "game_date": "2025-09-21"
+      },
+      {
+        "target": 1,
+        "stat": "moneyline",
+        "current": 0,
+        "team": "Indianapolis Colts",
+        "away": "Indianapolis Colts",
+        "home": "Tennessee Titans",
+        "game_date": "2025-09-21"
+      },
+      {
+        "target": 1,
+        "stat": "moneyline",
+        "current": 0,
+        "team": "Washington Commanders",
+        "away": "Las Vegas Raiders",
+        "home": "Washington Commanders",
+        "game_date": "2025-09-21"
+      }
+    ],
+    "name": "09/21 Parlay",
+    "odds": "+1039",
+    "wager": 10.0,
+    "type": "Parlay",
+    "returns": "103.90"
+  },
+  {
+    "bet_id": "DK638940702867776036",
+    "betting_site": "DraftKings",
+    "legs": [
+      {
+        "target": 1,
+        "stat": "anytime_touchdown",
+        "current": 0,
+        "player": "Christian McCaffrey",
+        "away": "Arizona Cardinals",
+        "home": "San Francisco 49ers",
+        "game_date": "2025-09-21"
+      },
+      {
+        "target": 1,
+        "stat": "anytime_touchdown",
+        "current": 0,
+        "player": "Bucky Irving",
+        "away": "New York Jets",
+        "home": "Tampa Bay Buccaneers",
+        "game_date": "2025-09-21"
+      },
+      {
+        "target": 1,
+        "stat": "anytime_touchdown",
+        "current": 0,
+        "player": "Bijan Robinson",
+        "away": "Atlanta Falcons",
+        "home": "Carolina Panthers",
+        "game_date": "2025-09-21"
+      },
+      {
+        "target": 1,
+        "stat": "anytime_touchdown",
+        "current": 0,
+        "player": "Jordan Mason",
+        "away": "Arizona Cardinals",
+        "home": "San Francisco 49ers",
+        "game_date": "2025-09-21"
+      },
+      {
+        "target": 1,
+        "stat": "anytime_touchdown",
+        "current": 0,
+        "player": "Kenneth Walker III",
+        "away": "New Orleans Saints",
+        "home": "Seattle Seahawks",
+        "game_date": "2025-09-21"
+      }
+    ],
+    "name": "09/21 Parlay",
+    "odds": "+1266",
+    "wager": 10.0,
+    "type": "Parlay",
+    "returns": "126.60"
+  },
+  {
+    "bet_id": "DK638941829591667808",
+    "betting_site": "DraftKings",
+    "legs": [
+      {
+        "target": 1,
+        "stat": "anytime_touchdown",
+        "current": 0,
+        "player": "Amon-Ra St. Brown",
+        "away": "Detroit Lions",
+        "home": "Baltimore Ravens",
+        "game_date": "2025-09-22"
+      },
+      {
+        "target": 1,
+        "stat": "anytime_touchdown",
+        "current": 0,
+        "player": "Derrick Henry",
+        "away": "Detroit Lions",
+        "home": "Baltimore Ravens",
+        "game_date": "2025-09-22"
+      }
+    ],
+    "name": "09/22 SGP",
+    "odds": "+230",
+    "wager": 10.0,
+    "type": "SGP",
+    "returns": "23.00"
+  },
+  {
+    "bet_id": "O/0240915/0000045",
+    "betting_site": "FanDuel",
+    "legs": [
+      {
+        "target": 1,
+        "stat": "moneyline",
+        "current": 0,
+        "team": "Baltimore Ravens",
+        "away": "Detroit Lions",
+        "home": "Baltimore Ravens",
+        "game_date": "2025-09-22"
+      },
+      {
+        "target": 200.0,
+        "stat": "passing_yards",
+        "current": 0,
+        "player": "Jared Goff",
+        "away": "Detroit Lions",
+        "home": "Baltimore Ravens",
+        "game_date": "2025-09-22"
+      },
+      {
+        "target": 0,
+        "stat": "rushing_yards",
+        "current": 0,
+        "player": "Lamar Jackson",
+        "away": "Detroit Lions",
+        "home": "Baltimore Ravens",
+        "game_date": "2025-09-22"
+      },
+      {
+        "target": 40.0,
+        "stat": "receiving_yards",
+        "current": 0,
+        "player": "Zay Flowers",
+        "away": "Detroit Lions",
+        "home": "Baltimore Ravens",
+        "game_date": "2025-09-22"
+      },
+      {
+        "target": 40.0,
+        "stat": "receiving_yards",
+        "current": 0,
+        "player": "Sam LaPorta",
+        "away": "Detroit Lions",
+        "home": "Baltimore Ravens",
+        "game_date": "2025-09-22"
+      }
+    ],
+    "name": "09/22 SGP",
+    "odds": "+294",
+    "wager": 10.0,
+    "type": "SGP",
+    "returns": "29.40"
+  },
+  {
+    "bet_id": "O/0240915/0000046",
+    "betting_site": "FanDuel",
+    "legs": [
+      {
+        "target": 200.0,
+        "stat": "passing_yards",
+        "current": 0,
+        "player": "Kyler Murray",
+        "away": "Seattle Seahawks",
+        "home": "Arizona Cardinals",
+        "game_date": "2025-09-25"
+      },
+      {
+        "target": 2.0,
+        "stat": "passing_touchdowns",
+        "current": 0,
+        "player": "Sam Darnold",
+        "away": "Minnesota Vikings",
+        "home": "Pittsburgh Steelers",
+        "game_date": "2025-09-28"
+      },
+      {
+        "target": 50.0,
+        "stat": "rushing_yards",
+        "current": 0,
+        "player": "Trey Benson",
+        "away": "Seattle Seahawks",
+        "home": "Arizona Cardinals",
+        "game_date": "2025-09-25"
+      },
+      {
+        "target": 6.0,
+        "stat": "receptions",
+        "current": 0,
+        "player": "Jaxon Smith-Njigba",
+        "away": "Seattle Seahawks",
+        "home": "Arizona Cardinals",
+        "game_date": "2025-09-25"
+      }
+    ],
+    "name": "09/25 Parlay",
+    "odds": "+1018",
+    "wager": 10.0,
+    "type": "Parlay",
+    "returns": "101.80"
+  },
+  {
+    "bet_id": "O/0240915/0000047",
+    "betting_site": "FanDuel",
+    "legs": [
+      {
+        "target": 150.0,
+        "stat": "passing_yards",
+        "current": 0,
+        "player": "Kyler Murray",
+        "away": "Seattle Seahawks",
+        "home": "Arizona Cardinals",
+        "game_date": "2025-09-25"
+      },
+      {
+        "target": 25.0,
+        "stat": "receiving_yards",
+        "current": 0,
+        "player": "Marvin Harrison Jr.",
+        "away": "Seattle Seahawks",
+        "home": "Arizona Cardinals",
+        "game_date": "2025-09-25"
+      },
+      {
+        "target": 25.0,
+        "stat": "receiving_yards",
+        "current": 0,
+        "player": "Trey McBride",
+        "away": "Seattle Seahawks",
+        "home": "Arizona Cardinals",
+        "game_date": "2025-09-25"
+      },
+      {
+        "target": 5.0,
+        "stat": "receiving_yards",
+        "current": 0,
+        "player": "Michael Wilson",
+        "away": "Seattle Seahawks",
+        "home": "Arizona Cardinals",
+        "game_date": "2025-09-25"
+      },
+      {
+        "target": 2.0,
+        "stat": "receptions",
+        "current": 0,
+        "player": "Trey Benson",
+        "away": "Seattle Seahawks",
+        "home": "Arizona Cardinals",
+        "game_date": "2025-09-25"
+      }
+    ],
+    "name": "09/25 SGP",
+    "odds": "-105",
+    "wager": 10.0,
+    "type": "SGP"
+  },
+  {
+    "bet_id": "DK638944245376940359",
+    "betting_site": "DraftKings",
+    "legs": [
+      {
+        "target": 1,
+        "stat": "anytime_touchdown",
+        "current": 0,
+        "player": "Trey McBride",
+        "away": "Seattle Seahawks",
+        "home": "Arizona Cardinals",
+        "game_date": "2025-09-25"
+      },
+      {
+        "target": 1,
+        "stat": "anytime_touchdown",
+        "current": 0,
+        "player": "Zach Charbonnet",
+        "away": "Seattle Seahawks",
+        "home": "Arizona Cardinals",
+        "game_date": "2025-09-25"
+      },
+      {
+        "target": 15.0,
+        "stat": "receiving_yards",
+        "current": 0,
+        "player": "Marvin Harrison Jr.",
+        "away": "Seattle Seahawks",
+        "home": "Arizona Cardinals",
+        "game_date": "2025-09-25"
+      }
+    ],
+    "name": "09/25 SGP",
+    "odds": "+800",
+    "wager": 10.0,
+    "type": "SGP",
+    "returns": "80.00"
+  },
+  {
+    "bet_id": "DK638944230797523015",
+    "betting_site": "DraftKings",
+    "legs": [
+      {
+        "target": 80.0,
+        "stat": "receiving_yards",
+        "current": 0,
+        "player": "Jaxon Smith-Njigba",
+        "away": "Seattle Seahawks",
+        "home": "Arizona Cardinals",
+        "game_date": "2025-09-25"
+      },
+      {
+        "target": 40.0,
+        "stat": "receiving_yards",
+        "current": 0,
+        "player": "Trey McBride",
+        "away": "Seattle Seahawks",
+        "home": "Arizona Cardinals",
+        "game_date": "2025-09-25"
+      },
+      {
+        "target": 25.0,
+        "stat": "rushing_yards",
+        "current": 0,
+        "player": "Kyler Murray",
+        "away": "Seattle Seahawks",
+        "home": "Arizona Cardinals",
+        "game_date": "2025-09-25"
+      }
+    ],
+    "name": "09/25 SGP",
+    "odds": "+240",
+    "wager": 10.0,
+    "type": "SGP",
+    "returns": "24.00"
+  },
+  {
+    "bet_id": "DK638946706562465944",
+    "betting_site": "DraftKings",
+    "legs": [
+      {
+        "target": 1,
+        "stat": "moneyline",
+        "current": 0,
+        "team": "Detroit Lions",
+        "away": "Cleveland Browns",
+        "home": "Detroit Lions",
+        "game_date": "2025-09-28"
+      },
+      {
+        "target": 1,
+        "stat": "moneyline",
+        "current": 0,
+        "team": "Buffalo Bills",
+        "away": "New Orleans Saints",
+        "home": "Buffalo Bills",
+        "game_date": "2025-09-28"
+      },
+      {
+        "target": 1,
+        "stat": "moneyline",
+        "current": 0,
+        "team": "Denver Broncos",
+        "away": "Cincinnati Bengals",
+        "home": "Denver Broncos",
+        "game_date": "2025-09-29"
+      },
+      {
+        "target": 1,
+        "stat": "moneyline",
+        "current": 0,
+        "team": "Los Angeles Chargers",
+        "away": "Los Angeles Chargers",
+        "home": "New York Giants",
+        "game_date": "2025-09-28"
+      },
+      {
+        "target": 1,
+        "stat": "moneyline",
+        "current": 0,
+        "team": "Green Bay Packers",
+        "away": "Green Bay Packers",
+        "home": "Dallas Cowboys",
+        "game_date": "2025-09-28"
+      },
+      {
+        "target": 1,
+        "stat": "moneyline",
+        "current": 0,
+        "team": "Baltimore Ravens",
+        "away": "Baltimore Ravens",
+        "home": "Kansas City Chiefs",
+        "game_date": "2025-09-28"
+      }
+    ],
+    "name": "09/28 Parlay",
+    "odds": "+391",
+    "wager": 20.0,
+    "type": "Parlay",
+    "returns": "78.20"
+  },
+  {
+    "bet_id": "DK638946708311633880",
+    "betting_site": "DraftKings",
+    "legs": [
+      {
+        "target": 1,
+        "stat": "moneyline",
+        "current": 0,
+        "team": "Detroit Lions",
+        "away": "Cleveland Browns",
+        "home": "Detroit Lions",
+        "game_date": "2025-09-28"
+      },
+      {
+        "target": 1,
+        "stat": "moneyline",
+        "current": 0,
+        "team": "Buffalo Bills",
+        "away": "New Orleans Saints",
+        "home": "Buffalo Bills",
+        "game_date": "2025-09-28"
+      },
+      {
+        "target": 1,
+        "stat": "moneyline",
+        "current": 0,
+        "team": "Denver Broncos",
+        "away": "Cincinnati Bengals",
+        "home": "Denver Broncos",
+        "game_date": "2025-09-29"
+      },
+      {
+        "target": 1,
+        "stat": "moneyline",
+        "current": 0,
+        "team": "Los Angeles Chargers",
+        "away": "Los Angeles Chargers",
+        "home": "New York Giants",
+        "game_date": "2025-09-28"
+      },
+      {
+        "target": 1,
+        "stat": "moneyline",
+        "current": 0,
+        "team": "Green Bay Packers",
+        "away": "Green Bay Packers",
+        "home": "Dallas Cowboys",
+        "game_date": "2025-09-28"
+      },
+      {
+        "target": 1,
+        "stat": "moneyline",
+        "current": 0,
+        "team": "Kansas City Chiefs",
+        "away": "Baltimore Ravens",
+        "home": "Kansas City Chiefs",
+        "game_date": "2025-09-28"
+      }
+    ],
+    "name": "09/28 Parlay",
+    "odds": "+488",
+    "wager": 20.0,
+    "type": "Parlay",
+    "returns": "97.60"
+  },
+  {
+    "bet_id": "DK638946864775833794",
+    "betting_site": "DraftKings",
+    "legs": [
+      {
+        "target": 200.0,
+        "stat": "passing_yards",
+        "current": 0,
+        "player": "Matthew Stafford",
+        "away": "Indianapolis Colts",
+        "home": "Los Angeles Rams",
+        "game_date": "2025-09-28"
+      },
+      {
+        "target": 180.0,
+        "stat": "passing_yards",
+        "current": 0,
+        "player": "Daniel Jones",
+        "away": "Los Angeles Chargers",
+        "home": "New York Giants",
+        "game_date": "2025-09-28"
+      },
+      {
+        "target": 6.0,
+        "stat": "receptions",
+        "current": 0,
+        "player": "Puka Nacua",
+        "away": "Indianapolis Colts",
+        "home": "Los Angeles Rams",
+        "game_date": "2025-09-28"
+      },
+      {
+        "target": 60.0,
+        "stat": "rushing_yards",
+        "current": 0,
+        "player": "Jonathan Taylor",
+        "away": "Indianapolis Colts",
+        "home": "Los Angeles Rams",
+        "game_date": "2025-09-28"
+      },
+      {
+        "target": 40.0,
+        "stat": "receiving_yards",
+        "current": 0,
+        "player": "Davante Adams",
+        "away": "Chicago Bears",
+        "home": "Las Vegas Raiders",
+        "game_date": "2025-09-28"
+      },
+      {
+        "target": 25.0,
+        "stat": "receiving_yards",
+        "current": 0,
+        "player": "Michael Pittman Jr.",
+        "away": "Indianapolis Colts",
+        "home": "Los Angeles Rams",
+        "game_date": "2025-09-28"
+      }
+    ],
+    "name": "09/28 Parlay",
+    "odds": "+238",
+    "wager": 5.0,
+    "type": "Parlay",
+    "returns": "11.90"
+  },
+  {
+    "bet_id": "O/0240915/0000048",
+    "betting_site": "FanDuel",
+    "legs": [
+      {
+        "target": 44.5,
+        "stat": "total_points",
+        "current": 0,
+        "team": "Eagles vs Buccaneers",
+        "away": "Unknown Team",
+        "home": "Unknown Team",
+        "game_date": "2025-09-28"
+      },
+      {
+        "target": 70.0,
+        "stat": "rushing_yards",
+        "current": 0,
+        "player": "Omarion Hampton",
+        "away": "Carolina Panthers",
+        "home": "New England Patriots",
+        "game_date": "2025-09-28"
+      },
+      {
+        "target": 1,
+        "stat": "anytime_touchdown",
+        "current": 0,
+        "player": "James Cook",
+        "away": "New Orleans Saints",
+        "home": "Buffalo Bills",
+        "game_date": "2025-09-28"
+      },
+      {
+        "target": 3.0,
+        "stat": "receptions",
+        "current": 0,
+        "player": "Sam LaPorta",
+        "away": "Cleveland Browns",
+        "home": "Detroit Lions",
+        "game_date": "2025-09-28"
+      }
+    ],
+    "name": "09/28 Parlay",
+    "odds": "+602",
+    "wager": 10.0,
+    "type": "Parlay",
+    "returns": "60.20"
+  },
+  {
+    "bet_id": "O/0240915/0000049",
+    "betting_site": "FanDuel",
+    "legs": [
+      {
+        "target": 150.0,
+        "stat": "passing_yards",
+        "current": 0,
+        "player": "Spencer Rattler",
+        "away": "New Orleans Saints",
+        "home": "Buffalo Bills",
+        "game_date": "2025-09-28"
+      },
+      {
+        "target": 3.0,
+        "stat": "receptions",
+        "current": 0,
+        "player": "DeVonta Smith",
+        "away": "Philadelphia Eagles",
+        "home": "Tampa Bay Buccaneers",
+        "game_date": "2025-09-28"
+      },
+      {
+        "target": 2.0,
+        "stat": "receptions",
+        "current": 0,
+        "player": "Bucky Irving",
+        "away": "Philadelphia Eagles",
+        "home": "Tampa Bay Buccaneers",
+        "game_date": "2025-09-28"
+      },
+      {
+        "target": 25.0,
+        "stat": "rushing_yards",
+        "current": 0,
+        "player": "David Montgomery",
+        "away": "Cleveland Browns",
+        "home": "Detroit Lions",
+        "game_date": "2025-09-28"
+      }
+    ],
+    "name": "09/28 Parlay",
+    "odds": "-110",
+    "wager": 20.0,
+    "type": "Parlay"
+  },
+  {
+    "bet_id": "O/0240915/0000050",
+    "betting_site": "FanDuel",
+    "legs": [
+      {
+        "target": 200.0,
+        "stat": "passing_yards",
+        "current": 0,
+        "player": "Jordan Love",
+        "away": "Green Bay Packers",
+        "home": "Dallas Cowboys",
+        "game_date": "2025-09-28"
+      },
+      {
+        "target": 60.0,
+        "stat": "receiving_yards",
+        "current": 0,
+        "player": "George Pickens",
+        "away": "Minnesota Vikings",
+        "home": "Pittsburgh Steelers",
+        "game_date": "2025-09-28"
+      }
+    ],
+    "name": "09/28 Parlay",
+    "odds": "+208",
+    "wager": 10.0,
+    "type": "Parlay",
+    "returns": "20.80"
+  },
+  {
+    "bet_id": "O/0240915/0000051",
+    "betting_site": "FanDuel",
+    "legs": [
+      {
+        "target": 1,
+        "stat": "moneyline",
+        "current": 0,
+        "team": "Los Angeles Rams",
+        "away": "San Francisco 49ers",
+        "home": "Los Angeles Rams",
+        "game_date": "2025-10-02"
+      },
+      {
+        "target": 200.0,
+        "stat": "passing_yards",
+        "current": 0,
+        "player": "Matthew Stafford",
+        "away": "San Francisco 49ers",
+        "home": "Los Angeles Rams",
+        "game_date": "2025-10-02"
+      },
+      {
+        "target": 175.0,
+        "stat": "passing_yards",
+        "current": 0,
+        "player": "Mac Jones",
+        "away": "Kansas City Chiefs",
+        "home": "Jacksonville Jaguars",
+        "game_date": "2025-10-06"
+      },
+      {
+        "target": 1,
+        "stat": "anytime_touchdown",
+        "current": 0,
+        "player": "Christian McCaffrey",
+        "away": "San Francisco 49ers",
+        "home": "Los Angeles Rams",
+        "game_date": "2025-10-02"
+      },
+      {
+        "target": 30.0,
+        "stat": "receiving_yards",
+        "current": 0,
+        "player": "Davante Adams",
+        "away": "Las Vegas Raiders",
+        "home": "Indianapolis Colts",
+        "game_date": "2025-10-05"
+      }
+    ],
+    "name": "10/02 Parlay",
+    "odds": "+481",
+    "wager": 10.0,
+    "type": "Parlay",
+    "returns": "48.10"
+  },
+  {
+    "bet_id": "DK638950461471078613",
+    "betting_site": "DraftKings",
+    "legs": [
+      {
+        "target": 200.0,
+        "stat": "passing_yards",
+        "current": 0,
+        "player": "Matthew Stafford",
+        "away": "San Francisco 49ers",
+        "home": "Los Angeles Rams",
+        "game_date": "2025-10-02"
+      },
+      {
+        "target": 170.0,
+        "stat": "passing_yards",
+        "current": 0,
+        "player": "Mac Jones",
+        "away": "Kansas City Chiefs",
+        "home": "Jacksonville Jaguars",
+        "game_date": "2025-10-06"
+      },
+      {
+        "target": 70.0,
+        "stat": "receiving_yards",
+        "current": 0,
+        "player": "Puka Nacua",
+        "away": "San Francisco 49ers",
+        "home": "Los Angeles Rams",
+        "game_date": "2025-10-02"
+      },
+      {
+        "target": 25.0,
+        "stat": "receiving_yards",
+        "current": 0,
+        "player": "Christian McCaffrey",
+        "away": "San Francisco 49ers",
+        "home": "Los Angeles Rams",
+        "game_date": "2025-10-02"
+      },
+      {
+        "target": 40.0,
+        "stat": "rushing_yards",
+        "current": 0,
+        "player": "Christian McCaffrey",
+        "away": "San Francisco 49ers",
+        "home": "Los Angeles Rams",
+        "game_date": "2025-10-02"
+      }
+    ],
+    "name": "10/02 Parlay",
+    "odds": "+174",
+    "wager": 20.0,
+    "type": "Parlay",
+    "returns": "34.80"
+  },
+  {
+    "bet_id": "DK638952803155496376",
+    "betting_site": "DraftKings",
+    "legs": [
+      {
+        "target": 1,
+        "stat": "moneyline",
+        "current": 0,
+        "team": "Miami Dolphins",
+        "away": "Miami Dolphins",
+        "home": "Carolina Panthers",
+        "game_date": "2025-10-05"
+      },
+      {
+        "target": 1,
+        "stat": "moneyline",
+        "current": 0,
+        "team": "Houston Texans",
+        "away": "Houston Texans",
+        "home": "Baltimore Ravens",
+        "game_date": "2025-10-05"
+      },
+      {
+        "target": 1,
+        "stat": "moneyline",
+        "current": 0,
+        "team": "Indianapolis Colts",
+        "away": "Las Vegas Raiders",
+        "home": "Indianapolis Colts",
+        "game_date": "2025-10-05"
+      },
+      {
+        "target": 1,
+        "stat": "moneyline",
+        "current": 0,
+        "team": "New York Giants",
+        "away": "New York Giants",
+        "home": "New Orleans Saints",
+        "game_date": "2025-10-05"
+      }
+    ],
+    "name": "10/05 Parlay",
+    "odds": "+869",
+    "wager": 10.0,
+    "type": "Parlay",
+    "returns": "86.90"
+  },
+  {
+    "bet_id": "DK638953058013659823",
+    "betting_site": "DraftKings",
+    "legs": [
+      {
+        "target": 1,
+        "stat": "anytime_touchdown",
+        "current": 0,
+        "player": "Josh Allen",
+        "away": "New England Patriots",
+        "home": "Buffalo Bills",
+        "game_date": "2025-10-05"
+      }
+    ],
+    "name": "10/05 SGP",
+    "odds": "+111",
+    "wager": 10.0,
+    "type": "SGP",
+    "returns": "11.10"
+  },
+  {
+    "bet_id": "O/1368367/0000034",
+    "betting_site": "FanDuel",
+    "legs": [
+      {
+        "target": 150.0,
+        "stat": "passing_yards",
+        "current": 0,
+        "player": "Jalen Hurts",
+        "away": "Unknown Team",
+        "home": "Unknown Team",
+        "game_date": "2025-10-05"
+      },
+      {
+        "target": 150.0,
+        "stat": "passing_yards",
+        "current": 0,
+        "player": "Bo Nix",
+        "away": "Denver Broncos",
+        "home": "Philadelphia Eagles",
+        "game_date": "2025-10-05"
+      },
+      {
+        "target": 60.0,
+        "stat": "rushing_yards",
+        "current": 0,
+        "player": "Saquon Barkley",
+        "away": "Denver Broncos",
+        "home": "Philadelphia Eagles",
+        "game_date": "2025-10-05"
+      },
+      {
+        "target": 1,
+        "stat": "anytime_touchdown",
+        "current": 0,
+        "player": "Saquon Barkley",
+        "away": "Denver Broncos",
+        "home": "Philadelphia Eagles",
+        "game_date": "2025-10-05"
+      }
+    ],
+    "name": "10/05 Parlay",
+    "odds": "+323",
+    "wager": 10.0,
+    "type": "Parlay",
+    "returns": "32.30"
+  },
+  {
+    "bet_id": "O/0240915/0000052",
+    "betting_site": "FanDuel",
+    "legs": [
+      {
+        "target": 200.0,
+        "stat": "passing_yards",
+        "current": 0,
+        "player": "Josh Allen",
+        "away": "New England Patriots",
+        "home": "Buffalo Bills",
+        "game_date": "2025-10-05"
+      },
+      {
+        "target": 200.0,
+        "stat": "passing_yards",
+        "current": 0,
+        "player": "Drake Maye",
+        "away": "New England Patriots",
+        "home": "Buffalo Bills",
+        "game_date": "2025-10-05"
+      },
+      {
+        "target": 0,
+        "stat": "receiving_yards",
+        "current": 0,
+        "player": "James Cook",
+        "away": "New England Patriots",
+        "home": "Buffalo Bills",
+        "game_date": "2025-10-05"
+      },
+      {
+        "target": 25.0,
+        "stat": "receiving_yards",
+        "current": 0,
+        "player": "Stefon Diggs",
+        "away": "Houston Texans",
+        "home": "Baltimore Ravens",
+        "game_date": "2025-10-05"
+      },
+      {
+        "target": 1,
+        "stat": "anytime_touchdown",
+        "current": 0,
+        "player": "James Cook",
+        "away": "New England Patriots",
+        "home": "Buffalo Bills",
+        "game_date": "2025-10-05"
+      }
+    ],
+    "name": "10/05 Parlay",
+    "odds": "+402",
+    "wager": 10.0,
+    "type": "Parlay",
+    "returns": "40.20"
+  },
+  {
+    "bet_id": "DK638953925568002478",
+    "betting_site": "DraftKings",
+    "legs": [
+      {
+        "target": 5.0,
+        "stat": "receiving_yards",
+        "current": 0,
+        "player": "Dyami Brown",
+        "away": "Unknown Team",
+        "home": "Unknown Team",
+        "game_date": "2025-10-06"
+      },
+      {
+        "target": 5.0,
+        "stat": "passing_touchdowns",
+        "current": 0,
+        "player": "Patrick Mahomes",
+        "away": "Kansas City Chiefs",
+        "home": "Jacksonville Jaguars",
+        "game_date": "2025-10-06"
+      },
+      {
+        "target": 5.0,
+        "stat": "rushing_yards",
+        "current": 0,
+        "player": "Isiah Pacheco",
+        "away": "Kansas City Chiefs",
+        "home": "Jacksonville Jaguars",
+        "game_date": "2025-10-06"
+      }
+    ],
+    "name": "10/06 Parlay",
+    "odds": "+375",
+    "wager": 10.0,
+    "type": "Parlay",
+    "returns": "37.50"
+  },
+  {
+    "bet_id": "O/0240915/0000054",
+    "betting_site": "FanDuel",
+    "legs": [
+      {
+        "target": 200.0,
+        "stat": "passing_yards",
+        "current": 0,
+        "player": "Patrick Mahomes",
+        "away": "Kansas City Chiefs",
+        "home": "Jacksonville Jaguars",
+        "game_date": "2025-10-06"
+      },
+      {
+        "target": 175.0,
+        "stat": "passing_yards",
+        "current": 0,
+        "player": "Trevor Lawrence",
+        "away": "Kansas City Chiefs",
+        "home": "Jacksonville Jaguars",
+        "game_date": "2025-10-06"
+      },
+      {
+        "target": 30.0,
+        "stat": "receiving_yards",
+        "current": 0,
+        "player": "Xavier Worthy",
+        "away": "Kansas City Chiefs",
+        "home": "Jacksonville Jaguars",
+        "game_date": "2025-10-06"
+      },
+      {
+        "target": 25.0,
+        "stat": "receiving_yards",
+        "current": 0,
+        "player": "Travis Kelce",
+        "away": "Kansas City Chiefs",
+        "home": "Jacksonville Jaguars",
+        "game_date": "2025-10-06"
+      },
+      {
+        "target": 15.0,
+        "stat": "receiving_yards",
+        "current": 0,
+        "player": "Isiah Pacheco",
+        "away": "Kansas City Chiefs",
+        "home": "Jacksonville Jaguars",
+        "game_date": "2025-10-06"
+      }
+    ],
+    "name": "10/06 SGP",
+    "odds": "+217",
+    "wager": 10.0,
+    "type": "SGP",
+    "returns": "21.70"
+  },
+  {
+    "bet_id": "O/0240915/0000053",
+    "betting_site": "FanDuel",
+    "legs": [
+      {
+        "target": 200.0,
+        "stat": "passing_yards",
+        "current": 0,
+        "player": "Patrick Mahomes",
+        "away": "Kansas City Chiefs",
+        "home": "Jacksonville Jaguars",
+        "game_date": "2025-10-06"
+      },
+      {
+        "target": 175.0,
+        "stat": "passing_yards",
+        "current": 0,
+        "player": "Trevor Lawrence",
+        "away": "Kansas City Chiefs",
+        "home": "Jacksonville Jaguars",
+        "game_date": "2025-10-06"
+      },
+      {
+        "target": 30.0,
+        "stat": "receiving_yards",
+        "current": 0,
+        "player": "Xavier Worthy",
+        "away": "Kansas City Chiefs",
+        "home": "Jacksonville Jaguars",
+        "game_date": "2025-10-06"
+      },
+      {
+        "target": 20.0,
+        "stat": "receiving_yards",
+        "current": 0,
+        "player": "Travis Kelce",
+        "away": "Kansas City Chiefs",
+        "home": "Jacksonville Jaguars",
+        "game_date": "2025-10-06"
+      },
+      {
+        "target": 20.0,
+        "stat": "receiving_yards",
+        "current": 0,
+        "player": "Marquise Brown",
+        "away": "Kansas City Chiefs",
+        "home": "Jacksonville Jaguars",
+        "game_date": "2025-10-06"
+      },
+      {
+        "target": 15.0,
+        "stat": "receiving_yards",
+        "current": 0,
+        "player": "Travis Hunter",
+        "away": "Unknown Team",
+        "home": "Unknown Team",
+        "game_date": "2025-10-06"
+      },
+      {
+        "target": 15.0,
+        "stat": "rushing_yards",
+        "current": 0,
+        "player": "Isiah Pacheco",
+        "away": "Kansas City Chiefs",
+        "home": "Jacksonville Jaguars",
+        "game_date": "2025-10-06"
+      },
+      {
+        "target": 10.0,
+        "stat": "rushing_yards",
+        "current": 0,
+        "player": "Patrick Mahomes",
+        "away": "Kansas City Chiefs",
+        "home": "Jacksonville Jaguars",
+        "game_date": "2025-10-06"
+      },
+      {
+        "target": 40.0,
+        "stat": "rushing_yards",
+        "current": 0,
+        "player": "Travis Etienne",
+        "away": "Kansas City Chiefs",
+        "home": "Jacksonville Jaguars",
+        "game_date": "2025-10-06"
+      },
+      {
+        "target": 1,
+        "stat": "anytime_touchdown",
+        "current": 0,
+        "player": "Travis Etienne",
+        "away": "Kansas City Chiefs",
+        "home": "Jacksonville Jaguars",
+        "game_date": "2025-10-06"
+      }
+    ],
+    "name": "10/06 Parlay",
+    "odds": "+1699",
+    "wager": 5.0,
+    "type": "Parlay",
+    "returns": "84.95"
+  },
+  {
+    "bet_id": "O/1368367/0000035",
+    "betting_site": "FanDuel",
+    "legs": [
+      {
+        "target": 1,
+        "stat": "moneyline",
+        "current": 0,
+        "team": "Denver Broncos",
+        "away": "Denver Broncos",
+        "home": "New York Jets",
+        "game_date": "2025-10-12"
+      },
+      {
+        "target": 1,
+        "stat": "moneyline",
+        "current": 0,
+        "team": "Los Angeles Rams",
+        "away": "Los Angeles Rams",
+        "home": "Baltimore Ravens",
+        "game_date": "2025-10-12"
+      },
+      {
+        "target": 1,
+        "stat": "moneyline",
+        "current": 0,
+        "team": "Arizona Cardinals",
+        "away": "Arizona Cardinals",
+        "home": "Indianapolis Colts",
+        "game_date": "2025-10-12"
+      },
+      {
+        "target": 1,
+        "stat": "moneyline",
+        "current": 0,
+        "team": "Los Angeles Chargers",
+        "away": "Los Angeles Chargers",
+        "home": "Miami Dolphins",
+        "game_date": "2025-10-12"
+      },
+      {
+        "target": 1,
+        "stat": "moneyline",
+        "current": 0,
+        "team": "Houston Texans",
+        "away": "Unknown Team",
+        "home": "Unknown Team",
+        "game_date": "2025-10-12"
+      },
+      {
+        "target": 1,
+        "stat": "moneyline",
+        "current": 0,
+        "team": "Baltimore Ravens",
+        "away": "Los Angeles Rams",
+        "home": "Baltimore Ravens",
+        "game_date": "2025-10-12"
+      }
+    ],
+    "name": "10/12 Parlay",
+    "odds": "+3088",
+    "wager": 5.0,
+    "type": "Parlay",
+    "returns": "154.40"
+  },
+  {
+    "bet_id": "O/1368367/0000036",
+    "betting_site": "FanDuel",
+    "legs": [
+      {
+        "target": 1,
+        "stat": "moneyline",
+        "current": 0,
+        "team": "Dallas Cowboys",
+        "away": "Dallas Cowboys",
+        "home": "Carolina Panthers",
+        "game_date": "2025-10-12"
+      },
+      {
+        "target": 1,
+        "stat": "moneyline",
+        "current": 0,
+        "team": "Los Angeles Chargers",
+        "away": "Los Angeles Chargers",
+        "home": "Miami Dolphins",
+        "game_date": "2025-10-12"
+      },
+      {
+        "target": 1,
+        "stat": "moneyline",
+        "current": 0,
+        "team": "Los Angeles Rams",
+        "away": "Los Angeles Rams",
+        "home": "Baltimore Ravens",
+        "game_date": "2025-10-12"
+      },
+      {
+        "target": 1,
+        "stat": "moneyline",
+        "current": 0,
+        "team": "Pittsburgh Steelers",
+        "away": "Cleveland Browns",
+        "home": "Pittsburgh Steelers",
+        "game_date": "2025-10-12"
+      },
+      {
+        "target": 1,
+        "stat": "moneyline",
+        "current": 0,
+        "team": "Indianapolis Colts",
+        "away": "Arizona Cardinals",
+        "home": "Indianapolis Colts",
+        "game_date": "2025-10-12"
+      },
+      {
+        "target": 1,
+        "stat": "moneyline",
+        "current": 0,
+        "team": "Jacksonville Jaguars",
+        "away": "Seattle Seahawks",
+        "home": "Jacksonville Jaguars",
+        "game_date": "2025-10-12"
+      }
+    ],
+    "name": "10/12 Parlay",
+    "odds": "+979",
+    "wager": 10.0,
+    "type": "Parlay",
+    "returns": "97.90"
+  },
+  {
+    "bet_id": "O/0240915/0000055",
+    "betting_site": "FanDuel",
+    "legs": [
+      {
+        "target": 1,
+        "stat": "anytime_touchdown",
+        "current": 0,
+        "player": "Travis Kelce",
+        "away": "Detroit Lions",
+        "home": "Kansas City Chiefs",
+        "game_date": "2025-10-12"
+      },
+      {
+        "target": 20.0,
+        "stat": "rushing_yards",
+        "current": 0,
+        "player": "Patrick Mahomes",
+        "away": "Detroit Lions",
+        "home": "Kansas City Chiefs",
+        "game_date": "2025-10-12"
+      },
+      {
+        "target": 1,
+        "stat": "anytime_touchdown",
+        "current": 0,
+        "player": "Amon-Ra St. Brown",
+        "away": "Detroit Lions",
+        "home": "Kansas City Chiefs",
+        "game_date": "2025-10-12"
+      },
+      {
+        "target": 5.0,
+        "stat": "passing_touchdowns",
+        "current": 0,
+        "player": "Patrick Mahomes",
+        "away": "Detroit Lions",
+        "home": "Kansas City Chiefs",
+        "game_date": "2025-10-12"
+      }
+    ],
+    "name": "10/12 SGP",
+    "odds": "+863",
+    "wager": 5.0,
+    "type": "SGP",
+    "returns": "43.15"
+  },
+  {
+    "bet_id": "DK638959109257988077",
+    "betting_site": "DraftKings",
+    "legs": [
+      {
+        "target": 5.0,
+        "stat": "passing_yards",
+        "current": 0,
+        "player": "Patrick Mahomes",
+        "away": "Detroit Lions",
+        "home": "Kansas City Chiefs",
+        "game_date": "2025-10-12"
+      },
+      {
+        "target": 1,
+        "stat": "anytime_touchdown",
+        "current": 0,
+        "player": "Travis Kelce",
+        "away": "Detroit Lions",
+        "home": "Kansas City Chiefs",
+        "game_date": "2025-10-12"
+      },
+      {
+        "target": 15.0,
+        "stat": "rushing_yards",
+        "current": 0,
+        "player": "Jared Goff",
+        "away": "Detroit Lions",
+        "home": "Kansas City Chiefs",
+        "game_date": "2025-10-12"
+      },
+      {
+        "target": 1,
+        "stat": "anytime_touchdown",
+        "current": 0,
+        "player": "Jahmyr Gibbs",
+        "away": "Detroit Lions",
+        "home": "Kansas City Chiefs",
+        "game_date": "2025-10-12"
+      }
+    ],
+    "name": "10/12 SGP",
+    "odds": "+10400",
+    "wager": 5.0,
+    "type": "SGP",
+    "returns": "520.00"
+  },
+  {
+    "bet_id": "DK638959876709085359",
+    "betting_site": "DraftKings",
+    "legs": [
+      {
+        "target": 3.0,
+        "stat": "receptions",
+        "current": 0,
+        "player": "Bijan Robinson",
+        "away": "Buffalo Bills",
+        "home": "Atlanta Falcons",
+        "game_date": "2025-10-13"
+      },
+      {
+        "target": 0,
+        "stat": "receiving_yards",
+        "current": 0,
+        "player": "Bijan Robinson",
+        "away": "Buffalo Bills",
+        "home": "Atlanta Falcons",
+        "game_date": "2025-10-13"
+      },
+      {
+        "target": 1,
+        "stat": "anytime_touchdown",
+        "current": 0,
+        "player": "Tyler Allgeier",
+        "away": "Buffalo Bills",
+        "home": "Atlanta Falcons",
+        "game_date": "2025-10-13"
+      },
+      {
+        "target": 60.0,
+        "stat": "receiving_yards",
+        "current": 0,
+        "player": "Drake London",
+        "away": "Buffalo Bills",
+        "home": "Atlanta Falcons",
+        "game_date": "2025-10-13"
+      }
+    ],
+    "name": "10/13 SGP",
+    "odds": "+656",
+    "wager": 10.0,
+    "type": "SGP",
+    "returns": "65.60"
+  },
+  {
+    "bet_id": "DK638959884125024982",
+    "betting_site": "DraftKings",
+    "legs": [
+      {
+        "target": 1,
+        "stat": "anytime_touchdown",
+        "current": 0,
+        "player": "Dalton Kincaid",
+        "away": "Buffalo Bills",
+        "home": "Atlanta Falcons",
+        "game_date": "2025-10-13"
+      },
+      {
+        "target": 1,
+        "stat": "anytime_touchdown",
+        "current": 0,
+        "player": "Josh Allen",
+        "away": "Buffalo Bills",
+        "home": "Atlanta Falcons",
+        "game_date": "2025-10-13"
+      }
+    ],
+    "name": "10/13 SGP",
+    "odds": "+765",
+    "wager": 10.0,
+    "type": "SGP",
+    "returns": "76.50"
+  },
+  {
+    "bet_id": "DK638959890786574108",
+    "betting_site": "DraftKings",
+    "legs": [
+      {
+        "target": 80.0,
+        "stat": "rushing_yards",
+        "current": 0,
+        "player": "Roschon Johnson",
+        "away": "Chicago Bears",
+        "home": "Washington Commanders",
+        "game_date": "2025-10-13"
+      },
+      {
+        "target": 1,
+        "stat": "anytime_touchdown",
+        "current": 0,
+        "player": "Roschon Johnson",
+        "away": "Chicago Bears",
+        "home": "Washington Commanders",
+        "game_date": "2025-10-13"
+      },
+      {
+        "target": 200.0,
+        "stat": "passing_yards",
+        "current": 0,
+        "player": "Caleb Williams",
+        "away": "Chicago Bears",
+        "home": "Washington Commanders",
+        "game_date": "2025-10-13"
+      },
+      {
+        "target": 3.0,
+        "stat": "receptions",
+        "current": 0,
+        "player": "Zach Ertz",
+        "away": "Chicago Bears",
+        "home": "Washington Commanders",
+        "game_date": "2025-10-13"
+      }
+    ],
+    "name": "10/13 SGP",
+    "odds": "+516",
+    "wager": 10.0,
+    "type": "SGP",
+    "returns": "51.60"
+  },
+  {
+    "bet_id": "O/0240915/0000056",
+    "betting_site": "FanDuel",
+    "legs": [
+      {
+        "target": 80.0,
+        "stat": "rushing_yards",
+        "current": 0,
+        "player": "Bijan Robinson",
+        "away": "Buffalo Bills",
+        "home": "Atlanta Falcons",
+        "game_date": "2025-10-13"
+      },
+      {
+        "target": 1,
+        "stat": "anytime_touchdown",
+        "current": 0,
+        "player": "Bijan Robinson",
+        "away": "Buffalo Bills",
+        "home": "Atlanta Falcons",
+        "game_date": "2025-10-13"
+      },
+      {
+        "target": 3.0,
+        "stat": "receptions",
+        "current": 0,
+        "player": "Bijan Robinson",
+        "away": "Buffalo Bills",
+        "home": "Atlanta Falcons",
+        "game_date": "2025-10-13"
+      },
+      {
+        "target": 60.0,
+        "stat": "receiving_yards",
+        "current": 0,
+        "player": "Drake London",
+        "away": "Buffalo Bills",
+        "home": "Atlanta Falcons",
+        "game_date": "2025-10-13"
+      }
+    ],
+    "name": "10/13 SGP",
+    "odds": "+193",
+    "wager": 10.0,
+    "type": "SGP",
+    "returns": "19.30"
+  },
+  {
+    "bet_id": "O/0240915/0000057",
+    "betting_site": "FanDuel",
+    "legs": [
+      {
+        "target": 1,
+        "stat": "anytime_touchdown",
+        "current": 0,
+        "player": "Khalil Shakir",
+        "away": "Buffalo Bills",
+        "home": "Atlanta Falcons",
+        "game_date": "2025-10-13"
+      },
+      {
+        "target": 20.5,
+        "stat": "longest_reception",
+        "current": 0,
+        "player": "Khalil Shakir",
+        "away": "Buffalo Bills",
+        "home": "Atlanta Falcons",
+        "game_date": "2025-10-13"
+      }
+    ],
+    "name": "10/13 SGP",
+    "odds": "+303",
+    "wager": 10.0,
+    "type": "SGP",
+    "returns": "30.30"
+  },
+  {
+    "bet_id": "O/1368367/0000037",
+    "betting_site": "FanDuel",
+    "legs": [
+      {
+        "target": 0,
+        "stat": "unknown",
+        "current": 0,
+        "player": "Unknown",
+        "away": "Unknown Team",
+        "home": "Unknown Team",
+        "game_date": "2025-10-13"
+      }
+    ],
+    "name": "10/13 SGP",
+    "odds": "+286",
+    "wager": 10.0,
+    "type": "SGP",
+    "returns": "28.60"
+  },
+  {
+    "bet_id": "O/0240915/0000058",
+    "betting_site": "FanDuel",
+    "legs": [
+      {
+        "target": 175.0,
+        "stat": "passing_yards",
+        "current": 0,
+        "player": "Aaron Rodgers",
+        "away": "Carolina Panthers",
+        "home": "New York Jets",
+        "game_date": "2025-10-19"
+      },
+      {
+        "target": 200.0,
+        "stat": "passing_yards",
+        "current": 0,
+        "player": "Joe Flacco",
+        "away": "Indianapolis Colts",
+        "home": "Los Angeles Chargers",
+        "game_date": "2025-10-19"
+      },
+      {
+        "target": 2.0,
+        "stat": "passing_touchdowns",
+        "current": 0,
+        "player": "Aaron Rodgers",
+        "away": "Carolina Panthers",
+        "home": "New York Jets",
+        "game_date": "2025-10-19"
+      },
+      {
+        "target": 60.0,
+        "stat": "receiving_yards",
+        "current": 0,
+        "player": "Ja'Marr Chase",
+        "away": "Pittsburgh Steelers",
+        "home": "Cincinnati Bengals",
+        "game_date": "2025-10-16"
+      },
+      {
+        "target": 60.0,
+        "stat": "receiving_yards",
+        "current": 0,
+        "player": "DK Metcalf",
+        "away": "Houston Texans",
+        "home": "Seattle Seahawks",
+        "game_date": "2025-10-20"
+      },
+      {
+        "target": 10.0,
+        "stat": "receiving_yards",
+        "current": 0,
+        "player": "Jaylen Warren",
+        "away": "Pittsburgh Steelers",
+        "home": "Cincinnati Bengals",
+        "game_date": "2025-10-16"
+      }
+    ],
+    "name": "10/16 Parlay",
+    "odds": "+452",
+    "wager": 10.0,
+    "type": "Parlay",
+    "returns": "45.20"
+  },
+  {
+    "bet_id": "DK638962542882998573",
+    "betting_site": "DraftKings",
+    "legs": [
+      {
+        "target": -11.5,
+        "stat": "spread",
+        "current": 0,
+        "team": "Kansas City Chiefs",
+        "away": "Las Vegas Raiders",
+        "home": "Kansas City Chiefs",
+        "game_date": "2025-10-19"
+      },
+      {
+        "target": -5.5,
+        "stat": "spread",
+        "current": 0,
+        "team": "Pittsburgh Steelers",
+        "away": "Pittsburgh Steelers",
+        "home": "Cincinnati Bengals",
+        "game_date": "2025-10-16"
+      },
+      {
+        "target": -7.0,
+        "stat": "spread",
+        "current": 0,
+        "team": "New England Patriots",
+        "away": "New England Patriots",
+        "home": "Tennessee Titans",
+        "game_date": "2025-10-19"
+      },
+      {
+        "target": 1,
+        "stat": "moneyline",
+        "current": 0,
+        "team": "Washington Commanders",
+        "away": "Washington Commanders",
+        "home": "Dallas Cowboys",
+        "game_date": "2025-10-19"
+      }
+    ],
+    "name": "10/16 Parlay",
+    "odds": "+1145",
+    "wager": 10.0,
+    "type": "Parlay",
+    "returns": "114.50"
+  },
+  {
+    "bet_id": "DK638964901122094929",
+    "betting_site": "DraftKings",
+    "legs": [
+      {
+        "target": 1,
+        "stat": "anytime_touchdown",
+        "current": 0,
+        "player": "A.J. Brown",
+        "away": "Philadelphia Eagles",
+        "home": "Minnesota Vikings",
+        "game_date": "2025-10-19"
+      },
+      {
+        "target": 1,
+        "stat": "anytime_touchdown",
+        "current": 0,
+        "player": "Saquon Barkley",
+        "away": "Philadelphia Eagles",
+        "home": "Minnesota Vikings",
+        "game_date": "2025-10-19"
+      },
+      {
+        "target": 1,
+        "stat": "anytime_touchdown",
+        "current": 0,
+        "player": "Rome Odunze",
+        "away": "New Orleans Saints",
+        "home": "Chicago Bears",
+        "game_date": "2025-10-19"
+      }
+    ],
+    "name": "10/19 Parlay",
+    "odds": "+1543",
+    "wager": 10.0,
+    "type": "Parlay",
+    "returns": "154.30"
+  },
+  {
+    "bet_id": "DK638965142909383818",
+    "betting_site": "DraftKings",
+    "legs": [
+      {
+        "target": 1,
+        "stat": "anytime_touchdown",
+        "current": 0,
+        "player": "Bijan Robinson",
+        "away": "Atlanta Falcons",
+        "home": "San Francisco 49ers",
+        "game_date": "2025-10-19"
+      },
+      {
+        "target": 200.0,
+        "stat": "passing_yards",
+        "current": 0,
+        "player": "Mac Jones",
+        "away": "Los Angeles Rams",
+        "home": "Jacksonville Jaguars",
+        "game_date": "2025-10-19"
+      },
+      {
+        "target": 180.0,
+        "stat": "passing_yards",
+        "current": 0,
+        "player": "Michael Penix Jr.",
+        "away": "Atlanta Falcons",
+        "home": "San Francisco 49ers",
+        "game_date": "2025-10-19"
+      },
+      {
+        "target": 1.0,
+        "stat": "passing_touchdowns",
+        "current": 0,
+        "player": "Michael Penix Jr.",
+        "away": "Atlanta Falcons",
+        "home": "San Francisco 49ers",
+        "game_date": "2025-10-19"
+      },
+      {
+        "target": 50.0,
+        "stat": "receiving_yards",
+        "current": 0,
+        "player": "Drake London",
+        "away": "Atlanta Falcons",
+        "home": "San Francisco 49ers",
+        "game_date": "2025-10-19"
+      },
+      {
+        "target": 0,
+        "stat": "receiving_yards",
+        "current": 0,
+        "player": "Bijan Robinson",
+        "away": "Atlanta Falcons",
+        "home": "San Francisco 49ers",
+        "game_date": "2025-10-19"
+      },
+      {
+        "target": 40.0,
+        "stat": "rushing_yards",
+        "current": 0,
+        "player": "Christian McCaffrey",
+        "away": "Atlanta Falcons",
+        "home": "San Francisco 49ers",
+        "game_date": "2025-10-19"
+      }
+    ],
+    "name": "10/19 Parlay",
+    "odds": "+397",
+    "wager": 10.0,
+    "type": "Parlay",
+    "returns": "39.70"
+  },
+  {
+    "bet_id": "O/1368367/0000038",
+    "betting_site": "FanDuel",
+    "legs": [
+      {
+        "target": 1,
+        "stat": "moneyline",
+        "current": 0,
+        "team": "Kansas City Chiefs",
+        "away": "Las Vegas Raiders",
+        "home": "Kansas City Chiefs",
+        "game_date": "2025-10-19"
+      },
+      {
+        "target": 1,
+        "stat": "moneyline",
+        "current": 0,
+        "team": "Chicago Bears",
+        "away": "New Orleans Saints",
+        "home": "Chicago Bears",
+        "game_date": "2025-10-19"
+      },
+      {
+        "target": 1,
+        "stat": "moneyline",
+        "current": 0,
+        "team": "Carolina Panthers",
+        "away": "Carolina Panthers",
+        "home": "New York Jets",
+        "game_date": "2025-10-19"
+      },
+      {
+        "target": 1,
+        "stat": "moneyline",
+        "current": 0,
+        "team": "New England Patriots",
+        "away": "New England Patriots",
+        "home": "Tennessee Titans",
+        "game_date": "2025-10-19"
+      },
+      {
+        "target": 2.5,
+        "stat": "spread",
+        "current": 0,
+        "team": "Minnesota Vikings",
+        "away": "Philadelphia Eagles",
+        "home": "Minnesota Vikings",
+        "game_date": "2025-10-19"
+      }
+    ],
+    "name": "10/19 Parlay",
+    "odds": "+720",
+    "wager": 10.0,
+    "type": "Parlay",
+    "returns": "72.00"
+  },
+  {
+    "bet_id": "O/1368367/0000039",
+    "betting_site": "FanDuel",
+    "legs": [
+      {
+        "target": 5.0,
+        "stat": "receiving_yards",
+        "current": 0,
+        "player": "Justin Jefferson",
+        "away": "Philadelphia Eagles",
+        "home": "Minnesota Vikings",
+        "game_date": "2025-10-19"
+      },
+      {
+        "target": 1,
+        "stat": "anytime_touchdown",
+        "current": 0,
+        "player": "Justin Jefferson",
+        "away": "Philadelphia Eagles",
+        "home": "Minnesota Vikings",
+        "game_date": "2025-10-19"
+      }
+    ],
+    "name": "10/19 SGP",
+    "odds": "+279",
+    "wager": 10.0,
+    "type": "SGP",
+    "returns": "27.90"
+  },
+  {
+    "bet_id": "O/1368367/0000040",
+    "betting_site": "FanDuel",
+    "legs": [
+      {
+        "target": 1,
+        "stat": "anytime_touchdown",
+        "current": 0,
+        "player": "Sam LaPorta",
+        "away": "Tampa Bay Buccaneers",
+        "home": "Detroit Lions",
+        "game_date": "2025-10-20"
+      },
+      {
+        "target": 1,
+        "stat": "anytime_touchdown",
+        "current": 0,
+        "player": "Cade Otton",
+        "away": "Tampa Bay Buccaneers",
+        "home": "Detroit Lions",
+        "game_date": "2025-10-20"
+      },
+      {
+        "target": 3.0,
+        "stat": "receptions",
+        "current": 0,
+        "player": "Sam LaPorta",
+        "away": "Tampa Bay Buccaneers",
+        "home": "Detroit Lions",
+        "game_date": "2025-10-20"
+      }
+    ],
+    "name": "10/20 SGP",
+    "odds": "+755",
+    "wager": 10.0,
+    "type": "SGP",
+    "returns": "75.50"
+  },
+  {
+    "bet_id": "O/1368367/0000041",
+    "betting_site": "FanDuel",
+    "legs": [
+      {
+        "target": 1,
+        "stat": "anytime_touchdown",
+        "current": 0,
+        "player": "Sam LaPorta",
+        "away": "Tampa Bay Buccaneers",
+        "home": "Detroit Lions",
+        "game_date": "2025-10-20"
+      },
+      {
+        "target": 1,
+        "stat": "anytime_touchdown",
+        "current": 0,
+        "player": "Cade Otton",
+        "away": "Tampa Bay Buccaneers",
+        "home": "Detroit Lions",
+        "game_date": "2025-10-20"
+      }
+    ],
+    "name": "10/20 SGP",
+    "odds": "+794",
+    "wager": 10.0,
+    "type": "SGP",
+    "returns": "79.40"
+  },
+  {
+    "bet_id": "O/1368367/0000042",
+    "betting_site": "FanDuel",
+    "legs": [
+      {
+        "target": 2.0,
+        "stat": "passing_touchdowns",
+        "current": 0,
+        "player": "Baker Mayfield",
+        "away": "Tampa Bay Buccaneers",
+        "home": "Detroit Lions",
+        "game_date": "2025-10-20"
+      },
+      {
+        "target": 4.0,
+        "stat": "receptions",
+        "current": 0,
+        "player": "Cade Otton",
+        "away": "Tampa Bay Buccaneers",
+        "home": "Detroit Lions",
+        "game_date": "2025-10-20"
+      },
+      {
+        "target": 1,
+        "stat": "moneyline",
+        "current": 0,
+        "team": "Detroit Lions",
+        "away": "Tampa Bay Buccaneers",
+        "home": "Detroit Lions",
+        "game_date": "2025-10-20"
+      }
+    ],
+    "name": "10/20 SGP",
+    "odds": "+390",
+    "wager": 10.0,
+    "type": "SGP",
+    "returns": "39.00"
   }
 ]
