@@ -997,12 +997,18 @@ function logoutToken() {
               let isWinningBet = false;
               if (isSpreadOrML && gameData) {
                 const scoreDiff = p.score_diff ?? 0;
+                console.log(`[Status Check] ${p.team || p.player} - ${p.stat}: scoreDiff=${scoreDiff}, target=${p.target}, gameStatus=${gameData.statusTypeName}`);
+                
                 if (p.stat === 'moneyline') {
-                  // Moneyline: just need to win
+                  // Moneyline: just need to win (positive score difference)
                   isWinningBet = scoreDiff > 0;
+                  console.log(`  Moneyline: scoreDiff > 0 = ${isWinningBet}`);
                 } else if (p.stat === 'spread') {
-                  // Spread: score_diff must beat the spread
-                  isWinningBet = scoreDiff > p.target;
+                  // Spread: score_diff + spread > 0
+                  // Example: -7 spread, win by 10 = 10 + (-7) = 3 > 0 ✓
+                  // Example: +3.5 spread, lose by 3 = -3 + 3.5 = 0.5 > 0 ✓
+                  isWinningBet = (scoreDiff + p.target) > 0;
+                  console.log(`  Spread: (${scoreDiff} + ${p.target}) = ${scoreDiff + p.target} > 0 = ${isWinningBet}`);
                 }
               }
               
