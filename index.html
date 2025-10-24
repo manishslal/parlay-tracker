@@ -346,7 +346,8 @@
     /* Multiple games: limit to 10 per row on desktop */
     .game-info-wrapper:not(:has(.game-info:only-child)) .game-info {
       flex: 0 0 auto;
-      max-width: calc(10% - 0.45rem); /* 10 per row on desktop */
+      width: calc((100% - 4.5rem) / 10); /* 10 items with 9 gaps of 0.5rem */
+      max-width: calc((100% - 4.5rem) / 10);
     }
     /* Center items that wrap to second row (11th item onwards) */
     .game-info-wrapper:not(:has(.game-info:only-child)) .game-info:nth-child(n+11) {
