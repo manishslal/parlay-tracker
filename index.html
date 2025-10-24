@@ -1012,14 +1012,24 @@ function logoutToken() {
                 }
               }
               
-              // Show Hit if 100% reached (for numeric) or winning (for spread/ML), even during live game
-              if(isSpreadOrML ? isWinningBet : pct===100) txt='✅ Hit';
-              else if(gameData && gameData.statusTypeName === 'STATUS_SCHEDULED') txt='🔜 Not Started';
-              else if(gameData && (gameData.statusTypeName === 'STATUS_IN_PROGRESS' || gameData.statusTypeName === 'STATUS_HALFTIME')) txt='⏳ In Progress';
-              else if(!gameData && (areAllGamesScheduled || (!isAnyGameLive && !areAllGamesFinal))) txt='🔜 Not Started';
-              else if(isSpreadOrML && gameData && gameData.statusTypeName === 'STATUS_FINAL') txt='🚫 Miss'; // Only show miss if game is final
-              else if(!isSpreadOrML && areAllGamesFinal) txt='🚫 Miss'; // For numeric stats, show miss if all games final
-              else txt='⏳ In Progress'; // Default to in progress
+              // Status logic - check game state FIRST before showing win/loss
+              if(gameData && gameData.statusTypeName === 'STATUS_SCHEDULED') {
+                txt='🔜 Not Started';
+              } else if(gameData && (gameData.statusTypeName === 'STATUS_IN_PROGRESS' || gameData.statusTypeName === 'STATUS_HALFTIME')) {
+                txt='⏳ In Progress';
+              } else if(!gameData && (areAllGamesScheduled || (!isAnyGameLive && !areAllGamesFinal))) {
+                txt='🔜 Not Started';
+              } else if(isSpreadOrML && gameData && gameData.statusTypeName === 'STATUS_FINAL') {
+                // For spread/moneyline, only show Hit/Miss when game is FINAL
+                txt = isWinningBet ? '✅ Hit' : '🚫 Miss';
+              } else if(!isSpreadOrML) {
+                // For numeric stats (player props), show Hit if 100% reached even during live game
+                if(pct===100) txt='✅ Hit';
+                else if(areAllGamesFinal) txt='🚫 Miss';
+                else txt='⏳ In Progress';
+              } else {
+                txt='⏳ In Progress'; // Default to in progress
+              }
               
               // Format for mobile display
               const playerOrTeam = p.player || p.team || 'N/A';
