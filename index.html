@@ -83,7 +83,7 @@
       z-index:0;}
     .parlay-title{display:flex;flex-direction:column;gap:0.25rem;position:relative;z-index:1;}
     .parlay-date{font-size:0.85rem;font-weight:normal;opacity:0.8;}
-    .game-info-wrapper{display:flex;gap:1rem;flex-wrap:wrap;position:relative;z-index:1;}
+    .game-info-wrapper{display:flex;gap:1rem;flex-wrap:wrap;position:relative;z-index:1;justify-content:flex-start;}
     .game-info{display:flex;flex-direction:column;align-items:center;
       gap:.25rem;font-size:.9rem;border:1px solid var(--border);
       padding:.5rem;border-radius:6px;background:rgba(0,0,0,0.2);}
@@ -219,6 +219,7 @@
         padding: 0.75rem 0.5rem;
         flex-direction: column;
         gap: 0.5rem;
+        align-items: stretch; /* Allow children to take full width */
       }
       
       .parlay-footer {
@@ -241,6 +242,8 @@
         gap: 0.5rem;
         justify-content: flex-end !important;
         flex-wrap: wrap;
+        width: 100%;
+        display: flex;
       }
       
       /* Single scoreboard - align to right, auto width */
