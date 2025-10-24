@@ -30,11 +30,11 @@
       --tab-active: #e0e0e0;
     }
     
-    /* Theme toggle button */
+    /* Theme toggle button - moved to top left */
     .theme-toggle {
       position: fixed;
       top: 1rem;
-      right: 1rem;
+      left: 1rem;
       background: var(--primary);
       color: #fff;
       border: none;
@@ -55,36 +55,32 @@
       transform: scale(1.1);
     }
     
-    /* Filter button */
+    /* Filter button - inline with Refresh button */
     .filter-button {
-      position: fixed;
-      bottom: 2rem;
-      right: 2rem;
+      display: inline-block;
+      position: static;
       background: var(--primary);
       color: #fff;
       border: none;
-      border-radius: 50%;
-      width: 60px;
-      height: 60px;
+      border-radius: 8px;
+      padding: 0.75rem 1.5rem;
       cursor: pointer;
-      font-size: 1.5rem;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 1000;
+      font-weight: bold;
+      margin-left: 1rem;
       box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-      transition: transform 0.2s;
+      transition: opacity 0.2s;
     }
     
     .filter-button:hover {
-      transform: scale(1.1);
+      opacity: 0.9;
     }
     
-    /* Filter menu */
+    /* Filter menu - dropdown below button */
     .filter-menu {
-      position: fixed;
-      bottom: 5rem;
-      right: 2rem;
+      position: absolute;
+      top: 100%;
+      left: 0;
+      margin-top: 0.5rem;
       background: var(--surface);
       border: 2px solid var(--border);
       border-radius: 12px;
@@ -92,10 +88,18 @@
       z-index: 999;
       box-shadow: 0 8px 24px rgba(0,0,0,0.4);
       display: none;
+      min-width: 200px;
     }
     
     .filter-menu.active {
       display: block;
+    }
+    
+    /* Button container for centering */
+    .button-container {
+      text-align: center;
+      margin-bottom: 1.5rem;
+      position: relative;
     }
     
     .filter-option {
@@ -122,19 +126,45 @@
       display: none;
     }
     
+    .parlay-section.collapsed {
+      padding: 0 !important;
+    }
+    
+    .parlay-section.collapsed .parlay-header {
+      margin: 0 !important;
+      border-radius: 12px !important;
+    }
+    
     .parlay-header {
       cursor: pointer;
       user-select: none;
     }
     
+    .parlay-title {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+      position: relative;
+      z-index: 1;
+      width: 100%;
+    }
+    
     .collapse-icon {
       display: inline-block;
-      margin-left: 0.5rem;
+      margin-right: 0.5rem;
       transition: transform 0.3s;
+      width: 20px;
+      text-align: center;
+      flex-shrink: 0;
     }
     
     .parlay-section.collapsed .collapse-icon {
-      transform: rotate(-90deg);
+      transform: rotate(-180deg);
+    }
+    
+    .parlay-title-text {
+      display: flex;
+      align-items: center;
     }
     
     /* Sortable column headers */
@@ -574,16 +604,6 @@
   <!-- Theme Toggle -->
   <button class="theme-toggle" id="theme-toggle" title="Toggle Light/Dark Mode">🌙</button>
   
-  <!-- Filter Button & Menu -->
-  <button class="filter-button" id="filter-button" title="Filter Parlays">🔍</button>
-  <div class="filter-menu" id="filter-menu">
-    <button class="filter-option active" data-filter="all">All Bets</button>
-    <button class="filter-option" data-filter="live">Live Only</button>
-    <button class="filter-option" data-filter="winning">Winning</button>
-    <button class="filter-option" data-filter="losing">Losing</button>
-    <button class="filter-option" data-filter="scheduled">Not Started</button>
-  </div>
-  
   <!-- Pull to Refresh Indicator -->
   <div class="pull-refresh" id="pull-refresh">Release to refresh...</div>
   
@@ -593,7 +613,20 @@
       <button class="tab active" data-tab="current">Live Bets</button>
       <button class="tab" data-tab="historical">Historical Bets</button>
     </div>
-    <button id="refresh-button">Refresh Stats</button>
+    <div class="button-container">
+      <button id="refresh-button">Refresh Stats</button>
+      <div style="display: inline-block; position: relative;">
+        <button class="filter-button" id="filter-button" title="Filter Parlays">Filter 🔍</button>
+        <div class="filter-menu" id="filter-menu">
+          <button class="filter-option active" data-filter="all">All Bets</button>
+          <button class="filter-option" data-filter="live">Live Only</button>
+          <button class="filter-option" data-filter="winning">Winning</button>
+          <button class="filter-option" data-filter="losing">Losing</button>
+          <button class="filter-option" data-filter="scheduled">Not Started</button>
+          <button class="filter-option" data-filter="clear">Clear Filter</button>
+        </div>
+      </div>
+    </div>
     <div id="status-message"></div>
     <div id="parlay-sections" class="tab-content active" data-tab="current"></div>
     <div id="historical-sections" class="tab-content" data-tab="historical" style="display:none"></div>
@@ -677,11 +710,20 @@
             return status && status.includes('In Progress');
           });
         } else if (currentFilter === 'winning') {
-          const hitCount = Array.from(legs).filter(leg => {
+          // Winning = any combination of Hit and Not Started (no Misses, no In Progress)
+          const hasHit = Array.from(legs).some(leg => {
             const status = leg.querySelector('td:nth-child(8)')?.textContent;
             return status && status.includes('Hit');
-          }).length;
-          shouldShow = hitCount > 0 && hitCount === legs.length;
+          });
+          const hasMiss = Array.from(legs).some(leg => {
+            const status = leg.querySelector('td:nth-child(8)')?.textContent;
+            return status && status.includes('Miss');
+          });
+          const allHitOrNotStarted = Array.from(legs).every(leg => {
+            const status = leg.querySelector('td:nth-child(8)')?.textContent;
+            return status && (status.includes('Hit') || status.includes('Not Started'));
+          });
+          shouldShow = hasHit && !hasMiss && allHitOrNotStarted;
         } else if (currentFilter === 'losing') {
           shouldShow = Array.from(legs).some(leg => {
             const status = leg.querySelector('td:nth-child(8)')?.textContent;
@@ -692,6 +734,9 @@
             const status = leg.querySelector('td:nth-child(8)')?.textContent;
             return status && status.includes('Not Started');
           });
+        } else if (currentFilter === 'clear') {
+          currentFilter = 'all';
+          shouldShow = true;
         }
         
         section.style.display = shouldShow ? 'block' : 'none';
@@ -1130,8 +1175,13 @@ function logoutToken() {
         header.innerHTML = `
           ${allLegsComplete ? '<div class="winning-overlay"></div>' : ''}
           <div class="parlay-title">
-            ${displayName}<span class="collapse-icon">▼</span>
-            ${formattedDate && `<span class="parlay-date">${formattedDate}</span>`}
+            <div class="parlay-title-text">
+              <span class="collapse-icon">▼</span>
+              <div>
+                <div>${displayName}</div>
+                ${formattedDate && `<span class="parlay-date">${formattedDate}</span>`}
+              </div>
+            </div>
           </div>
         `;
 
