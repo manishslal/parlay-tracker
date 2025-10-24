@@ -399,6 +399,42 @@ def bet_exists(bet_id: str, existing_bets: List[Dict]) -> bool:
             return True
     return False
 
+def get_parlay_date_keys(bet: Dict) -> Tuple[str, str]:
+    """
+    Get sorting keys for a parlay based on leg dates.
+    Returns: (earliest_date, latest_date) for sorting
+    
+    Sort order:
+    - Primary: earliest_date (ascending) - shows newer parlays first
+    - Secondary: latest_date (descending) - breaks ties by latest leg
+    """
+    legs = bet.get("legs", [])
+    if not legs:
+        # If no legs, use a default far-past date
+        return ("1900-01-01", "1900-01-01")
+    
+    dates = []
+    for leg in legs:
+        game_date = leg.get("game_date")
+        if game_date:
+            dates.append(game_date)
+    
+    if not dates:
+        return ("1900-01-01", "1900-01-01")
+    
+    earliest_date = min(dates)  # Earliest leg date (date option 2)
+    latest_date = max(dates)    # Latest leg date (date option 1)
+    
+    return (earliest_date, latest_date)
+
+def sort_historical_bets(bets: List[Dict]) -> List[Dict]:
+    """
+    Sort historical bets by game dates.
+    Primary sort: earliest leg date (descending - newer first)
+    Secondary sort: latest leg date (descending - newer first)
+    """
+    return sorted(bets, key=lambda bet: get_parlay_date_keys(bet), reverse=True)
+
 def main():
     # Read existing historical bets
     historical_file = "Data/Historical_Bets.json"
@@ -790,8 +826,9 @@ Moneyline - Lions (Y)"""),
         new_bets.append(bet_entry)
         print(f"Added bet: {bet_id} - {len(legs)} legs")
     
-    # Combine with existing and save
+    # Combine with existing and sort by date
     all_bets = historical_bets + new_bets
+    all_bets = sort_historical_bets(all_bets)
     
     with open(historical_file, 'w') as f:
         json.dump(all_bets, f, indent=2)
@@ -799,6 +836,7 @@ Moneyline - Lions (Y)"""),
     print(f"\nTotal bets now: {len(all_bets)}")
     print(f"Added {len(new_bets)} new bets")
     print(f"Skipped {len(skipped_bets)} duplicate bets")
+    print(f"Sorted by game dates (newest first)")
     print(f"Saved to {historical_file}")
 
 if __name__ == "__main__":
