@@ -144,32 +144,32 @@
     "legs": [
       {
         "game_date": "2025-10-23",
-        "away": "MIN",
-        "home": "LAC",
+        "away": "Minnesota Vikings",
+        "home": "Los Angeles Chargers",
         "player": "T.J. Hockenson",
         "target": 30.5,
         "stat": "receiving_yards"
       },
       {
         "game_date": "2025-10-23",
-        "away": "MIN",
-        "home": "LAC",
+        "away": "Minnesota Vikings",
+        "home": "Los Angeles Chargers",
         "player": "Justin Jefferson",
         "target": 0.5,
         "stat": "anytime_td_scorer"
       },
       {
         "game_date": "2025-10-23",
-        "away": "MIN",
-        "home": "LAC",
+        "away": "Minnesota Vikings",
+        "home": "Los Angeles Chargers",
         "player": "Quentin Johnston",
         "target": 21.5,
         "stat": "longest_reception"
       },
       {
         "game_date": "2025-10-23",
-        "away": "MIN",
-        "home": "LAC",
+        "away": "Minnesota Vikings",
+        "home": "Los Angeles Chargers",
         "player": "Ladd McConkey",
         "target": 56.5,
         "stat": "receiving_yards"
