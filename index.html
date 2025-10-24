@@ -61,10 +61,10 @@
       justify-content:space-between;align-items:flex-start;font-weight:bold;
       position:relative;}
     .parlay-footer{background:var(--primary);color:#fff;
-      margin:1.125rem -1.5rem -1.125rem -1.5rem;padding:0.75rem 1.5rem;
+      margin:1.125rem -1.5rem -1.125rem -1.5rem;padding:0.375rem 1.5rem;
       border-radius:0 0 10px 10px;display:flex;
       justify-content:space-between;align-items:center;
-      font-size:0.75rem;min-height:3rem;}
+      font-size:0.75rem;min-height:1.5rem;}
     .footer-left{display:flex;flex-direction:column;gap:0.25rem;}
     .footer-right{display:flex;flex-direction:column;gap:0.25rem;text-align:right;}
     .footer-odds{font-weight:bold;color:#FFD700;}
@@ -93,6 +93,8 @@
     td { background: var(--surface); }
     th:first-child { border-top-left-radius: 10px; }
     th:last-child { border-top-right-radius: 10px; }
+    th:nth-child(1),td:nth-child(1),
+    th:nth-child(2),td:nth-child(2),
     th:nth-child(3),td:nth-child(3),
     th:nth-child(4),td:nth-child(4),
     th:nth-child(5),td:nth-child(5),
@@ -990,8 +992,9 @@ function logoutToken() {
               let txt;
               // Show Hit if 100% reached (for numeric) or current=1 (for spread/ML), even during live game
               if(isSpreadOrML ? current===1 : pct===100) txt='✅ Hit';
-              else if(areAllGamesScheduled || (!isAnyGameLive && !areAllGamesFinal))txt='🔜 Not Started';
-              else if(isAnyGameLive)txt='⏳ In Progress';
+              else if(gameData && gameData.statusTypeName === 'STATUS_SCHEDULED') txt='🔜 Not Started';
+              else if(gameData && (gameData.statusTypeName === 'STATUS_IN_PROGRESS' || gameData.statusTypeName === 'STATUS_HALFTIME')) txt='⏳ In Progress';
+              else if(!gameData && (areAllGamesScheduled || (!isAnyGameLive && !areAllGamesFinal))) txt='🔜 Not Started';
               else txt='🚫 Miss';
               
               // Format for mobile display
