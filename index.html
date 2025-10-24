@@ -139,7 +139,7 @@
     }
     
     .mobile-line-2-header {
-      grid-template-columns: auto 1fr auto;
+      grid-template-columns: 4.5rem 1fr 4.5rem;
       gap: 0.5rem;
       align-items: center;
       font-size: 0.45rem;
@@ -158,9 +158,25 @@
     }
     
     .mobile-line-2 {
-      grid-template-columns: auto 1fr auto;
+      grid-template-columns: 4.5rem 1fr 4.5rem;
       gap: 0.5rem;
       align-items: center;
+    }
+    
+    .mobile-line-2 span:first-child {
+      text-align: left;
+      max-width: 4.5rem;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    
+    .mobile-line-2 span:last-child {
+      text-align: right;
+      max-width: 4.5rem;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
     
     /* Mobile Responsive Styles */
@@ -259,7 +275,17 @@
         padding: 0.5rem;
         background: var(--surface);
         border-radius: 8px;
-        border: 1px solid var(--border);
+        border: 1px solid rgba(255, 204, 0, 0.2);
+      }
+      
+      /* Reduce spacing between header and first leg */
+      tr:first-child {
+        margin-top: -0.5rem;
+      }
+      
+      /* Reduce spacing between last leg and footer */
+      tr:last-child {
+        margin-bottom: -0.5rem;
       }
       
       td {
@@ -677,8 +703,25 @@ function logoutToken() {
         return;
       }
 
+      // Sort parlays by earliest game date
+      const sortedParlays = [...parlays].sort((a, b) => {
+        // Find earliest date in each parlay
+        const getEarliestDate = (parlay) => {
+          if (!parlay.legs || parlay.legs.length === 0) return new Date('9999-12-31');
+          const dates = parlay.legs
+            .map(leg => leg.game_date)
+            .filter(date => date)
+            .map(date => new Date(date));
+          return dates.length > 0 ? new Date(Math.min(...dates)) : new Date('9999-12-31');
+        };
+        
+        const dateA = getEarliestDate(a);
+        const dateB = getEarliestDate(b);
+        return dateA - dateB;
+      });
+
       // Show a helpful empty-state when there's no data for the tab
-      if (parlays.length === 0) {
+      if (sortedParlays.length === 0) {
         const empty = document.createElement('div');
         empty.className = 'no-data';
         const tabName = container.dataset.tab === 'historical' ? 'Historical Bets' : "Live Bets";
@@ -699,7 +742,7 @@ function logoutToken() {
       const isHistoricalSection = container.id === 'historical-sections';
       
       // Render all parlays in their respective sections
-      parlays.forEach(parlay=>{
+      sortedParlays.forEach(parlay=>{
         console.log('Processing parlay:', parlay);
         const section=document.createElement('div');
         section.className='parlay-section';
@@ -891,6 +934,9 @@ function logoutToken() {
                     } else {
                       currentDisplay = 'Tied';
                     }
+                  } else if (!gameData && (areAllGamesFinal || areAllGamesScheduled === false)) {
+                    // Historical data without game info - use current value
+                    currentDisplay = current === 1 ? 'Win' : 'Loss';
                   } else {
                     currentDisplay = '-';
                   }
