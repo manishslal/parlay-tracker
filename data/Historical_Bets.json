@@ -1066,9 +1066,9 @@
         "stat": "moneyline",
         "current": 0,
         "team": "Houston Texans",
-        "away": "Unknown Team",
-        "home": "Unknown Team",
-        "game_date": "2025-10-12"
+        "away": "Houston Texans",
+        "home": "Baltimore Ravens",
+        "game_date": "2025-10-05"
       },
       {
         "target": 1,
@@ -1254,8 +1254,8 @@
         "stat": "receiving_yards",
         "current": 0,
         "player": "Dyami Brown",
-        "away": "Unknown Team",
-        "home": "Unknown Team",
+        "away": "Kansas City Chiefs",
+        "home": "Jacksonville Jaguars",
         "game_date": "2025-10-06"
       },
       {
@@ -1393,8 +1393,8 @@
         "stat": "receiving_yards",
         "current": 0,
         "player": "Travis Hunter",
-        "away": "Unknown Team",
-        "home": "Unknown Team",
+        "away": "Kansas City Chiefs",
+        "home": "Jacksonville Jaguars",
         "game_date": "2025-10-06"
       },
       {
@@ -1516,8 +1516,8 @@
         "stat": "passing_yards",
         "current": 0,
         "player": "Jalen Hurts",
-        "away": "Unknown Team",
-        "home": "Unknown Team",
+        "away": "Denver Broncos",
+        "home": "Philadelphia Eagles",
         "game_date": "2025-10-05"
       },
       {
@@ -1926,8 +1926,8 @@
         "stat": "total_points",
         "current": 0,
         "team": "Eagles vs Buccaneers",
-        "away": "Unknown Team",
-        "home": "Unknown Team",
+        "away": "Philadelphia Eagles",
+        "home": "Tampa Bay Buccaneers",
         "game_date": "2025-09-28"
       },
       {
@@ -2581,27 +2581,27 @@
         "stat": "moneyline",
         "current": 0,
         "team": "Dallas Cowboys",
-        "away": "Unknown Team",
-        "home": "Unknown Team",
-        "game_date": "2025-09-15"
+        "away": "New York Giants",
+        "home": "Dallas Cowboys",
+        "game_date": "2025-09-14"
       },
       {
         "target": 1,
         "stat": "moneyline",
         "current": 0,
         "team": "Cincinnati Bengals",
-        "away": "Unknown Team",
-        "home": "Unknown Team",
-        "game_date": "2025-09-15"
+        "away": "Jacksonville Jaguars",
+        "home": "Cincinnati Bengals",
+        "game_date": "2025-09-14"
       },
       {
         "target": 1,
         "stat": "moneyline",
         "current": 0,
         "team": "Baltimore Ravens",
-        "away": "Unknown Team",
-        "home": "Unknown Team",
-        "game_date": "2025-09-15"
+        "away": "Cleveland Browns",
+        "home": "Baltimore Ravens",
+        "game_date": "2025-09-14"
       },
       {
         "target": 1,
@@ -2637,8 +2637,8 @@
         "stat": "passing_yards",
         "current": 0,
         "player": "Geno Smith",
-        "away": "Unknown Team",
-        "home": "Unknown Team",
+        "away": "Los Angeles Chargers",
+        "home": "Las Vegas Raiders",
         "game_date": "2025-09-15"
       },
       {
@@ -2664,8 +2664,8 @@
         "stat": "receptions",
         "current": 0,
         "player": "Keenan Allen",
-        "away": "Unknown Team",
-        "home": "Unknown Team",
+        "away": "Los Angeles Chargers",
+        "home": "Las Vegas Raiders",
         "game_date": "2025-09-15"
       },
       {
