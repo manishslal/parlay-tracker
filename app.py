@@ -774,7 +774,7 @@ def process_parlay_data(parlays):
             if game_data:
                 try:
                     leg["current"] = calculate_bet_value(leg, game_data)
-                    app.logger.info(f"Calculated value for {leg['player']} - {leg['stat']}: {leg['current']}")
+                    app.logger.info(f"Calculated value for {leg.get('player', leg.get('team', 'Unknown'))} - {leg['stat']}: {leg['current']}")
                     
                     # Add score differential for spread/moneyline bets
                     if leg["stat"] in ["spread", "moneyline"]:
@@ -785,12 +785,22 @@ def process_parlay_data(parlays):
                         
                         # Calculate from bet team's perspective
                         bet_team = leg.get("team", "")
-                        if bet_team == home_team:
+                        
+                        # Normalize team names for comparison (case-insensitive, strip whitespace)
+                        bet_team_norm = bet_team.lower().strip()
+                        home_team_norm = home_team.lower().strip()
+                        away_team_norm = away_team.lower().strip()
+                        
+                        # Also check if one team name contains the other (e.g., "LA Chargers" vs "Los Angeles Chargers")
+                        if bet_team_norm == home_team_norm or bet_team_norm in home_team_norm or home_team_norm in bet_team_norm:
                             leg["score_diff"] = home_score - away_score
-                        elif bet_team == away_team:
+                            app.logger.info(f"Matched home team: '{bet_team}' == '{home_team}', score_diff = {home_score - away_score}")
+                        elif bet_team_norm == away_team_norm or bet_team_norm in away_team_norm or away_team_norm in bet_team_norm:
                             leg["score_diff"] = away_score - home_score
+                            app.logger.info(f"Matched away team: '{bet_team}' == '{away_team}', score_diff = {away_score - home_score}")
                         else:
                             leg["score_diff"] = 0
+                            app.logger.warning(f"NO MATCH for team '{bet_team}' - ESPN has home:'{home_team}' away:'{away_team}'")
                             
                 except Exception as e:
                     app.logger.error(f"Error calculating bet value: {str(e)}")
