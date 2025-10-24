@@ -290,6 +290,10 @@
       user-select: none;
       gap: 1rem;
     }
+    /* Single scoreboard: keep header on one line */
+    .parlay-header:has(.game-info-wrapper .game-info:only-child) {
+      flex-wrap: nowrap;
+    }
     .parlay-footer{
       background:linear-gradient(135deg, rgba(20, 13, 82, 0.7) 0%, var(--primary) 100%);
       color:#fff;
@@ -324,7 +328,7 @@
       border-radius:8px;
       pointer-events:none;
       z-index:0;}
-    .parlay-title{display:flex;flex-direction:column;gap:0.25rem;position:relative;z-index:1;flex:1 1 100%;min-width:0;}
+    .parlay-title{display:flex;flex-direction:column;gap:0.25rem;position:relative;z-index:1;flex:1 1 auto;min-width:0;}
     .parlay-date{font-size:0.85rem;font-weight:normal;opacity:0.8;}
     .game-info-wrapper{display:flex;gap:0.5rem;flex-wrap:wrap;position:relative;z-index:1;justify-content:flex-end;align-items:flex-start;width:100%;flex:1 1 100%;flex-direction:row-reverse;}
     /* Single game: align scoreboards to the right, no reversal, no size constraints */
@@ -333,6 +337,7 @@
       width:auto;
       flex:0 0 auto;
       flex-direction:row;
+      flex-wrap:nowrap;
     }
     .game-info-wrapper:has(.game-info:only-child) .game-info {
       flex: 0 0 auto;
