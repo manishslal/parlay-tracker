@@ -1359,6 +1359,67 @@ function logoutToken() {
         const areAllGamesFinal = parlay.games && parlay.games.every(g=>g.statusTypeName==='STATUS_FINAL');
         const areAllGamesScheduled = parlay.games && parlay.games.every(g=>g.statusTypeName==='STATUS_SCHEDULED');
 
+        // Sort legs by status for Live Bets: "In Progress" → "Not Started" → "Hit"
+        // Only sort for live bets tab, not historical
+        let legsToRender = parlay.legs;
+        if (!isHistoricalSection) {
+          legsToRender = [...parlay.legs].sort((a, b) => {
+            // Helper function to determine leg status
+            const getLegStatus = (leg) => {
+              const gameData = parlay.games ? parlay.games.find(g => 
+                g.teams.away === leg.away && g.teams.home === leg.home
+              ) : null;
+              
+              const isSpreadOrML = leg.stat === 'spread' || leg.stat === 'moneyline';
+              const current = leg.current ?? 0;
+              const pct = leg.target > 0 ? Math.min(100, Math.round(current / leg.target * 100)) : 0;
+              
+              // Check if game is in progress
+              if (gameData && (gameData.statusTypeName === 'STATUS_IN_PROGRESS' || gameData.statusTypeName === 'STATUS_HALFTIME')) {
+                return 'In Progress';
+              }
+              
+              // Check if not started
+              if (gameData && gameData.statusTypeName === 'STATUS_SCHEDULED') {
+                return 'Not Started';
+              }
+              if (!gameData && (areAllGamesScheduled || (!isAnyGameLive && !areAllGamesFinal))) {
+                return 'Not Started';
+              }
+              
+              // Check if hit (100% or winning bet)
+              if (!isSpreadOrML && pct === 100) {
+                return 'Hit';
+              }
+              if (isSpreadOrML && gameData && gameData.statusTypeName === 'STATUS_FINAL') {
+                const scoreDiff = leg.score_diff ?? 0;
+                let isWinningBet = false;
+                if (leg.stat === 'moneyline') {
+                  isWinningBet = scoreDiff > 0;
+                } else if (leg.stat === 'spread') {
+                  isWinningBet = (scoreDiff + leg.target) > 0;
+                }
+                return isWinningBet ? 'Hit' : 'Miss';
+              }
+              
+              return 'In Progress'; // Default
+            };
+            
+            const statusA = getLegStatus(a);
+            const statusB = getLegStatus(b);
+            
+            // Sort order: "In Progress" → "Not Started" → "Hit" → "Miss"
+            const statusOrder = {
+              'In Progress': 0,
+              'Not Started': 1,
+              'Hit': 2,
+              'Miss': 3
+            };
+            
+            return (statusOrder[statusA] ?? 99) - (statusOrder[statusB] ?? 99);
+          });
+        }
+
         const table=document.createElement('table');
         table.innerHTML=`
           <thead><tr>
@@ -1366,7 +1427,7 @@ function logoutToken() {
             <th>Target</th><th style="width:25%;">Progress</th><th>Status</th>
           </tr></thead>
           <tbody>
-            ${parlay.legs.map(p=>{
+            ${legsToRender.map(p=>{
               const current = p.current ?? 0; // Handle undefined/null as 0
               const pct = p.target > 0 ? Math.min(100, Math.round(current / p.target * 100)) : 0;
               
