@@ -163,8 +163,13 @@
     }
     
     .parlay-section.collapsed .parlay-header {
+      margin: 0 0 1.125rem 0 !important;
+      border-radius: 12px 12px 0 0 !important;
+    }
+    
+    .parlay-section.collapsed .parlay-footer {
       margin: 0 !important;
-      border-radius: 12px !important;
+      border-radius: 0 0 12px 12px !important;
     }
     
     .parlay-header {
@@ -330,7 +335,7 @@
       z-index:0;}
     .parlay-title{display:flex;flex-direction:column;gap:0.25rem;position:relative;z-index:1;flex:1 1 auto;min-width:0;}
     .parlay-date{font-size:0.85rem;font-weight:normal;opacity:0.8;}
-    .game-info-wrapper{display:flex;gap:0.5rem;flex-wrap:wrap;position:relative;z-index:1;justify-content:flex-end;align-items:flex-start;width:100%;flex:1 1 100%;flex-direction:row-reverse;}
+    .game-info-wrapper{display:flex;gap:0.5rem;flex-wrap:wrap;position:relative;z-index:1;justify-content:flex-end;align-items:flex-start;flex:0 1 100%;flex-direction:row-reverse;}
     /* Single game: align scoreboards to the right, no reversal, no size constraints */
     .game-info-wrapper:has(.game-info:only-child) {
       justify-content:flex-end;
@@ -343,10 +348,12 @@
       flex: 0 0 auto;
       max-width: none;
     }
-    /* Multiple games: limit to 10 per row on desktop */
+    /* Multiple games: limit to 10 per row on desktop, fill available width evenly */
+    .game-info-wrapper:not(:has(.game-info:only-child)) {
+      width: 100%;
+    }
     .game-info-wrapper:not(:has(.game-info:only-child)) .game-info {
-      flex: 0 0 auto;
-      width: calc((100% - 4.5rem) / 10); /* 10 items with 9 gaps of 0.5rem */
+      flex: 0 0 calc((100% - 4.5rem) / 10); /* 10 items with 9 gaps of 0.5rem */
       max-width: calc((100% - 4.5rem) / 10);
     }
     /* Center items that wrap to second row (11th item onwards) */
@@ -1615,14 +1622,14 @@ function logoutToken() {
           </div>
         `;
         
-        // Wrap table and footer in parlay-body div for collapsing
+        // Wrap only table in parlay-body div for collapsing (footer stays visible)
         const parlayBody = document.createElement('div');
         parlayBody.className = 'parlay-body';
         parlayBody.appendChild(table);
-        parlayBody.appendChild(footer);
         
         section.appendChild(header);
         section.appendChild(parlayBody);
+        section.appendChild(footer);
         
         // Add collapse/expand functionality
         header.addEventListener('click', () => {
