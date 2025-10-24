@@ -88,9 +88,9 @@
     /* Filter menu - dropdown below button */
     .filter-menu {
       position: absolute;
-      top: 100%;
-      left: 0;
-      margin-top: 0.5rem;
+      top: calc(100% + 0.5rem);
+      left: 50%;
+      transform: translateX(-50%);
       background: var(--surface);
       border: 2px solid var(--border);
       border-radius: 12px;
@@ -113,12 +113,12 @@
       align-items: center;
       gap: 1rem;
       flex-wrap: wrap;
-      position: relative;
+      margin-bottom: 1.5rem;
     }
     
     #refresh-button {
       display: inline-block;
-      margin: 0 0 1.5rem 0;
+      margin: 0;
       padding: 0.75rem 1.5rem;
       background: var(--primary);
       color: #fff;
@@ -126,6 +126,12 @@
       border: none;
       border-radius: 8px;
       cursor: pointer;
+    }
+    
+    .button-container > div {
+      display: flex;
+      align-items: center;
+      margin: 0;
     }
     
     .filter-option {
@@ -321,11 +327,12 @@
     .parlay-title{display:flex;flex-direction:column;gap:0.25rem;position:relative;z-index:1;flex:1 1 100%;min-width:0;}
     .parlay-date{font-size:0.85rem;font-weight:normal;opacity:0.8;}
     .game-info-wrapper{display:flex;gap:0.5rem;flex-wrap:wrap;position:relative;z-index:1;justify-content:flex-end;align-items:flex-start;width:100%;flex:1 1 100%;flex-direction:row-reverse;}
-    /* Single game: align scoreboards to the right */
+    /* Single game: align scoreboards to the right, no reversal */
     .game-info-wrapper:has(.game-info:only-child) {
       justify-content:flex-end;
       width:auto;
       flex:0 0 auto;
+      flex-direction:row;
     }
     /* Multiple games: limit width and center overflow rows */
     .game-info-wrapper .game-info {
@@ -501,7 +508,7 @@
         border-radius: 8px;
       }
 
-      /* Compact scoreboards - max 2 per row, populate right to left */
+      /* Compact scoreboards - max 3 per row, populate right to left */
       .game-info-wrapper {
         gap: 0.5rem;
         justify-content: flex-end !important;
@@ -511,10 +518,11 @@
         flex-direction: row-reverse;
       }
       
-      /* Single scoreboard - align to right, auto width */
+      /* Single scoreboard - align to right, auto width, no reversal */
       .game-info-wrapper:has(.game-info:only-child) {
         justify-content: flex-end !important;
         width: auto;
+        flex-direction: row;
       }
       
       .game-info-wrapper:has(.game-info:only-child) .game-info {
@@ -522,8 +530,8 @@
         max-width: none;
       }
       
-      /* Multiple games: center items that wrap to second row (3rd item onwards) */
-      .game-info-wrapper .game-info:nth-child(n+3) {
+      /* Multiple games: center items that wrap to second row (4th item onwards) */
+      .game-info-wrapper .game-info:nth-child(n+4) {
         margin: 0 auto;
       }
       
@@ -531,8 +539,8 @@
         font-size: 0.65rem;
         padding: 0.35rem 0.5rem;
         gap: 0.15rem;
-        flex: 0 0 calc(50% - 0.25rem); /* Max 2 per row on mobile */
-        max-width: calc(50% - 0.25rem);
+        flex: 0 0 calc(33.333% - 0.35rem); /* Max 3 per row on mobile */
+        max-width: calc(33.333% - 0.35rem);
         box-sizing: border-box;
       }
       
