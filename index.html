@@ -313,14 +313,15 @@
     /* Footer logo styling */
     .footer-logo {
       position: absolute;
-      right: 0;
+      right: 0.5rem;
       top: 0;
       bottom: 0;
-      height: 100%;
+      height: 120%;
       width: auto;
-      opacity: 0.3;
+      opacity: 0.15;
       object-fit: contain;
       pointer-events: none;
+      transform: translateY(-10%);
     }
     
     /* Ensure footer content stays above logo */
@@ -395,7 +396,12 @@
     tbody tr:last-child td { border-bottom: none; }
     tbody tr:last-child td:first-child { border-bottom-left-radius: 10px; }
     tbody tr:last-child td:last-child { border-bottom-right-radius: 10px; }
-    th{background:#2a2a2a;}
+    th{background:#2a2a2a;color:#fff;}
+    
+    /* Ensure table headers are white in light mode */
+    body.light-mode th {
+      color: #fff !important;
+    }
     .progress-bar{background:var(--progress-bg);border-radius:13px;position:relative;height:1.5rem;border:2px solid var(--outline-blue);padding:3px;}
     .progress-bar.pct-vlow { border-color: var(--error); }
     .progress-bar.pct-low { border-color: var(--orange); }
@@ -1806,6 +1812,21 @@ function logoutToken() {
                   const aFirstWord = aCell.split(' ')[0];
                   const bFirstWord = bCell.split(' ')[0];
                   return isAsc ? aFirstWord.localeCompare(bFirstWord) : bFirstWord.localeCompare(aFirstWord);
+                }
+                
+                // For Progress column (index 4), extract percentage from progress bar
+                if (index === 4) {
+                  const aTd = a.querySelectorAll('td')[index];
+                  const bTd = b.querySelectorAll('td')[index];
+                  
+                  // Try to get percentage from progress-text span
+                  const aProgressText = aTd?.querySelector('.progress-text')?.textContent || '0%';
+                  const bProgressText = bTd?.querySelector('.progress-text')?.textContent || '0%';
+                  
+                  const aPct = parseFloat(aProgressText.replace('%', '')) || 0;
+                  const bPct = parseFloat(bProgressText.replace('%', '')) || 0;
+                  
+                  return isAsc ? aPct - bPct : bPct - aPct;
                 }
                 
                 // Try numeric comparison first
