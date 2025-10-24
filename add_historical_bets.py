@@ -191,8 +191,8 @@ def find_game_for_team(team: str, bet_date: datetime) -> Tuple[str, str, str]:
     Find the game matchup for a team based on bet date using ESPN API
     Returns: (away_team, home_team, game_date)
     """
-    # Search within 5 days of bet date (bet date and up to 4 days after)
-    for days_offset in range(0, 5):
+    # Search within 7 days of bet date (bet date and up to 6 days after)
+    for days_offset in range(0, 7):
         check_date = bet_date + timedelta(days=days_offset)
         games = get_espn_games_for_date(check_date)
         
@@ -388,6 +388,16 @@ def parse_betting_site(bet_id: str) -> str:
         return "DraftKings"
     else:
         return "Unknown"
+
+def bet_exists(bet_id: str, existing_bets: List[Dict]) -> bool:
+    """
+    Check if a bet with the given bet_id already exists in the historical bets
+    Returns True if bet exists, False otherwise
+    """
+    for bet in existing_bets:
+        if bet.get("bet_id") == bet_id:
+            return True
+    return False
 
 def main():
     # Read existing historical bets
@@ -739,8 +749,15 @@ Moneyline - Lions (Y)"""),
     ]
     
     new_bets = []
+    skipped_bets = []
     
     for date_str, bet_id, wager, odds, legs_text in bet_data:
+        # Check if bet already exists
+        if bet_exists(bet_id, historical_bets):
+            skipped_bets.append(bet_id)
+            print(f"Skipped (already exists): {bet_id}")
+            continue
+        
         bet_date = parse_bet_date(date_str)
         betting_site = parse_betting_site(bet_id)
         
@@ -781,6 +798,7 @@ Moneyline - Lions (Y)"""),
     
     print(f"\nTotal bets now: {len(all_bets)}")
     print(f"Added {len(new_bets)} new bets")
+    print(f"Skipped {len(skipped_bets)} duplicate bets")
     print(f"Saved to {historical_file}")
 
 if __name__ == "__main__":
