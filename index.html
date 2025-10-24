@@ -237,12 +237,13 @@
       /* Compact scoreboards - 3 per row, aligned to right */
       .game-info-wrapper {
         gap: 0.5rem;
-        justify-content: flex-end;
+        justify-content: flex-end !important;
+        flex-wrap: wrap;
       }
       
       /* Single scoreboard - align to right, auto width */
       .game-info-wrapper:has(.game-info:only-child) {
-        justify-content: flex-end;
+        justify-content: flex-end !important;
       }
       
       .game-info-wrapper:has(.game-info:only-child) .game-info {
