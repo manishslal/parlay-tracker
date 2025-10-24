@@ -1740,45 +1740,56 @@ function logoutToken() {
       });
       
       // === 4. SORTABLE COLUMNS ===
-      document.querySelectorAll('thead th').forEach((th, index) => {
-        th.addEventListener('click', () => {
-          const table = th.closest('table');
-          const tbody = table.querySelector('tbody');
-          const rows = Array.from(tbody.querySelectorAll('tr'));
-          
-          // Determine sort direction
-          const isAsc = th.classList.contains('sorted') && th.classList.contains('asc');
-          
-          // Remove sorted class from all headers
-          table.querySelectorAll('thead th').forEach(h => {
-            h.classList.remove('sorted', 'asc');
+      // Attach sorting to THIS table's headers only (not all tables on page)
+      const currentTable = section.querySelector('table');
+      if (currentTable) {
+        currentTable.querySelectorAll('thead th').forEach((th, index) => {
+          th.addEventListener('click', () => {
+            const table = th.closest('table');
+            const tbody = table.querySelector('tbody');
+            const rows = Array.from(tbody.querySelectorAll('tr'));
+            
+            // Determine sort direction
+            const isAsc = th.classList.contains('sorted') && th.classList.contains('asc');
+            
+            // Remove sorted class from all headers in this table
+            table.querySelectorAll('thead th').forEach(h => {
+              h.classList.remove('sorted', 'asc');
+            });
+            
+            // Add sorted class to clicked header
+            th.classList.add('sorted');
+            if (!isAsc) th.classList.add('asc');
+            
+            // Sort rows
+            rows.sort((a, b) => {
+              const aCell = a.querySelectorAll('td')[index]?.textContent.trim() || '';
+              const bCell = b.querySelectorAll('td')[index]?.textContent.trim() || '';
+              
+              // For Player column (index 0), sort by first word only
+              if (index === 0) {
+                const aFirstWord = aCell.split(' ')[0];
+                const bFirstWord = bCell.split(' ')[0];
+                return isAsc ? aFirstWord.localeCompare(bFirstWord) : bFirstWord.localeCompare(aFirstWord);
+              }
+              
+              // Try numeric comparison first
+              const aNum = parseFloat(aCell);
+              const bNum = parseFloat(bCell);
+              
+              if (!isNaN(aNum) && !isNaN(bNum)) {
+                return isAsc ? aNum - bNum : bNum - aNum;
+              }
+              
+              // String comparison
+              return isAsc ? aCell.localeCompare(bCell) : bCell.localeCompare(aCell);
+            });
+            
+            // Re-append sorted rows
+            rows.forEach(row => tbody.appendChild(row));
           });
-          
-          // Add sorted class to clicked header
-          th.classList.add('sorted');
-          if (!isAsc) th.classList.add('asc');
-          
-          // Sort rows
-          rows.sort((a, b) => {
-            const aCell = a.querySelectorAll('td')[index]?.textContent.trim() || '';
-            const bCell = b.querySelectorAll('td')[index]?.textContent.trim() || '';
-            
-            // Try numeric comparison first
-            const aNum = parseFloat(aCell);
-            const bNum = parseFloat(bCell);
-            
-            if (!isNaN(aNum) && !isNaN(bNum)) {
-              return isAsc ? aNum - bNum : bNum - aNum;
-            }
-            
-            // String comparison
-            return isAsc ? aCell.localeCompare(bCell) : bCell.localeCompare(aCell);
-          });
-          
-          // Re-append sorted rows
-          rows.forEach(row => tbody.appendChild(row));
         });
-      });
+      }
       
       // Apply filter after rendering
       applyFilter();
