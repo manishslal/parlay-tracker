@@ -305,18 +305,30 @@
       margin:1.125rem -1.5rem -1.125rem -1.5rem;padding:0.375rem 1.5rem;
       border-radius:0 0 10px 10px;display:flex;
       justify-content:space-between;align-items:center;
-      font-size:0.75rem;min-height:1.5rem;}
-    /* Site-specific footer colors with gradients */
-    .parlay-section[data-site="DraftKings"] .parlay-footer {
-      background: linear-gradient(135deg, rgba(76, 175, 80, 0.7) 0%, var(--draftkings) 100%);
+      font-size:0.75rem;min-height:1.5rem;
+      position: relative;
+      overflow: hidden;
     }
-    .parlay-section[data-site="FanDuel"] .parlay-footer {
-      background: linear-gradient(135deg, rgba(33, 150, 243, 0.7) 0%, var(--fanduel) 100%);
+    
+    /* Footer logo styling */
+    .footer-logo {
+      position: absolute;
+      right: 0;
+      top: 0;
+      bottom: 0;
+      height: 100%;
+      width: auto;
+      opacity: 0.3;
+      object-fit: contain;
+      pointer-events: none;
     }
-    .parlay-section[data-site="Dabble"] .parlay-footer {
-      background: linear-gradient(135deg, rgba(255, 193, 7, 0.7) 0%, var(--dabble) 100%);
-      color: #000;
+    
+    /* Ensure footer content stays above logo */
+    .footer-left, .footer-right {
+      position: relative;
+      z-index: 1;
     }
+    
     .footer-left{display:flex;flex-direction:column;gap:0.25rem;}
     .footer-right{display:flex;flex-direction:column;gap:0.25rem;text-align:right;}
     .footer-odds{font-weight:bold;color:#FFD700;}
@@ -833,6 +845,14 @@
       const isLight = document.body.classList.contains('light-mode');
       themeToggle.textContent = isLight ? '☀️' : '🌙';
       localStorage.setItem('theme', isLight ? 'light' : 'dark');
+      
+      // Update all footer logos to match new theme
+      const logoSuffix = isLight ? '2' : '1'; // 1=white (dark mode), 2=colored (light mode)
+      document.querySelectorAll('.footer-logo').forEach(logo => {
+        const currentSrc = logo.src;
+        const newSrc = currentSrc.replace(/logo-[12]\.svg$/, `logo-${logoSuffix}.svg`);
+        logo.src = newSrc;
+      });
     });
     
     // === 2. FILTER FUNCTIONALITY ===
@@ -1710,6 +1730,24 @@ function logoutToken() {
         const betIdText = parlay.bet_id || 'N/A';
         const siteText = parlay.betting_site || 'N/A';
         
+        // Determine which logo to use based on theme and betting site
+        const isDarkMode = !document.body.classList.contains('light-mode');
+        const logoSuffix = isDarkMode ? '1' : '2'; // 1=white (dark mode), 2=colored (light mode)
+        
+        // Map betting site names to logo filenames
+        const logoMap = {
+          'DraftKings': 'draftkings',
+          'FanDuel': 'fanduel',
+          'Dabble': 'dabble'
+        };
+        
+        const logoKey = logoMap[siteText];
+        const logoHTML = logoKey ? 
+          `<img src="media/logos/${logoKey}-logo-${logoSuffix}.svg" 
+                alt="${siteText}" 
+                class="footer-logo"
+                onerror="this.style.display='none'">` : '';
+        
         footer.innerHTML = `
           <div class="footer-left">
             <div class="footer-odds">Odds: ${oddsText}</div>
@@ -1719,6 +1757,7 @@ function logoutToken() {
             <div class="footer-betid">Bet ID: ${betIdText}</div>
             <div class="footer-site">${siteText}</div>
           </div>
+          ${logoHTML}
         `;
         
         // Wrap only table in parlay-body div for collapsing (footer stays visible)
