@@ -163,7 +163,7 @@
     }
     
     .parlay-section.collapsed .parlay-header {
-      margin: 0 0 1.125rem 0 !important;
+      margin: 0 !important;
       border-radius: 12px 12px 0 0 !important;
     }
     
@@ -716,6 +716,7 @@
     </div>
     <div class="button-container">
       <button id="refresh-button">Refresh Stats</button>
+      <button id="clear-cache-button" style="display: none;">Clear Cache 🗑️</button>
       <div style="position: relative;">
         <button class="filter-button" id="filter-button" title="Filter Parlays">Filter 🔍</button>
         <div class="filter-menu" id="filter-menu">
@@ -729,6 +730,7 @@
       </div>
     </div>
     <div id="status-message"></div>
+    <div id="cache-info" style="text-align: center; margin-bottom: 1rem; color: #888; font-size: 0.85rem; display: none;"></div>
     <div id="parlay-sections" class="tab-content active" data-tab="current"></div>
     <div id="historical-sections" class="tab-content" data-tab="historical" style="display:none"></div>
     <div style="text-align: right; margin-top: 2rem;">
@@ -766,6 +768,57 @@
     // Client-side cache for faster tab switching
     let cachedLive = null;
     let cachedHistorical = null;
+    
+    // === HISTORICAL BETS CACHE SYSTEM ===
+    const HISTORICAL_CACHE_KEY = 'parlay_tracker_historical_cache';
+    const HISTORICAL_CACHE_META_KEY = 'parlay_tracker_historical_cache_meta';
+    
+    function saveHistoricalCache(data) {
+      try {
+        const cacheData = {
+          timestamp: new Date().toISOString(),
+          betCount: data.length,
+          data: data
+        };
+        localStorage.setItem(HISTORICAL_CACHE_KEY, JSON.stringify(cacheData));
+        localStorage.setItem(HISTORICAL_CACHE_META_KEY, JSON.stringify({
+          timestamp: cacheData.timestamp,
+          betCount: cacheData.betCount
+        }));
+        console.log('✅ Historical cache saved:', cacheData.betCount, 'bets');
+      } catch (e) {
+        console.warn('Failed to save historical cache:', e);
+      }
+    }
+    
+    function loadHistoricalCache() {
+      try {
+        const cached = localStorage.getItem(HISTORICAL_CACHE_KEY);
+        if (!cached) return null;
+        
+        const cacheData = JSON.parse(cached);
+        console.log('📦 Historical cache loaded:', cacheData.betCount, 'bets from', new Date(cacheData.timestamp).toLocaleString());
+        return cacheData.data;
+      } catch (e) {
+        console.warn('Failed to load historical cache:', e);
+        return null;
+      }
+    }
+    
+    function clearHistoricalCache() {
+      localStorage.removeItem(HISTORICAL_CACHE_KEY);
+      localStorage.removeItem(HISTORICAL_CACHE_META_KEY);
+      console.log('🗑️ Historical cache cleared');
+    }
+    
+    function getHistoricalCacheMeta() {
+      try {
+        const meta = localStorage.getItem(HISTORICAL_CACHE_META_KEY);
+        return meta ? JSON.parse(meta) : null;
+      } catch (e) {
+        return null;
+      }
+    }
     
     // === 1. THEME TOGGLE ===
     const themeToggle = document.getElementById('theme-toggle');
@@ -891,6 +944,27 @@
     });
 
     // Tab handling
+    const clearCacheBtn = document.getElementById('clear-cache-button');
+    const cacheInfo = document.getElementById('cache-info');
+    
+    function updateCacheDisplay() {
+      const activeTab = document.querySelector('.tab.active').dataset.tab;
+      if (activeTab === 'historical') {
+        const meta = getHistoricalCacheMeta();
+        if (meta) {
+          clearCacheBtn.style.display = 'inline-block';
+          cacheInfo.style.display = 'block';
+          cacheInfo.textContent = `📦 Using cached data (${meta.betCount} bets) from ${new Date(meta.timestamp).toLocaleString()}`;
+        } else {
+          clearCacheBtn.style.display = 'none';
+          cacheInfo.style.display = 'none';
+        }
+      } else {
+        clearCacheBtn.style.display = 'none';
+        cacheInfo.style.display = 'none';
+      }
+    }
+    
     document.querySelectorAll('.tab').forEach(tab => {
       tab.addEventListener('click', async () => {
         // Update active tab
@@ -907,9 +981,23 @@
           }
         });
         
+        // Update cache display
+        updateCacheDisplay();
+        
         // Refresh data when switching tabs
         await update();
       });
+    });
+    
+    // Clear Cache button handler
+    clearCacheBtn.addEventListener('click', async () => {
+      if (confirm('Clear cached historical data? This will re-fetch all historical bets from the server.')) {
+        clearHistoricalCache();
+        cachedHistorical = null;
+        msg.textContent = 'Cache cleared. Refreshing...';
+        updateCacheDisplay();
+        await update();
+      }
     });
 
     // --- Admin Token Modal/Login UI ---
@@ -1140,20 +1228,31 @@ function logoutToken() {
           
           render(combinedParlays, sec);
         } else if(activeTab === 'historical') {
-          if (cachedHistorical) {
-            console.log('Using cached historical data');
-            render(cachedHistorical, histSec);
+          // Try localStorage cache first
+          const cachedData = loadHistoricalCache();
+          if (cachedData) {
+            console.log('Using localStorage cached historical data');
+            cachedHistorical = cachedData;
+            render(cachedData, histSec);
+            msg.textContent=`Using cached data: ${new Date().toLocaleTimeString()}`;
           } else {
+            // No cache - fetch from server
             const historicalResponse = await fetchWithAdminToken(histUrl);
             if(!historicalResponse.ok) throw new Error(`Historical data error: ${historicalResponse.status}`);
             const historical = await historicalResponse.json();
+            
+            // Save to both memory and localStorage cache
             cachedHistorical = historical;
-            console.log('Historical parlays:', historical);
+            saveHistoricalCache(historical);
+            
+            console.log('Historical parlays fetched and cached:', historical);
             render(historical, histSec);
+            msg.textContent=`Last updated: ${new Date().toLocaleTimeString()}`;
           }
         }
         
-        msg.textContent=`Last updated: ${new Date().toLocaleTimeString()}`;
+        // Update cache display after rendering
+        updateCacheDisplay();
       }catch(e){
         console.error('Error during update:', e);
         msg.textContent=`Error loading data: ${e.message}`;
@@ -1706,9 +1805,10 @@ function logoutToken() {
         const result = await response.json();
         msg.textContent = `Moved ${result.moved_count} parlay(s) to history. ${result.remaining_live} still live.`;
         
-        // Clear caches and refresh
+        // Clear caches (including localStorage for historical since new bets were added)
         cachedLive = null;
         cachedHistorical = null;
+        clearHistoricalCache();
         await update();
       } catch (e) {
         console.error('Error moving completed:', e);
