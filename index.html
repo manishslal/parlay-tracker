@@ -355,7 +355,7 @@
     body:not(.dark-mode) .trophy-light {display: block;}
     .parlay-title{display:flex;flex-direction:column;gap:0.25rem;position:relative;z-index:1;flex:1 1 auto;min-width:0;}
     .parlay-date{font-size:0.85rem;font-weight:normal;opacity:0.8;}
-    .game-info-wrapper{display:flex;gap:0.5rem;flex-wrap:wrap;position:relative;z-index:1;justify-content:flex-end;align-items:flex-start;flex:0 1 100%;flex-direction:row-reverse;}
+    .game-info-wrapper{display:flex;gap:0.5rem;flex-wrap:wrap;position:relative;z-index:1;justify-content:flex-end;align-items:flex-start;flex:0 1 100%;flex-direction:row;}
     /* Single game: align scoreboards to the right, no reversal, no size constraints */
     .game-info-wrapper:has(.game-info:only-child) {
       justify-content:flex-end;
@@ -368,9 +368,10 @@
       flex: 0 0 auto;
       max-width: none;
     }
-    /* Multiple games: limit to 10 per row on desktop, fill available width evenly */
+    /* Multiple games: keep right-aligned, limit to 10 per row on desktop */
     .game-info-wrapper:not(:has(.game-info:only-child)) {
       width: 100%;
+      justify-content: flex-end; /* Keep scoreboards aligned to the right */
     }
     .game-info-wrapper:not(:has(.game-info:only-child)) .game-info {
       flex: 0 0 calc((100% - 4.5rem) / 10); /* 10 items with 9 gaps of 0.5rem */
@@ -383,6 +384,10 @@
     .game-info{display:flex;flex-direction:column;align-items:center;
       gap:.25rem;font-size:.9rem;border:1px solid var(--border);
       padding:.5rem;border-radius:6px;background:rgba(0,0,0,0.2);}
+    /* Reduce scoreboard font size (web view only) */
+    .game-info * {
+      font-size: 0.8rem;
+    }
     table{width:100%;border-collapse:separate;border-spacing:0;}
     th,td{padding:.375rem;border-bottom:1px solid var(--border);
       vertical-align:middle;text-align:left;}
@@ -533,6 +538,11 @@
       .parlay-title {
         flex: 1;
         min-width: 0;
+        font-size: 0.9rem; /* Reduced by 1 font size for mobile */
+      }
+      
+      .parlay-date {
+        font-size: 0.7rem !important; /* Match footer font size on mobile */
       }
       
       .parlay-footer {
@@ -1376,38 +1386,64 @@ function logoutToken() {
         
         // Get game date for single game parlays
         let formattedDate = '';
-        if (parlay.legs && parlay.legs[0]) {
-          // Get unique game dates from all legs
-          const uniqueDates = [...new Set(parlay.legs.map(leg => leg.game_date))].filter(d => d);
-          
-          // If there's only one unique date, it's a single game parlay
-          if (uniqueDates.length === 1 && uniqueDates[0]) {
-            const dateStr = String(uniqueDates[0]);
+        
+        // Check if on mobile view
+        const isMobile = window.innerWidth <= 768;
+        
+        if (isMobile) {
+          // Mobile: prioritize bet_date field
+          if (parlay.bet_date) {
             try {
-              let gameDate;
-              
-              // Handle both formats: YYYY-MM-DD (new standard) and YYYYMMDD (legacy)
-              if (dateStr.includes('-')) {
-                // YYYY-MM-DD format
-                gameDate = new Date(dateStr);
-              } else if (dateStr.length === 8) {
-                // YYYYMMDD format (legacy)
-                const year = dateStr.substring(0, 4);
-                const month = dateStr.substring(4, 6);
-                const day = dateStr.substring(6, 8);
-                gameDate = new Date(`${year}-${month}-${day}`);
-              }
-              
-              // Check if date is valid
-              if (gameDate && !isNaN(gameDate.getTime())) {
-                const dayOfWeek = gameDate.toLocaleDateString('en-US', { weekday: 'long' });
-                const monthName = gameDate.toLocaleDateString('en-US', { month: 'short' });
-                const dayNum = gameDate.getDate();
-                const yearNum = gameDate.getFullYear();
-                formattedDate = `${dayOfWeek} - ${monthName} ${dayNum}, ${yearNum}`;
+              const betDate = new Date(parlay.bet_date);
+              if (betDate && !isNaN(betDate.getTime())) {
+                const monthName = betDate.toLocaleDateString('en-US', { month: 'short' });
+                const dayNum = betDate.getDate();
+                const yearNum = betDate.getFullYear();
+                formattedDate = `${monthName} ${dayNum}, ${yearNum}`;
               }
             } catch (e) {
-              console.error('Error parsing date:', dateStr, e);
+              console.error('Error parsing bet_date:', parlay.bet_date, e);
+              formattedDate = 'input date';
+            }
+          } else {
+            // Fallback to 'input date' if no bet_date
+            formattedDate = 'input date';
+          }
+        } else {
+          // Desktop: show game_date in full format
+          if (parlay.legs && parlay.legs[0]) {
+            // Get unique game dates from all legs
+            const uniqueDates = [...new Set(parlay.legs.map(leg => leg.game_date))].filter(d => d);
+            
+            // If there's only one unique date, it's a single game parlay
+            if (uniqueDates.length === 1 && uniqueDates[0]) {
+              const dateStr = String(uniqueDates[0]);
+              try {
+                let gameDate;
+                
+                // Handle both formats: YYYY-MM-DD (new standard) and YYYYMMDD (legacy)
+                if (dateStr.includes('-')) {
+                  // YYYY-MM-DD format
+                  gameDate = new Date(dateStr);
+                } else if (dateStr.length === 8) {
+                  // YYYYMMDD format (legacy)
+                  const year = dateStr.substring(0, 4);
+                  const month = dateStr.substring(4, 6);
+                  const day = dateStr.substring(6, 8);
+                  gameDate = new Date(`${year}-${month}-${day}`);
+                }
+                
+                // Check if date is valid
+                if (gameDate && !isNaN(gameDate.getTime())) {
+                  const dayOfWeek = gameDate.toLocaleDateString('en-US', { weekday: 'long' });
+                  const monthName = gameDate.toLocaleDateString('en-US', { month: 'short' });
+                  const dayNum = gameDate.getDate();
+                  const yearNum = gameDate.getFullYear();
+                  formattedDate = `${dayOfWeek} - ${monthName} ${dayNum}, ${yearNum}`;
+                }
+              } catch (e) {
+                console.error('Error parsing date:', dateStr, e);
+              }
             }
           }
         }
@@ -1455,11 +1491,11 @@ function logoutToken() {
                 gameStatus='🔜 Not Started';
                 gameCls='status-pregame';
                 const countdown = getCountdown(g.startDateTime);
-                gameDetails=`<div>${getTeamAbbr(g.teams.away)} @ ${getTeamAbbr(g.teams.home)}</div><div>${countdown || g.startTime}</div>`;
+                gameDetails=`<div style="font-weight:bold;">${getTeamAbbr(g.teams.away)} @ ${getTeamAbbr(g.teams.home)}</div><div style="font-weight:normal;">${countdown || g.startTime}</div>`;
               }
-              else if(isHalftime){gameStatus='HALF';gameCls='status-halftime';gameDetails=`<div>${getQuarter(g.period)}</div><div>${g.teams.away.substring(0,3).toUpperCase()} ${g.score.away} - ${g.score.home} ${g.teams.home.substring(0,3).toUpperCase()}</div>`;}
-              else if(isLive){gameStatus='LIVE';gameCls='status-live';gameDetails=`<div>${getQuarter(g.period)}, ${g.clock}</div><div>${g.teams.away.substring(0,3).toUpperCase()} ${g.score.away} - ${g.score.home} ${g.teams.home.substring(0,3).toUpperCase()}</div>`;}
-              else{gameStatus='FINAL';gameCls='status-final';gameDetails=`<div>${g.teams.away.substring(0,3).toUpperCase()} ${g.score.away} - ${g.score.home} ${g.teams.home.substring(0,3).toUpperCase()}</div>`;}
+              else if(isHalftime){gameStatus='HALF';gameCls='status-halftime';gameDetails=`<div style="font-weight:normal;">${getQuarter(g.period)}</div><div style="font-weight:bold;">${g.teams.away.substring(0,3).toUpperCase()} ${g.score.away} - ${g.score.home} ${g.teams.home.substring(0,3).toUpperCase()}</div>`;}
+              else if(isLive){gameStatus='LIVE';gameCls='status-live';gameDetails=`<div style="font-weight:normal;">${getQuarter(g.period)}, ${g.clock}</div><div style="font-weight:bold;">${g.teams.away.substring(0,3).toUpperCase()} ${g.score.away} - ${g.score.home} ${g.teams.home.substring(0,3).toUpperCase()}</div>`;}
+              else{gameStatus='FINAL';gameCls='status-final';gameDetails=`<div style="font-weight:bold;">${g.teams.away.substring(0,3).toUpperCase()} ${g.score.away} - ${g.score.home} ${g.teams.home.substring(0,3).toUpperCase()}</div>`;}
               
               const gameInfoDiv=document.createElement('div');
               gameInfoDiv.className='game-info';
@@ -1475,11 +1511,11 @@ function logoutToken() {
                 gameStatus='🔜 Not Started';
                 gameCls='status-pregame';
                 const countdown = getCountdown(g.startDateTime);
-                gameDetails=`<div>${getTeamAbbr(g.teams.away)} @ ${getTeamAbbr(g.teams.home)}</div><div>${countdown || g.startTime}</div>`;
+                gameDetails=`<div style="font-weight:bold;">${getTeamAbbr(g.teams.away)} @ ${getTeamAbbr(g.teams.home)}</div><div style="font-weight:normal;">${countdown || g.startTime}</div>`;
               }
-              else if(isHalftime){gameStatus='HALF';gameCls='status-halftime';gameDetails=`<div>${getQuarter(g.period)}</div><div>${g.teams.away.substring(0,3).toUpperCase()} ${g.score.away} - ${g.score.home} ${g.teams.home.substring(0,3).toUpperCase()}</div>`;}
-              else if(isLive){gameStatus='LIVE';gameCls='status-live';gameDetails=`<div>${getQuarter(g.period)}, ${g.clock}</div><div>${g.teams.away.substring(0,3).toUpperCase()} ${g.score.away} - ${g.score.home} ${g.teams.home.substring(0,3).toUpperCase()}</div>`;}
-              else{gameStatus='FINAL';gameCls='status-final';gameDetails=`<div>${g.teams.away.substring(0,3).toUpperCase()} ${g.score.away} - ${g.score.home} ${g.teams.home.substring(0,3).toUpperCase()}</div>`;}
+              else if(isHalftime){gameStatus='HALF';gameCls='status-halftime';gameDetails=`<div style="font-weight:normal;">${getQuarter(g.period)}</div><div style="font-weight:bold;">${g.teams.away.substring(0,3).toUpperCase()} ${g.score.away} - ${g.score.home} ${g.teams.home.substring(0,3).toUpperCase()}</div>`;}
+              else if(isLive){gameStatus='LIVE';gameCls='status-live';gameDetails=`<div style="font-weight:normal;">${getQuarter(g.period)}, ${g.clock}</div><div style="font-weight:bold;">${g.teams.away.substring(0,3).toUpperCase()} ${g.score.away} - ${g.score.home} ${g.teams.home.substring(0,3).toUpperCase()}</div>`;}
+              else{gameStatus='FINAL';gameCls='status-final';gameDetails=`<div style="font-weight:bold;">${g.teams.away.substring(0,3).toUpperCase()} ${g.score.away} - ${g.score.home} ${g.teams.home.substring(0,3).toUpperCase()}</div>`;}
               
               const gameInfoDiv=document.createElement('div');
               gameInfoDiv.className='game-info';
