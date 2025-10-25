@@ -107,6 +107,10 @@
       box-shadow: 0 2px 8px rgba(0,0,0,0.2);
       transition: all 0.2s;
       position: relative;
+      height: 40px; /* Fixed height for alignment */
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
     
     .toolbar-button:hover {
@@ -123,6 +127,8 @@
       font-size: 0.9rem;
       width: 250px;
       transition: border-color 0.2s;
+      height: 40px; /* Fixed height for alignment */
+      box-sizing: border-box;
     }
     
     .search-input:focus {
@@ -130,55 +136,57 @@
       border-color: var(--primary);
     }
     
-    /* Filter dropdown panel */
-    .filter-panel {
-      position: fixed;
-      top: 0;
-      right: -400px;
-      width: 400px;
-      height: 100vh;
+    /* Sub-panel for filter options - smaller dropdown to the right */
+    .filter-sub-panel {
+      position: absolute;
+      top: calc(100% + 0.5rem);
+      left: 0;
+      width: 300px;
+      max-height: 400px;
       background: var(--surface);
-      border-left: 2px solid var(--border);
-      box-shadow: -4px 0 20px rgba(0,0,0,0.5);
-      z-index: 1000;
-      transition: right 0.3s ease;
+      border: 2px solid var(--border);
+      border-radius: 8px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+      z-index: 1001;
       overflow-y: auto;
+      display: none;
     }
     
-    .filter-panel.active {
-      right: 0;
+    .filter-sub-panel.active {
+      display: block;
     }
     
     .filter-panel-header {
-      padding: 1.5rem;
+      padding: 1rem;
       background: var(--primary);
       color: #fff;
       font-weight: bold;
-      font-size: 1.2rem;
+      font-size: 1rem;
       display: flex;
       justify-content: space-between;
       align-items: center;
       position: sticky;
       top: 0;
       z-index: 10;
+      border-radius: 6px 6px 0 0;
     }
     
     .filter-panel-close {
       background: none;
       border: none;
       color: #fff;
-      font-size: 1.5rem;
+      font-size: 1.3rem;
       cursor: pointer;
       padding: 0;
-      width: 30px;
-      height: 30px;
+      width: 24px;
+      height: 24px;
       display: flex;
       align-items: center;
       justify-content: center;
     }
     
     .filter-panel-content {
-      padding: 1.5rem;
+      padding: 1rem;
     }
     
     .filter-category {
@@ -206,25 +214,6 @@
     .filter-category-desc {
       font-size: 0.85rem;
       opacity: 0.7;
-    }
-    
-    /* Sub-panel for filter options */
-    .filter-sub-panel {
-      position: fixed;
-      top: 0;
-      right: -400px;
-      width: 400px;
-      height: 100vh;
-      background: var(--surface);
-      border-left: 2px solid var(--border);
-      box-shadow: -4px 0 20px rgba(0,0,0,0.5);
-      z-index: 1001;
-      transition: right 0.3s ease;
-      overflow-y: auto;
-    }
-    
-    .filter-sub-panel.active {
-      right: 0;
     }
     
     .filter-option-item {
@@ -767,6 +756,22 @@
         padding: 0 0.5rem;
       }
       
+      /* Mobile toolbar adjustments */
+      .toolbar {
+        gap: 0.2rem; /* Reduced gap by 80% from 1rem */
+        margin: 0.5rem 0;
+      }
+      
+      .toolbar-button {
+        font-size: 0.85rem;
+        padding: 0.5rem 1rem;
+      }
+      
+      .search-input {
+        width: 100%;
+        font-size: 0.85rem;
+      }
+      
       .parlay-section {
         padding: 1rem 0.5rem;
         overflow-x: hidden; /* Prevent horizontal scroll */
@@ -1011,6 +1016,15 @@
           <button class="collapse-option" data-category="sport">Sport</button>
           <button class="collapse-option" data-category="last30">Last 30 Days</button>
         </div>
+        
+        <!-- Filter Sub-Panel -->
+        <div class="filter-sub-panel" id="filter-sub-panel">
+          <div class="filter-panel-header">
+            <span id="sub-panel-title">Filter Options</span>
+            <button class="filter-panel-close" id="close-sub-panel">×</button>
+          </div>
+          <div class="filter-panel-content" id="sub-panel-content"></div>
+        </div>
       </div>
       
       <div style="position: relative;">
@@ -1022,18 +1036,6 @@
       </div>
       
       <input type="text" class="search-input" id="search-input" placeholder="Search bets...">
-    </div>
-    
-    <!-- Filter Overlay -->
-    <div class="filter-overlay" id="filter-overlay"></div>
-    
-    <!-- Filter Sub-Panel -->
-    <div class="filter-sub-panel" id="filter-sub-panel">
-      <div class="filter-panel-header">
-        <span id="sub-panel-title">Filter Options</span>
-        <button class="filter-panel-close" id="close-sub-panel">×</button>
-      </div>
-      <div class="filter-panel-content" id="sub-panel-content"></div>
     </div>
     
     <div id="cache-info" style="text-align: center; margin-bottom: 1rem; color: #888; font-size: 0.85rem; display: none;"></div>
@@ -1165,7 +1167,6 @@
     const subPanelTitle = document.getElementById('sub-panel-title');
     const subPanelContent = document.getElementById('sub-panel-content');
     const closeSubPanel = document.getElementById('close-sub-panel');
-    const filterOverlay = document.getElementById('filter-overlay');
     
     filterDropdownBtn.addEventListener('click', (e) => {
       e.stopPropagation();
@@ -1245,17 +1246,19 @@
       });
       
       filterSubPanel.classList.add('active');
-      filterOverlay.classList.add('active');
     }
     
     closeSubPanel.addEventListener('click', () => {
       filterSubPanel.classList.remove('active');
-      filterOverlay.classList.remove('active');
     });
     
-    filterOverlay.addEventListener('click', () => {
-      filterSubPanel.classList.remove('active');
-      filterOverlay.classList.remove('active');
+    // Close sub-panel when clicking outside
+    document.addEventListener('click', (e) => {
+      if (!filterSubPanel.contains(e.target) && 
+          !filterDropdownBtn.contains(e.target) &&
+          !filterMainMenu.contains(e.target)) {
+        filterSubPanel.classList.remove('active');
+      }
     });
     
     // Collapse functionality
@@ -1280,9 +1283,8 @@
     collapseAllBtn.addEventListener('click', () => {
       document.querySelectorAll('.parlay-section').forEach(section => {
         if (section.style.display !== 'none') {
-          const table = section.querySelector('table');
-          if (table && !table.classList.contains('collapsed')) {
-            section.querySelector('.parlay-header').click();
+          if (!section.classList.contains('collapsed')) {
+            section.classList.add('collapsed');
           }
         }
       });
@@ -1292,9 +1294,8 @@
     uncollapseAllBtn.addEventListener('click', () => {
       document.querySelectorAll('.parlay-section').forEach(section => {
         if (section.style.display !== 'none') {
-          const table = section.querySelector('table');
-          if (table && table.classList.contains('collapsed')) {
-            section.querySelector('.parlay-header').click();
+          if (section.classList.contains('collapsed')) {
+            section.classList.remove('collapsed');
           }
         }
       });
