@@ -85,7 +85,228 @@
       opacity: 0.9;
     }
     
-    /* Filter menu - dropdown below button */
+    /* New toolbar styles */
+    .toolbar {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 1rem;
+      margin: 1rem 0;
+      flex-wrap: wrap;
+    }
+    
+    .toolbar-button {
+      padding: 0.6rem 1.2rem;
+      background: var(--primary);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.9rem;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+      transition: all 0.2s;
+      position: relative;
+    }
+    
+    .toolbar-button:hover {
+      opacity: 0.9;
+      transform: translateY(-1px);
+    }
+    
+    .search-input {
+      padding: 0.6rem 1rem;
+      border: 2px solid var(--border);
+      border-radius: 8px;
+      background: var(--surface);
+      color: var(--text);
+      font-size: 0.9rem;
+      width: 250px;
+      transition: border-color 0.2s;
+    }
+    
+    .search-input:focus {
+      outline: none;
+      border-color: var(--primary);
+    }
+    
+    /* Filter dropdown panel */
+    .filter-panel {
+      position: fixed;
+      top: 0;
+      right: -400px;
+      width: 400px;
+      height: 100vh;
+      background: var(--surface);
+      border-left: 2px solid var(--border);
+      box-shadow: -4px 0 20px rgba(0,0,0,0.5);
+      z-index: 1000;
+      transition: right 0.3s ease;
+      overflow-y: auto;
+    }
+    
+    .filter-panel.active {
+      right: 0;
+    }
+    
+    .filter-panel-header {
+      padding: 1.5rem;
+      background: var(--primary);
+      color: #fff;
+      font-weight: bold;
+      font-size: 1.2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    
+    .filter-panel-close {
+      background: none;
+      border: none;
+      color: #fff;
+      font-size: 1.5rem;
+      cursor: pointer;
+      padding: 0;
+      width: 30px;
+      height: 30px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .filter-panel-content {
+      padding: 1.5rem;
+    }
+    
+    .filter-category {
+      margin-bottom: 1.5rem;
+      padding: 1rem;
+      background: var(--section-bg);
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    
+    .filter-category:hover {
+      background: var(--parlay-bg);
+    }
+    
+    .filter-category-title {
+      font-weight: bold;
+      font-size: 1rem;
+      margin-bottom: 0.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .filter-category-desc {
+      font-size: 0.85rem;
+      opacity: 0.7;
+    }
+    
+    /* Sub-panel for filter options */
+    .filter-sub-panel {
+      position: fixed;
+      top: 0;
+      right: -400px;
+      width: 400px;
+      height: 100vh;
+      background: var(--surface);
+      border-left: 2px solid var(--border);
+      box-shadow: -4px 0 20px rgba(0,0,0,0.5);
+      z-index: 1001;
+      transition: right 0.3s ease;
+      overflow-y: auto;
+    }
+    
+    .filter-sub-panel.active {
+      right: 0;
+    }
+    
+    .filter-option-item {
+      padding: 0.75rem 1rem;
+      margin: 0.5rem 0;
+      background: var(--section-bg);
+      border: 2px solid var(--border);
+      border-radius: 6px;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      transition: all 0.2s;
+    }
+    
+    .filter-option-item:hover {
+      background: var(--parlay-bg);
+      border-color: var(--primary);
+    }
+    
+    .filter-option-item.selected {
+      background: var(--primary);
+      color: #fff;
+      border-color: var(--primary);
+    }
+    
+    .filter-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.5);
+      z-index: 999;
+      display: none;
+    }
+    
+    .filter-overlay.active {
+      display: block;
+    }
+    
+    /* Collapse menu */
+    .collapse-menu {
+      position: absolute;
+      top: calc(100% + 0.5rem);
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--surface);
+      border: 2px solid var(--border);
+      border-radius: 8px;
+      padding: 0.5rem;
+      z-index: 998;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+      display: none;
+      min-width: 150px;
+    }
+    
+    .collapse-menu.active {
+      display: block;
+    }
+    
+    .collapse-option {
+      padding: 0.6rem 1rem;
+      margin: 0.25rem 0;
+      background: var(--section-bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      cursor: pointer;
+      color: var(--text);
+      display: block;
+      width: 100%;
+      text-align: left;
+      transition: background 0.2s;
+      font-size: 0.9rem;
+    }
+    
+    .collapse-option:hover {
+      background: var(--primary);
+      color: #fff;
+    }
+    
+    /* Old filter menu - keeping for compatibility but will hide */
     .filter-menu {
       position: absolute;
       top: calc(100% + 0.5rem);
@@ -777,19 +998,44 @@
     <div class="button-container">
       <button id="refresh-button">Refresh Stats</button>
       <button id="clear-cache-button" style="display: none;">Clear Cache 🗑️</button>
-      <div style="position: relative;">
-        <button class="filter-button" id="filter-button" title="Filter Parlays">Filter 🔍</button>
-        <div class="filter-menu" id="filter-menu">
-          <button class="filter-option active" data-filter="all">All Bets</button>
-          <button class="filter-option" data-filter="live">Live Only</button>
-          <button class="filter-option" data-filter="winning">Winning</button>
-          <button class="filter-option" data-filter="losing">Losing</button>
-          <button class="filter-option" data-filter="scheduled">Not Started</button>
-          <button class="filter-option" data-filter="clear">Clear Filter</button>
-        </div>
-      </div>
     </div>
     <div id="status-message"></div>
+    
+    <!-- New Toolbar -->
+    <div class="toolbar">
+      <div style="position: relative;">
+        <button class="toolbar-button" id="filter-dropdown-btn">Filter ▼</button>
+        <div class="collapse-menu" id="filter-main-menu">
+          <button class="collapse-option" data-category="status">Status</button>
+          <button class="collapse-option" data-category="site">Betting Site</button>
+          <button class="collapse-option" data-category="sport">Sport</button>
+          <button class="collapse-option" data-category="last30">Last 30 Days</button>
+        </div>
+      </div>
+      
+      <div style="position: relative;">
+        <button class="toolbar-button" id="collapse-dropdown-btn">Collapse ▼</button>
+        <div class="collapse-menu" id="collapse-menu">
+          <button class="collapse-option" id="collapse-all">Collapse All</button>
+          <button class="collapse-option" id="uncollapse-all">Uncollapse All</button>
+        </div>
+      </div>
+      
+      <input type="text" class="search-input" id="search-input" placeholder="Search bets...">
+    </div>
+    
+    <!-- Filter Overlay -->
+    <div class="filter-overlay" id="filter-overlay"></div>
+    
+    <!-- Filter Sub-Panel -->
+    <div class="filter-sub-panel" id="filter-sub-panel">
+      <div class="filter-panel-header">
+        <span id="sub-panel-title">Filter Options</span>
+        <button class="filter-panel-close" id="close-sub-panel">×</button>
+      </div>
+      <div class="filter-panel-content" id="sub-panel-content"></div>
+    </div>
+    
     <div id="cache-info" style="text-align: center; margin-bottom: 1rem; color: #888; font-size: 0.85rem; display: none;"></div>
     <div id="parlay-sections" class="tab-content active" data-tab="current"></div>
     <div id="historical-sections" class="tab-content" data-tab="historical" style="display:none"></div>
@@ -903,72 +1149,244 @@
       });
     });
     
-    // === 2. FILTER FUNCTIONALITY ===
-    let currentFilter = 'all';
-    const filterButton = document.getElementById('filter-button');
-    const filterMenu = document.getElementById('filter-menu');
+    // === 2. NEW FILTER, COLLAPSE, AND SEARCH FUNCTIONALITY ===
+    let activeFilters = {
+      status: new Set(),
+      site: new Set(),
+      sport: new Set(),
+      last30Days: false
+    };
+    let searchQuery = '';
     
-    filterButton.addEventListener('click', (e) => {
+    // Filter dropdown menu toggle
+    const filterDropdownBtn = document.getElementById('filter-dropdown-btn');
+    const filterMainMenu = document.getElementById('filter-main-menu');
+    const filterSubPanel = document.getElementById('filter-sub-panel');
+    const subPanelTitle = document.getElementById('sub-panel-title');
+    const subPanelContent = document.getElementById('sub-panel-content');
+    const closeSubPanel = document.getElementById('close-sub-panel');
+    const filterOverlay = document.getElementById('filter-overlay');
+    
+    filterDropdownBtn.addEventListener('click', (e) => {
       e.stopPropagation();
-      filterMenu.classList.toggle('active');
+      filterMainMenu.classList.toggle('active');
     });
     
     document.addEventListener('click', () => {
-      filterMenu.classList.remove('active');
+      filterMainMenu.classList.remove('active');
     });
     
-    filterMenu.addEventListener('click', (e) => {
+    filterMainMenu.addEventListener('click', (e) => {
       e.stopPropagation();
     });
     
-    document.querySelectorAll('.filter-option').forEach(option => {
+    // Filter category click handlers
+    document.querySelectorAll('.collapse-option[data-category]').forEach(option => {
       option.addEventListener('click', () => {
-        document.querySelectorAll('.filter-option').forEach(o => o.classList.remove('active'));
-        option.classList.add('active');
-        currentFilter = option.dataset.filter;
-        filterMenu.classList.remove('active');
-        applyFilter();
+        const category = option.dataset.category;
+        filterMainMenu.classList.remove('active');
+        
+        if (category === 'last30') {
+          // Toggle last 30 days filter
+          activeFilters.last30Days = !activeFilters.last30Days;
+          option.textContent = activeFilters.last30Days ? 'Last 30 Days ✓' : 'Last 30 Days';
+          applyAllFilters();
+        } else {
+          // Open sub-panel for multi-select filters
+          openFilterSubPanel(category);
+        }
       });
     });
     
-    function applyFilter() {
+    function openFilterSubPanel(category) {
+      let title = '';
+      let options = [];
+      
+      if (category === 'status') {
+        title = 'Filter by Status';
+        options = ['Winning', 'Live', 'Losing', 'Not Started'];
+      } else if (category === 'site') {
+        title = 'Filter by Betting Site';
+        // Get unique betting sites from all visible parlays
+        const sites = new Set();
+        document.querySelectorAll('.parlay-section').forEach(section => {
+          const site = section.dataset.site;
+          if (site) sites.add(site);
+        });
+        options = Array.from(sites).sort();
+      } else if (category === 'sport') {
+        title = 'Filter by Sport';
+        options = ['NFL', 'NBA'];
+      }
+      
+      subPanelTitle.textContent = title;
+      subPanelContent.innerHTML = '';
+      
+      options.forEach(opt => {
+        const item = document.createElement('div');
+        item.className = 'filter-option-item';
+        if (activeFilters[category].has(opt)) {
+          item.classList.add('selected');
+        }
+        item.innerHTML = `<span>${opt}</span><span>${activeFilters[category].has(opt) ? '✓' : ''}</span>`;
+        item.addEventListener('click', () => {
+          if (activeFilters[category].has(opt)) {
+            activeFilters[category].delete(opt);
+            item.classList.remove('selected');
+            item.querySelector('span:last-child').textContent = '';
+          } else {
+            activeFilters[category].add(opt);
+            item.classList.add('selected');
+            item.querySelector('span:last-child').textContent = '✓';
+          }
+          applyAllFilters();
+        });
+        subPanelContent.appendChild(item);
+      });
+      
+      filterSubPanel.classList.add('active');
+      filterOverlay.classList.add('active');
+    }
+    
+    closeSubPanel.addEventListener('click', () => {
+      filterSubPanel.classList.remove('active');
+      filterOverlay.classList.remove('active');
+    });
+    
+    filterOverlay.addEventListener('click', () => {
+      filterSubPanel.classList.remove('active');
+      filterOverlay.classList.remove('active');
+    });
+    
+    // Collapse functionality
+    const collapseDropdownBtn = document.getElementById('collapse-dropdown-btn');
+    const collapseMenu = document.getElementById('collapse-menu');
+    const collapseAllBtn = document.getElementById('collapse-all');
+    const uncollapseAllBtn = document.getElementById('uncollapse-all');
+    
+    collapseDropdownBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      collapseMenu.classList.toggle('active');
+    });
+    
+    document.addEventListener('click', () => {
+      collapseMenu.classList.remove('active');
+    });
+    
+    collapseMenu.addEventListener('click', (e) => {
+      e.stopPropagation();
+    });
+    
+    collapseAllBtn.addEventListener('click', () => {
       document.querySelectorAll('.parlay-section').forEach(section => {
-        const legs = section.querySelectorAll('tbody tr');
+        if (section.style.display !== 'none') {
+          const table = section.querySelector('table');
+          if (table && !table.classList.contains('collapsed')) {
+            section.querySelector('.parlay-header').click();
+          }
+        }
+      });
+      collapseMenu.classList.remove('active');
+    });
+    
+    uncollapseAllBtn.addEventListener('click', () => {
+      document.querySelectorAll('.parlay-section').forEach(section => {
+        if (section.style.display !== 'none') {
+          const table = section.querySelector('table');
+          if (table && table.classList.contains('collapsed')) {
+            section.querySelector('.parlay-header').click();
+          }
+        }
+      });
+      collapseMenu.classList.remove('active');
+    });
+    
+    // Search functionality
+    const searchInput = document.getElementById('search-input');
+    searchInput.addEventListener('input', (e) => {
+      searchQuery = e.target.value.toLowerCase().trim();
+      applyAllFilters();
+    });
+    
+    function applyAllFilters() {
+      document.querySelectorAll('.parlay-section').forEach(section => {
         let shouldShow = true;
         
-        if (currentFilter === 'live') {
-          shouldShow = Array.from(legs).some(leg => {
-            const status = leg.querySelector('td:nth-child(8)')?.textContent;
-            return status && status.includes('In Progress');
-          });
-        } else if (currentFilter === 'winning') {
-          // Winning = any combination of Hit and Not Started (no Misses, no In Progress)
-          const hasHit = Array.from(legs).some(leg => {
-            const status = leg.querySelector('td:nth-child(8)')?.textContent;
-            return status && status.includes('Hit');
-          });
-          const hasMiss = Array.from(legs).some(leg => {
-            const status = leg.querySelector('td:nth-child(8)')?.textContent;
-            return status && status.includes('Miss');
-          });
-          const allHitOrNotStarted = Array.from(legs).every(leg => {
-            const status = leg.querySelector('td:nth-child(8)')?.textContent;
-            return status && (status.includes('Hit') || status.includes('Not Started'));
-          });
-          shouldShow = hasHit && !hasMiss && allHitOrNotStarted;
-        } else if (currentFilter === 'losing') {
-          shouldShow = Array.from(legs).some(leg => {
-            const status = leg.querySelector('td:nth-child(8)')?.textContent;
-            return status && status.includes('Miss');
-          });
-        } else if (currentFilter === 'scheduled') {
-          shouldShow = Array.from(legs).every(leg => {
-            const status = leg.querySelector('td:nth-child(8)')?.textContent;
-            return status && status.includes('Not Started');
-          });
-        } else if (currentFilter === 'clear') {
-          currentFilter = 'all';
-          shouldShow = true;
+        // Get parlay data
+        const site = section.dataset.site || '';
+        const sport = section.dataset.sport || '';
+        const betDate = section.dataset.betDate || '';
+        const legs = section.querySelectorAll('tbody tr');
+        
+        // Status filter
+        if (activeFilters.status.size > 0) {
+          let statusMatch = false;
+          
+          if (activeFilters.status.has('Winning')) {
+            const hasHit = Array.from(legs).some(leg => {
+              const status = leg.querySelector('td:nth-child(8)')?.textContent;
+              return status && status.includes('Hit');
+            });
+            const hasMiss = Array.from(legs).some(leg => {
+              const status = leg.querySelector('td:nth-child(8)')?.textContent;
+              return status && status.includes('Miss');
+            });
+            const allHitOrNotStarted = Array.from(legs).every(leg => {
+              const status = leg.querySelector('td:nth-child(8)')?.textContent;
+              return status && (status.includes('Hit') || status.includes('Not Started'));
+            });
+            if (hasHit && !hasMiss && allHitOrNotStarted) statusMatch = true;
+          }
+          
+          if (activeFilters.status.has('Live')) {
+            const hasLive = Array.from(legs).some(leg => {
+              const status = leg.querySelector('td:nth-child(8)')?.textContent;
+              return status && status.includes('In Progress');
+            });
+            if (hasLive) statusMatch = true;
+          }
+          
+          if (activeFilters.status.has('Losing')) {
+            const hasMiss = Array.from(legs).some(leg => {
+              const status = leg.querySelector('td:nth-child(8)')?.textContent;
+              return status && status.includes('Miss');
+            });
+            if (hasMiss) statusMatch = true;
+          }
+          
+          if (activeFilters.status.has('Not Started')) {
+            const allNotStarted = Array.from(legs).every(leg => {
+              const status = leg.querySelector('td:nth-child(8)')?.textContent;
+              return status && status.includes('Not Started');
+            });
+            if (allNotStarted) statusMatch = true;
+          }
+          
+          shouldShow = shouldShow && statusMatch;
+        }
+        
+        // Betting site filter
+        if (activeFilters.site.size > 0) {
+          shouldShow = shouldShow && activeFilters.site.has(site);
+        }
+        
+        // Sport filter
+        if (activeFilters.sport.size > 0) {
+          shouldShow = shouldShow && activeFilters.sport.has(sport);
+        }
+        
+        // Last 30 days filter
+        if (activeFilters.last30Days && betDate) {
+          const thirtyDaysAgo = new Date();
+          thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+          const betDateObj = new Date(betDate);
+          shouldShow = shouldShow && betDateObj >= thirtyDaysAgo;
+        }
+        
+        // Search filter
+        if (searchQuery) {
+          const searchableText = section.textContent.toLowerCase();
+          shouldShow = shouldShow && searchableText.includes(searchQuery);
         }
         
         section.style.display = shouldShow ? 'block' : 'none';
@@ -1398,7 +1816,9 @@ function logoutToken() {
         console.log('Processing parlay:', parlay);
         const section=document.createElement('div');
         section.className='parlay-section';
-        section.dataset.site = parlay.betting_site || 'Unknown'; // For color-coding
+        section.dataset.site = parlay.betting_site || 'Unknown'; // For color-coding and filtering
+        section.dataset.sport = parlay.sport || ''; // For sport filtering
+        section.dataset.betDate = parlay.bet_date || ''; // For date filtering
         
         const header=document.createElement('div');
         header.className='parlay-header';

@@ -39,7 +39,8 @@
     "returns": "39.00",
     "type": "SGP",
     "wager": 10,
-    "bet_date": "2025-10-19"
+    "bet_date": "2025-10-19",
+    "sport": "NFL"
   },
   {
     "bet_id": "0/1368367/0000041",
@@ -71,7 +72,8 @@
     "returns": "79.40",
     "type": "SGP",
     "wager": 10,
-    "bet_date": "2025-10-19"
+    "bet_date": "2025-10-19",
+    "sport": "NFL"
   },
   {
     "bet_id": "O/1368367/0000040",
@@ -110,7 +112,8 @@
     "wager": 10.0,
     "type": "SGP",
     "returns": "75.50",
-    "bet_date": "2025-10-19"
+    "bet_date": "2025-10-19",
+    "sport": "NFL"
   },
   {
     "bet_id": "O/1368367/0000041",
@@ -140,7 +143,8 @@
     "wager": 10.0,
     "type": "SGP",
     "returns": "79.40",
-    "bet_date": "2025-10-19"
+    "bet_date": "2025-10-19",
+    "sport": "NFL"
   },
   {
     "bet_id": "O/1368367/0000042",
@@ -179,7 +183,8 @@
     "wager": 10.0,
     "type": "SGP",
     "returns": "39.00",
-    "bet_date": "2025-10-19"
+    "bet_date": "2025-10-19",
+    "sport": "NFL"
   },
   {
     "bet_id": "",
@@ -261,7 +266,8 @@
     "returns": 39.7,
     "type": "Parlay",
     "wager": "10",
-    "bet_date": "2025-10-18"
+    "bet_date": "2025-10-18",
+    "sport": "NFL"
   },
   {
     "bet_id": "DK638964901122094929",
@@ -300,7 +306,8 @@
     "wager": 10.0,
     "type": "Parlay",
     "returns": "154.30",
-    "bet_date": "2025-10-18"
+    "bet_date": "2025-10-18",
+    "sport": "NFL"
   },
   {
     "bet_id": "DK638965142909383818",
@@ -375,7 +382,8 @@
     "wager": 10.0,
     "type": "Parlay",
     "returns": "39.70",
-    "bet_date": "2025-10-18"
+    "bet_date": "2025-10-18",
+    "sport": "NFL"
   },
   {
     "bet_id": "O/1368367/0000038",
@@ -432,7 +440,8 @@
     "wager": 10.0,
     "type": "Parlay",
     "returns": "72.00",
-    "bet_date": "2025-10-18"
+    "bet_date": "2025-10-18",
+    "sport": "NFL"
   },
   {
     "bet_id": "O/1368367/0000039",
@@ -462,7 +471,8 @@
     "wager": 10.0,
     "type": "SGP",
     "returns": "27.90",
-    "bet_date": "2025-10-18"
+    "bet_date": "2025-10-18",
+    "sport": "NFL"
   },
   {
     "bet_id": "O/0240915/0000058",
@@ -528,7 +538,8 @@
     "wager": 10.0,
     "type": "Parlay",
     "returns": "45.20",
-    "bet_date": "2025-10-15"
+    "bet_date": "2025-10-15",
+    "sport": "NFL"
   },
   {
     "bet_id": "DK638962542882998573",
@@ -576,7 +587,8 @@
     "wager": 10.0,
     "type": "Parlay",
     "returns": "114.50",
-    "bet_date": "2025-10-15"
+    "bet_date": "2025-10-15",
+    "sport": "NFL"
   },
   {
     "bet_id": "",
@@ -628,7 +640,8 @@
     "returns": 19.2,
     "type": "SGP",
     "wager": "10",
-    "bet_date": "2025-10-12"
+    "bet_date": "2025-10-12",
+    "sport": "NFL"
   },
   {
     "bet_id": "",
@@ -660,7 +673,8 @@
     "returns": 76.5,
     "type": "SGP",
     "wager": "10",
-    "bet_date": "2025-10-12"
+    "bet_date": "2025-10-12",
+    "sport": "NFL"
   },
   {
     "bet_id": "",
@@ -712,7 +726,8 @@
     "returns": 65.6,
     "type": "SGP",
     "wager": "10",
-    "bet_date": "2025-10-12"
+    "bet_date": "2025-10-12",
+    "sport": "NFL"
   },
   {
     "bet_id": "",
@@ -744,7 +759,8 @@
     "returns": 30.3,
     "type": "SGP",
     "wager": "10",
-    "bet_date": "2025-10-12"
+    "bet_date": "2025-10-12",
+    "sport": "NFL"
   },
   {
     "bet_id": "",
@@ -796,7 +812,8 @@
     "returns": 51.6,
     "type": "SGP",
     "wager": "10",
-    "bet_date": "2025-10-12"
+    "bet_date": "2025-10-12",
+    "sport": "NFL"
   },
   {
     "bet_id": "DK638959876709085359",
@@ -844,7 +861,8 @@
     "wager": 10.0,
     "type": "SGP",
     "returns": "65.60",
-    "bet_date": "2025-10-12"
+    "bet_date": "2025-10-12",
+    "sport": "NFL"
   },
   {
     "bet_id": "DK638959884125024982",
@@ -874,7 +892,8 @@
     "wager": 10.0,
     "type": "SGP",
     "returns": "76.50",
-    "bet_date": "2025-10-12"
+    "bet_date": "2025-10-12",
+    "sport": "NFL"
   },
   {
     "bet_id": "DK638959890786574108",
@@ -922,7 +941,8 @@
     "wager": 10.0,
     "type": "SGP",
     "returns": "51.60",
-    "bet_date": "2025-10-12"
+    "bet_date": "2025-10-12",
+    "sport": "NFL"
   },
   {
     "bet_id": "O/0240915/0000056",
@@ -970,7 +990,8 @@
     "wager": 10.0,
     "type": "SGP",
     "returns": "19.30",
-    "bet_date": "2025-10-12"
+    "bet_date": "2025-10-12",
+    "sport": "NFL"
   },
   {
     "bet_id": "O/0240915/0000057",
@@ -1000,7 +1021,8 @@
     "wager": 10.0,
     "type": "SGP",
     "returns": "30.30",
-    "bet_date": "2025-10-12"
+    "bet_date": "2025-10-12",
+    "sport": "NFL"
   },
   {
     "bet_id": "O/1368367/0000037",
@@ -1021,7 +1043,8 @@
     "wager": 10.0,
     "type": "SGP",
     "returns": "28.60",
-    "bet_date": "2025-10-12"
+    "bet_date": "2025-10-12",
+    "sport": "NFL"
   },
   {
     "bet_id": "O/1368367/0000035",
@@ -1087,7 +1110,8 @@
     "wager": 5.0,
     "type": "Parlay",
     "returns": "154.40",
-    "bet_date": "2025-10-04"
+    "bet_date": "2025-10-04",
+    "sport": "NFL"
   },
   {
     "bet_id": "O/1368367/0000036",
@@ -1153,7 +1177,8 @@
     "wager": 10.0,
     "type": "Parlay",
     "returns": "97.90",
-    "bet_date": "2025-10-11"
+    "bet_date": "2025-10-11",
+    "sport": "NFL"
   },
   {
     "bet_id": "O/0240915/0000055",
@@ -1201,7 +1226,8 @@
     "wager": 5.0,
     "type": "SGP",
     "returns": "43.15",
-    "bet_date": "2025-10-11"
+    "bet_date": "2025-10-11",
+    "sport": "NFL"
   },
   {
     "bet_id": "DK638959109257988077",
@@ -1249,7 +1275,8 @@
     "wager": 5.0,
     "type": "SGP",
     "returns": "520.00",
-    "bet_date": "2025-10-11"
+    "bet_date": "2025-10-11",
+    "sport": "NFL"
   },
   {
     "bet_id": "DK638953925568002478",
@@ -1288,7 +1315,8 @@
     "wager": 10.0,
     "type": "Parlay",
     "returns": "37.50",
-    "bet_date": "2025-10-05"
+    "bet_date": "2025-10-05",
+    "sport": "NFL"
   },
   {
     "bet_id": "O/0240915/0000054",
@@ -1345,7 +1373,8 @@
     "wager": 10.0,
     "type": "SGP",
     "returns": "21.70",
-    "bet_date": "2025-10-05"
+    "bet_date": "2025-10-05",
+    "sport": "NFL"
   },
   {
     "bet_id": "O/0240915/0000053",
@@ -1447,7 +1476,8 @@
     "wager": 5.0,
     "type": "Parlay",
     "returns": "84.95",
-    "bet_date": "2025-10-05"
+    "bet_date": "2025-10-05",
+    "sport": "NFL"
   },
   {
     "bet_id": "DK638952803155496376",
@@ -1495,7 +1525,8 @@
     "wager": 10.0,
     "type": "Parlay",
     "returns": "86.90",
-    "bet_date": "2025-10-04"
+    "bet_date": "2025-10-04",
+    "sport": "NFL"
   },
   {
     "bet_id": "DK638953058013659823",
@@ -1516,7 +1547,8 @@
     "wager": 10.0,
     "type": "SGP",
     "returns": "11.10",
-    "bet_date": "2025-10-04"
+    "bet_date": "2025-10-04",
+    "sport": "NFL"
   },
   {
     "bet_id": "O/1368367/0000034",
@@ -1564,7 +1596,8 @@
     "wager": 10.0,
     "type": "Parlay",
     "returns": "32.30",
-    "bet_date": "2025-10-04"
+    "bet_date": "2025-10-04",
+    "sport": "NFL"
   },
   {
     "bet_id": "O/0240915/0000052",
@@ -1621,7 +1654,8 @@
     "wager": 10.0,
     "type": "Parlay",
     "returns": "40.20",
-    "bet_date": "2025-10-04"
+    "bet_date": "2025-10-04",
+    "sport": "NFL"
   },
   {
     "bet_id": "O/0240915/0000051",
@@ -1678,7 +1712,8 @@
     "wager": 10.0,
     "type": "Parlay",
     "returns": "48.10",
-    "bet_date": "2025-10-01"
+    "bet_date": "2025-10-01",
+    "sport": "NFL"
   },
   {
     "bet_id": "DK638950461471078613",
@@ -1735,7 +1770,8 @@
     "wager": 20.0,
     "type": "Parlay",
     "returns": "34.80",
-    "bet_date": "2025-10-01"
+    "bet_date": "2025-10-01",
+    "sport": "NFL"
   },
   {
     "bet_id": "DK638946706562465944",
@@ -1801,7 +1837,8 @@
     "wager": 20.0,
     "type": "Parlay",
     "returns": "78.20",
-    "bet_date": "2025-09-27"
+    "bet_date": "2025-09-27",
+    "sport": "NFL"
   },
   {
     "bet_id": "DK638946708311633880",
@@ -1867,7 +1904,8 @@
     "wager": 20.0,
     "type": "Parlay",
     "returns": "97.60",
-    "bet_date": "2025-09-27"
+    "bet_date": "2025-09-27",
+    "sport": "NFL"
   },
   {
     "bet_id": "DK638946864775833794",
@@ -1933,7 +1971,8 @@
     "wager": 5.0,
     "type": "Parlay",
     "returns": "11.90",
-    "bet_date": "2025-09-27"
+    "bet_date": "2025-09-27",
+    "sport": "NFL"
   },
   {
     "bet_id": "O/0240915/0000048",
@@ -1981,7 +2020,8 @@
     "wager": 10.0,
     "type": "Parlay",
     "returns": "60.20",
-    "bet_date": "2025-09-27"
+    "bet_date": "2025-09-27",
+    "sport": "NFL"
   },
   {
     "bet_id": "O/0240915/0000049",
@@ -2028,7 +2068,8 @@
     "odds": "-110",
     "wager": 20.0,
     "type": "Parlay",
-    "bet_date": "2025-09-27"
+    "bet_date": "2025-09-27",
+    "sport": "NFL"
   },
   {
     "bet_id": "O/0240915/0000050",
@@ -2058,7 +2099,8 @@
     "wager": 10.0,
     "type": "Parlay",
     "returns": "20.80",
-    "bet_date": "2025-09-27"
+    "bet_date": "2025-09-27",
+    "sport": "NFL"
   },
   {
     "bet_id": "O/0240915/0000046",
@@ -2106,7 +2148,8 @@
     "wager": 10.0,
     "type": "Parlay",
     "returns": "101.80",
-    "bet_date": "2025-09-24"
+    "bet_date": "2025-09-24",
+    "sport": "NFL"
   },
   {
     "bet_id": "O/0240915/0000047",
@@ -2162,7 +2205,8 @@
     "odds": "-105",
     "wager": 10.0,
     "type": "SGP",
-    "bet_date": "2025-09-24"
+    "bet_date": "2025-09-24",
+    "sport": "NFL"
   },
   {
     "bet_id": "DK638944245376940359",
@@ -2201,7 +2245,8 @@
     "wager": 10.0,
     "type": "SGP",
     "returns": "80.00",
-    "bet_date": "2025-09-24"
+    "bet_date": "2025-09-24",
+    "sport": "NFL"
   },
   {
     "bet_id": "DK638944230797523015",
@@ -2240,7 +2285,8 @@
     "wager": 10.0,
     "type": "SGP",
     "returns": "24.00",
-    "bet_date": "2025-09-24"
+    "bet_date": "2025-09-24",
+    "sport": "NFL"
   },
   {
     "bet_id": "DK638941829591667808",
@@ -2270,7 +2316,8 @@
     "wager": 10.0,
     "type": "SGP",
     "returns": "23.00",
-    "bet_date": "2025-09-21"
+    "bet_date": "2025-09-21",
+    "sport": "NFL"
   },
   {
     "bet_id": "O/0240915/0000045",
@@ -2327,7 +2374,8 @@
     "wager": 10.0,
     "type": "SGP",
     "returns": "29.40",
-    "bet_date": "2025-09-21"
+    "bet_date": "2025-09-21",
+    "sport": "NFL"
   },
   {
     "bet_id": "O/0240915/0000044",
@@ -2384,7 +2432,8 @@
     "wager": 10.0,
     "type": "Parlay",
     "returns": "32.50",
-    "bet_date": "2025-09-20"
+    "bet_date": "2025-09-20",
+    "sport": "NFL"
   },
   {
     "bet_id": "O/1119460/0000003",
@@ -2450,7 +2499,8 @@
     "wager": 10.0,
     "type": "Parlay",
     "returns": "105.30",
-    "bet_date": "2025-09-20"
+    "bet_date": "2025-09-20",
+    "sport": "NFL"
   },
   {
     "bet_id": "O/1119460/0000002",
@@ -2516,7 +2566,8 @@
     "wager": 10.0,
     "type": "Parlay",
     "returns": "103.90",
-    "bet_date": "2025-09-20"
+    "bet_date": "2025-09-20",
+    "sport": "NFL"
   },
   {
     "bet_id": "DK638940702867776036",
@@ -2573,7 +2624,8 @@
     "wager": 10.0,
     "type": "Parlay",
     "returns": "126.60",
-    "bet_date": "2025-09-20"
+    "bet_date": "2025-09-20",
+    "sport": "NFL"
   },
   {
     "bet_id": "O/1368367/0000033",
@@ -2602,7 +2654,8 @@
     "odds": "-116",
     "wager": 10.0,
     "type": "SGP",
-    "bet_date": "2025-09-17"
+    "bet_date": "2025-09-17",
+    "sport": "NFL"
   },
   {
     "bet_id": "O/0240915/0000040",
@@ -2659,7 +2712,8 @@
     "wager": 10.0,
     "type": "Parlay",
     "returns": "45.20",
-    "bet_date": "2025-09-13"
+    "bet_date": "2025-09-13",
+    "sport": "NFL"
   },
   {
     "bet_id": "O/0240915/0000042",
@@ -2716,7 +2770,8 @@
     "wager": 10.0,
     "type": "Parlay",
     "returns": "63.10",
-    "bet_date": "2025-09-14"
+    "bet_date": "2025-09-14",
+    "sport": "NFL"
   },
   {
     "bet_id": "O/0240915/0000043",
@@ -2737,7 +2792,8 @@
     "wager": 10.0,
     "type": "SGP",
     "returns": "15.20",
-    "bet_date": "2025-09-14"
+    "bet_date": "2025-09-14",
+    "sport": "NFL"
   },
   {
     "bet_id": "O/0240915/0000041",
@@ -2776,7 +2832,8 @@
     "wager": 10.0,
     "type": "Parlay",
     "returns": "43.10",
-    "bet_date": "2025-09-13"
+    "bet_date": "2025-09-13",
+    "sport": "NFL"
   },
   {
     "bet_id": "DK638932329442198194",
@@ -2806,7 +2863,8 @@
     "wager": 10.0,
     "type": "SGP",
     "returns": "80.00",
-    "bet_date": "2025-09-10"
+    "bet_date": "2025-09-10",
+    "sport": "NFL"
   },
   {
     "bet_id": "O/0240915/0000037",
@@ -2845,7 +2903,8 @@
     "wager": 5.0,
     "type": "SGP",
     "returns": "14.85",
-    "bet_date": "2025-09-07"
+    "bet_date": "2025-09-07",
+    "sport": "NFL"
   },
   {
     "bet_id": "O/0240915/0000038",
@@ -2884,7 +2943,8 @@
     "wager": 5.0,
     "type": "SGP",
     "returns": "14.85",
-    "bet_date": "2025-09-07"
+    "bet_date": "2025-09-07",
+    "sport": "NFL"
   },
   {
     "bet_id": "O/0240915/0000039",
@@ -2923,7 +2983,8 @@
     "wager": 10.0,
     "type": "SGP",
     "returns": "274.60",
-    "bet_date": "2025-09-07"
+    "bet_date": "2025-09-07",
+    "sport": "NFL"
   },
   {
     "bet_id": "DK638929734797786019",
@@ -2980,7 +3041,8 @@
     "wager": 4.8,
     "type": "SGP",
     "returns": "17.04",
-    "bet_date": "2025-09-07"
+    "bet_date": "2025-09-07",
+    "sport": "NFL"
   },
   {
     "bet_id": "DK638929693228150392",
@@ -3037,7 +3099,8 @@
     "wager": 10.0,
     "type": "SGP",
     "returns": "250.00",
-    "bet_date": "2025-09-07"
+    "bet_date": "2025-09-07",
+    "sport": "NFL"
   },
   {
     "bet_id": "O/0240915/0000029",
@@ -3094,7 +3157,8 @@
     "wager": 5.0,
     "type": "SGP",
     "returns": "25.45",
-    "bet_date": "2025-09-06"
+    "bet_date": "2025-09-06",
+    "sport": "NFL"
   },
   {
     "bet_id": "O/0240915/0000030",
@@ -3151,7 +3215,8 @@
     "wager": 5.0,
     "type": "Parlay",
     "returns": "12.35",
-    "bet_date": "2025-09-06"
+    "bet_date": "2025-09-06",
+    "sport": "NFL"
   },
   {
     "bet_id": "O/0240915/0000033",
@@ -3172,7 +3237,8 @@
     "wager": 10.0,
     "type": "SGP",
     "returns": "21.00",
-    "bet_date": "2025-09-06"
+    "bet_date": "2025-09-06",
+    "sport": "NFL"
   },
   {
     "bet_id": "O/0240915/0000032",
@@ -3192,7 +3258,8 @@
     "odds": "-105",
     "wager": 10.0,
     "type": "SGP",
-    "bet_date": "2025-09-06"
+    "bet_date": "2025-09-06",
+    "sport": "NFL"
   },
   {
     "bet_id": "O/0240915/0000031",
@@ -3249,7 +3316,8 @@
     "wager": 10.0,
     "type": "SGP",
     "returns": "50.10",
-    "bet_date": "2025-09-06"
+    "bet_date": "2025-09-06",
+    "sport": "NFL"
   },
   {
     "bet_id": "O/0240915/0000036",
@@ -3288,7 +3356,8 @@
     "wager": 10.0,
     "type": "SGP",
     "returns": "42.30",
-    "bet_date": "2025-09-06"
+    "bet_date": "2025-09-06",
+    "sport": "NFL"
   },
   {
     "bet_id": "O/0240915/0000034",
@@ -3308,7 +3377,8 @@
     "odds": "-122",
     "wager": 5.0,
     "type": "SGP",
-    "bet_date": "2025-09-06"
+    "bet_date": "2025-09-06",
+    "sport": "NFL"
   },
   {
     "bet_id": "O/0240915/0000035",
@@ -3338,7 +3408,8 @@
     "wager": 10.0,
     "type": "SGP",
     "returns": "15.90",
-    "bet_date": "2025-09-06"
+    "bet_date": "2025-09-06",
+    "sport": "NFL"
   },
   {
     "bet_id": "O/1368367/0000030",
@@ -3395,7 +3466,8 @@
     "wager": 5.0,
     "type": "Parlay",
     "returns": "34.40",
-    "bet_date": "2025-09-03"
+    "bet_date": "2025-09-03",
+    "sport": "NFL"
   },
   {
     "bet_id": "O/1368367/0000031",
@@ -3452,7 +3524,8 @@
     "wager": 5.0,
     "type": "Parlay",
     "returns": "34.75",
-    "bet_date": "2025-09-03"
+    "bet_date": "2025-09-03",
+    "sport": "NFL"
   },
   {
     "bet_id": "O/1368367/0000032",
@@ -3482,7 +3555,8 @@
     "wager": 10.0,
     "type": "Parlay",
     "returns": "75.00",
-    "bet_date": "2025-09-03"
+    "bet_date": "2025-09-03",
+    "sport": "NFL"
   },
   {
     "bet_id": "O/1368367/0000029",
@@ -3530,7 +3604,8 @@
     "wager": 10.0,
     "type": "SGP",
     "returns": "32.20",
-    "bet_date": "2025-09-03"
+    "bet_date": "2025-09-03",
+    "sport": "NFL"
   },
   {
     "bet_id": "DK638926171300468480",
@@ -3560,7 +3635,8 @@
     "wager": 4.8,
     "type": "SGP",
     "returns": "18.24",
-    "bet_date": "2025-09-03"
+    "bet_date": "2025-09-03",
+    "sport": "NFL"
   },
   {
     "bet_id": "DK638926174744164449",
@@ -3581,6 +3657,7 @@
     "wager": 5.0,
     "type": "SGP",
     "returns": "60.00",
-    "bet_date": "2025-09-03"
+    "bet_date": "2025-09-03",
+    "sport": "NFL"
   }
 ]

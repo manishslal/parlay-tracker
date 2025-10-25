@@ -81,7 +81,8 @@
         "stat": "spread"
       }
     ],
-    "bet_date": "2025-10-22"
+    "bet_date": "2025-10-22",
+    "sport": "NFL"
   },
   {
     "type": "Same Game Parlay",
@@ -133,7 +134,8 @@
         "stat": "receiving_yards"
       }
     ],
-    "bet_date": "2025-10-22"
+    "bet_date": "2025-10-22",
+    "sport": "NFL"
   },
   {
     "type": "Parlay",
@@ -177,6 +179,7 @@
         "stat": "receiving_yards"
       }
     ],
-    "bet_date": "2025-10-22"
+    "bet_date": "2025-10-22",
+    "sport": "NFL"
   }
 ]
