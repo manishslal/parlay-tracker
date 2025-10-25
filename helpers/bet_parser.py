@@ -102,12 +102,18 @@ def calculate_bet_status(bet: Dict) -> str:
 
 def extract_bet_date(bet: Dict) -> str:
     """
-    Extract bet date from existing data.
-    Priority: game_date from earliest leg, or parse from bet name
+    Extract bet date from bet object.
+    Priority: 
+    1. Direct bet_date field (when bet was placed)
+    2. Earliest game_date from legs (fallback)
+    3. Parse from bet name (fallback)
     """
-    legs = bet.get('legs', [])
+    # First priority: use the explicit bet_date field if it exists
+    if 'bet_date' in bet and bet['bet_date']:
+        return bet['bet_date']
     
-    # Try to get earliest game_date from legs
+    # Fallback 1: Try to get earliest game_date from legs
+    legs = bet.get('legs', [])
     dates = []
     for leg in legs:
         game_date = leg.get('game_date')
@@ -118,7 +124,7 @@ def extract_bet_date(bet: Dict) -> str:
         # Return earliest date
         return min(dates)
     
-    # Fallback: try to parse from name (e.g., "10/12 Parlay" -> "2025-10-12")
+    # Fallback 2: try to parse from name (e.g., "10/12 Parlay" -> "2025-10-12")
     name = bet.get('name', '')
     if '/' in name:
         try:

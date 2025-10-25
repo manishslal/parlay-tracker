@@ -3,8 +3,8 @@
     "type": "Parlay",
     "name": "9 Pick ML Parlay - Week 8",
     "odds": "+2746",
-    "wager": 5.00,
-    "returns": 175.30,
+    "wager": 5.0,
+    "returns": 175.3,
     "bet_id": "DK638968421983149956",
     "betting_site": "DraftKings",
     "legs": [
@@ -80,13 +80,14 @@
         "target": 3.5,
         "stat": "spread"
       }
-    ]
+    ],
+    "bet_date": "2025-10-22"
   },
   {
     "type": "Same Game Parlay",
     "name": "TNF SGP",
     "odds": "+353",
-    "wager": 10.00,
+    "wager": 10.0,
     "returns": 45.35,
     "bet_id": "O/0240915/0000059",
     "betting_site": "FanDuel",
@@ -131,13 +132,14 @@
         "target": 25,
         "stat": "receiving_yards"
       }
-    ]
+    ],
+    "bet_date": "2025-10-22"
   },
   {
     "type": "Parlay",
     "name": "4 Picks (All-In) SGP",
     "odds": "+1200",
-    "wager": 5.00,
+    "wager": 5.0,
     "returns": null,
     "bet_id": null,
     "betting_site": "Dabble",
@@ -174,6 +176,7 @@
         "target": 56.5,
         "stat": "receiving_yards"
       }
-    ]
+    ],
+    "bet_date": "2025-10-22"
   }
 ]

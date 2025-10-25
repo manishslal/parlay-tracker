@@ -38,7 +38,8 @@
     "odds": "+390",
     "returns": "39.00",
     "type": "SGP",
-    "wager": 10
+    "wager": 10,
+    "bet_date": "2025-10-19"
   },
   {
     "bet_id": "0/1368367/0000041",
@@ -69,7 +70,8 @@
     "odds": "+794",
     "returns": "79.40",
     "type": "SGP",
-    "wager": 10
+    "wager": 10,
+    "bet_date": "2025-10-19"
   },
   {
     "bet_id": "O/1368367/0000040",
@@ -107,7 +109,8 @@
     "odds": "+755",
     "wager": 10.0,
     "type": "SGP",
-    "returns": "75.50"
+    "returns": "75.50",
+    "bet_date": "2025-10-19"
   },
   {
     "bet_id": "O/1368367/0000041",
@@ -136,7 +139,8 @@
     "odds": "+794",
     "wager": 10.0,
     "type": "SGP",
-    "returns": "79.40"
+    "returns": "79.40",
+    "bet_date": "2025-10-19"
   },
   {
     "bet_id": "O/1368367/0000042",
@@ -174,7 +178,8 @@
     "odds": "+390",
     "wager": 10.0,
     "type": "SGP",
-    "returns": "39.00"
+    "returns": "39.00",
+    "bet_date": "2025-10-19"
   },
   {
     "bet_id": "",
@@ -255,7 +260,8 @@
     "odds": "+397",
     "returns": 39.7,
     "type": "Parlay",
-    "wager": "10"
+    "wager": "10",
+    "bet_date": "2025-10-18"
   },
   {
     "bet_id": "DK638964901122094929",
@@ -293,7 +299,8 @@
     "odds": "+1543",
     "wager": 10.0,
     "type": "Parlay",
-    "returns": "154.30"
+    "returns": "154.30",
+    "bet_date": "2025-10-18"
   },
   {
     "bet_id": "DK638965142909383818",
@@ -367,7 +374,8 @@
     "odds": "+397",
     "wager": 10.0,
     "type": "Parlay",
-    "returns": "39.70"
+    "returns": "39.70",
+    "bet_date": "2025-10-18"
   },
   {
     "bet_id": "O/1368367/0000038",
@@ -423,7 +431,8 @@
     "odds": "+720",
     "wager": 10.0,
     "type": "Parlay",
-    "returns": "72.00"
+    "returns": "72.00",
+    "bet_date": "2025-10-18"
   },
   {
     "bet_id": "O/1368367/0000039",
@@ -452,7 +461,8 @@
     "odds": "+279",
     "wager": 10.0,
     "type": "SGP",
-    "returns": "27.90"
+    "returns": "27.90",
+    "bet_date": "2025-10-18"
   },
   {
     "bet_id": "O/0240915/0000058",
@@ -517,7 +527,8 @@
     "odds": "+452",
     "wager": 10.0,
     "type": "Parlay",
-    "returns": "45.20"
+    "returns": "45.20",
+    "bet_date": "2025-10-15"
   },
   {
     "bet_id": "DK638962542882998573",
@@ -564,7 +575,8 @@
     "odds": "+1145",
     "wager": 10.0,
     "type": "Parlay",
-    "returns": "114.50"
+    "returns": "114.50",
+    "bet_date": "2025-10-15"
   },
   {
     "bet_id": "",
@@ -615,7 +627,8 @@
     "odds": "+192",
     "returns": 19.2,
     "type": "SGP",
-    "wager": "10"
+    "wager": "10",
+    "bet_date": "2025-10-12"
   },
   {
     "bet_id": "",
@@ -646,7 +659,8 @@
     "odds": "+765",
     "returns": 76.5,
     "type": "SGP",
-    "wager": "10"
+    "wager": "10",
+    "bet_date": "2025-10-12"
   },
   {
     "bet_id": "",
@@ -697,7 +711,8 @@
     "odds": "+656",
     "returns": 65.6,
     "type": "SGP",
-    "wager": "10"
+    "wager": "10",
+    "bet_date": "2025-10-12"
   },
   {
     "bet_id": "",
@@ -728,7 +743,8 @@
     "odds": "+303",
     "returns": 30.3,
     "type": "SGP",
-    "wager": "10"
+    "wager": "10",
+    "bet_date": "2025-10-12"
   },
   {
     "bet_id": "",
@@ -779,28 +795,8 @@
     "odds": "+516",
     "returns": 51.6,
     "type": "SGP",
-    "wager": "10"
-  },
-  {
-    "bet_id": "",
-    "betting_site": "",
-    "legs": [
-      {
-        "away": "Buffalo Bills",
-        "current": 238,
-        "game_date": "2025-10-13",
-        "home": "Atlanta Falcons",
-        "parlay_name": "TEST 1-Leg - Bills @ Falcons (Bijan Robinson)",
-        "player": "Bijan Robinson",
-        "stat": "rushing_receiving_yards",
-        "target": 80
-      }
-    ],
-    "name": "TEST 1-Leg - Bills @ Falcons (Bijan Robinson)",
-    "odds": "",
-    "returns": "",
-    "type": "SGP",
-    "wager": ""
+    "wager": "10",
+    "bet_date": "2025-10-12"
   },
   {
     "bet_id": "DK638959876709085359",
@@ -847,7 +843,8 @@
     "odds": "+656",
     "wager": 10.0,
     "type": "SGP",
-    "returns": "65.60"
+    "returns": "65.60",
+    "bet_date": "2025-10-12"
   },
   {
     "bet_id": "DK638959884125024982",
@@ -876,7 +873,8 @@
     "odds": "+765",
     "wager": 10.0,
     "type": "SGP",
-    "returns": "76.50"
+    "returns": "76.50",
+    "bet_date": "2025-10-12"
   },
   {
     "bet_id": "DK638959890786574108",
@@ -923,7 +921,8 @@
     "odds": "+516",
     "wager": 10.0,
     "type": "SGP",
-    "returns": "51.60"
+    "returns": "51.60",
+    "bet_date": "2025-10-12"
   },
   {
     "bet_id": "O/0240915/0000056",
@@ -970,7 +969,8 @@
     "odds": "+193",
     "wager": 10.0,
     "type": "SGP",
-    "returns": "19.30"
+    "returns": "19.30",
+    "bet_date": "2025-10-12"
   },
   {
     "bet_id": "O/0240915/0000057",
@@ -999,7 +999,8 @@
     "odds": "+303",
     "wager": 10.0,
     "type": "SGP",
-    "returns": "30.30"
+    "returns": "30.30",
+    "bet_date": "2025-10-12"
   },
   {
     "bet_id": "O/1368367/0000037",
@@ -1019,7 +1020,8 @@
     "odds": "+286",
     "wager": 10.0,
     "type": "SGP",
-    "returns": "28.60"
+    "returns": "28.60",
+    "bet_date": "2025-10-12"
   },
   {
     "bet_id": "O/1368367/0000035",
@@ -1084,7 +1086,8 @@
     "odds": "+3088",
     "wager": 5.0,
     "type": "Parlay",
-    "returns": "154.40"
+    "returns": "154.40",
+    "bet_date": "2025-10-04"
   },
   {
     "bet_id": "O/1368367/0000036",
@@ -1149,7 +1152,8 @@
     "odds": "+979",
     "wager": 10.0,
     "type": "Parlay",
-    "returns": "97.90"
+    "returns": "97.90",
+    "bet_date": "2025-10-11"
   },
   {
     "bet_id": "O/0240915/0000055",
@@ -1196,7 +1200,8 @@
     "odds": "+863",
     "wager": 5.0,
     "type": "SGP",
-    "returns": "43.15"
+    "returns": "43.15",
+    "bet_date": "2025-10-11"
   },
   {
     "bet_id": "DK638959109257988077",
@@ -1243,7 +1248,8 @@
     "odds": "+10400",
     "wager": 5.0,
     "type": "SGP",
-    "returns": "520.00"
+    "returns": "520.00",
+    "bet_date": "2025-10-11"
   },
   {
     "bet_id": "DK638953925568002478",
@@ -1281,7 +1287,8 @@
     "odds": "+375",
     "wager": 10.0,
     "type": "Parlay",
-    "returns": "37.50"
+    "returns": "37.50",
+    "bet_date": "2025-10-05"
   },
   {
     "bet_id": "O/0240915/0000054",
@@ -1337,7 +1344,8 @@
     "odds": "+217",
     "wager": 10.0,
     "type": "SGP",
-    "returns": "21.70"
+    "returns": "21.70",
+    "bet_date": "2025-10-05"
   },
   {
     "bet_id": "O/0240915/0000053",
@@ -1438,7 +1446,8 @@
     "odds": "+1699",
     "wager": 5.0,
     "type": "Parlay",
-    "returns": "84.95"
+    "returns": "84.95",
+    "bet_date": "2025-10-05"
   },
   {
     "bet_id": "DK638952803155496376",
@@ -1485,7 +1494,8 @@
     "odds": "+869",
     "wager": 10.0,
     "type": "Parlay",
-    "returns": "86.90"
+    "returns": "86.90",
+    "bet_date": "2025-10-04"
   },
   {
     "bet_id": "DK638953058013659823",
@@ -1505,7 +1515,8 @@
     "odds": "+111",
     "wager": 10.0,
     "type": "SGP",
-    "returns": "11.10"
+    "returns": "11.10",
+    "bet_date": "2025-10-04"
   },
   {
     "bet_id": "O/1368367/0000034",
@@ -1552,7 +1563,8 @@
     "odds": "+323",
     "wager": 10.0,
     "type": "Parlay",
-    "returns": "32.30"
+    "returns": "32.30",
+    "bet_date": "2025-10-04"
   },
   {
     "bet_id": "O/0240915/0000052",
@@ -1608,7 +1620,8 @@
     "odds": "+402",
     "wager": 10.0,
     "type": "Parlay",
-    "returns": "40.20"
+    "returns": "40.20",
+    "bet_date": "2025-10-04"
   },
   {
     "bet_id": "O/0240915/0000051",
@@ -1664,7 +1677,8 @@
     "odds": "+481",
     "wager": 10.0,
     "type": "Parlay",
-    "returns": "48.10"
+    "returns": "48.10",
+    "bet_date": "2025-10-01"
   },
   {
     "bet_id": "DK638950461471078613",
@@ -1720,7 +1734,8 @@
     "odds": "+174",
     "wager": 20.0,
     "type": "Parlay",
-    "returns": "34.80"
+    "returns": "34.80",
+    "bet_date": "2025-10-01"
   },
   {
     "bet_id": "DK638946706562465944",
@@ -1785,7 +1800,8 @@
     "odds": "+391",
     "wager": 20.0,
     "type": "Parlay",
-    "returns": "78.20"
+    "returns": "78.20",
+    "bet_date": "2025-09-27"
   },
   {
     "bet_id": "DK638946708311633880",
@@ -1850,7 +1866,8 @@
     "odds": "+488",
     "wager": 20.0,
     "type": "Parlay",
-    "returns": "97.60"
+    "returns": "97.60",
+    "bet_date": "2025-09-27"
   },
   {
     "bet_id": "DK638946864775833794",
@@ -1915,7 +1932,8 @@
     "odds": "+238",
     "wager": 5.0,
     "type": "Parlay",
-    "returns": "11.90"
+    "returns": "11.90",
+    "bet_date": "2025-09-27"
   },
   {
     "bet_id": "O/0240915/0000048",
@@ -1962,7 +1980,8 @@
     "odds": "+602",
     "wager": 10.0,
     "type": "Parlay",
-    "returns": "60.20"
+    "returns": "60.20",
+    "bet_date": "2025-09-27"
   },
   {
     "bet_id": "O/0240915/0000049",
@@ -2008,7 +2027,8 @@
     "name": "09/28 Parlay",
     "odds": "-110",
     "wager": 20.0,
-    "type": "Parlay"
+    "type": "Parlay",
+    "bet_date": "2025-09-27"
   },
   {
     "bet_id": "O/0240915/0000050",
@@ -2037,7 +2057,8 @@
     "odds": "+208",
     "wager": 10.0,
     "type": "Parlay",
-    "returns": "20.80"
+    "returns": "20.80",
+    "bet_date": "2025-09-27"
   },
   {
     "bet_id": "O/0240915/0000046",
@@ -2084,7 +2105,8 @@
     "odds": "+1018",
     "wager": 10.0,
     "type": "Parlay",
-    "returns": "101.80"
+    "returns": "101.80",
+    "bet_date": "2025-09-24"
   },
   {
     "bet_id": "O/0240915/0000047",
@@ -2139,7 +2161,8 @@
     "name": "09/25 SGP",
     "odds": "-105",
     "wager": 10.0,
-    "type": "SGP"
+    "type": "SGP",
+    "bet_date": "2025-09-24"
   },
   {
     "bet_id": "DK638944245376940359",
@@ -2177,7 +2200,8 @@
     "odds": "+800",
     "wager": 10.0,
     "type": "SGP",
-    "returns": "80.00"
+    "returns": "80.00",
+    "bet_date": "2025-09-24"
   },
   {
     "bet_id": "DK638944230797523015",
@@ -2215,7 +2239,8 @@
     "odds": "+240",
     "wager": 10.0,
     "type": "SGP",
-    "returns": "24.00"
+    "returns": "24.00",
+    "bet_date": "2025-09-24"
   },
   {
     "bet_id": "DK638941829591667808",
@@ -2244,7 +2269,8 @@
     "odds": "+230",
     "wager": 10.0,
     "type": "SGP",
-    "returns": "23.00"
+    "returns": "23.00",
+    "bet_date": "2025-09-21"
   },
   {
     "bet_id": "O/0240915/0000045",
@@ -2300,7 +2326,8 @@
     "odds": "+294",
     "wager": 10.0,
     "type": "SGP",
-    "returns": "29.40"
+    "returns": "29.40",
+    "bet_date": "2025-09-21"
   },
   {
     "bet_id": "O/0240915/0000044",
@@ -2356,7 +2383,8 @@
     "odds": "+325",
     "wager": 10.0,
     "type": "Parlay",
-    "returns": "32.50"
+    "returns": "32.50",
+    "bet_date": "2025-09-20"
   },
   {
     "bet_id": "O/1119460/0000003",
@@ -2421,7 +2449,8 @@
     "odds": "+1053",
     "wager": 10.0,
     "type": "Parlay",
-    "returns": "105.30"
+    "returns": "105.30",
+    "bet_date": "2025-09-20"
   },
   {
     "bet_id": "O/1119460/0000002",
@@ -2486,7 +2515,8 @@
     "odds": "+1039",
     "wager": 10.0,
     "type": "Parlay",
-    "returns": "103.90"
+    "returns": "103.90",
+    "bet_date": "2025-09-20"
   },
   {
     "bet_id": "DK638940702867776036",
@@ -2542,7 +2572,8 @@
     "odds": "+1266",
     "wager": 10.0,
     "type": "Parlay",
-    "returns": "126.60"
+    "returns": "126.60",
+    "bet_date": "2025-09-20"
   },
   {
     "bet_id": "O/1368367/0000033",
@@ -2570,7 +2601,8 @@
     "name": "09/18 SGP",
     "odds": "-116",
     "wager": 10.0,
-    "type": "SGP"
+    "type": "SGP",
+    "bet_date": "2025-09-17"
   },
   {
     "bet_id": "O/0240915/0000040",
@@ -2626,7 +2658,8 @@
     "odds": "+452",
     "wager": 10.0,
     "type": "Parlay",
-    "returns": "45.20"
+    "returns": "45.20",
+    "bet_date": "2025-09-13"
   },
   {
     "bet_id": "O/0240915/0000042",
@@ -2682,7 +2715,8 @@
     "odds": "+631",
     "wager": 10.0,
     "type": "Parlay",
-    "returns": "63.10"
+    "returns": "63.10",
+    "bet_date": "2025-09-14"
   },
   {
     "bet_id": "O/0240915/0000043",
@@ -2702,7 +2736,8 @@
     "odds": "+152",
     "wager": 10.0,
     "type": "SGP",
-    "returns": "15.20"
+    "returns": "15.20",
+    "bet_date": "2025-09-14"
   },
   {
     "bet_id": "O/0240915/0000041",
@@ -2740,7 +2775,8 @@
     "odds": "+431",
     "wager": 10.0,
     "type": "Parlay",
-    "returns": "43.10"
+    "returns": "43.10",
+    "bet_date": "2025-09-13"
   },
   {
     "bet_id": "DK638932329442198194",
@@ -2769,7 +2805,8 @@
     "odds": "+800",
     "wager": 10.0,
     "type": "SGP",
-    "returns": "80.00"
+    "returns": "80.00",
+    "bet_date": "2025-09-10"
   },
   {
     "bet_id": "O/0240915/0000037",
@@ -2807,7 +2844,8 @@
     "odds": "+297",
     "wager": 5.0,
     "type": "SGP",
-    "returns": "14.85"
+    "returns": "14.85",
+    "bet_date": "2025-09-07"
   },
   {
     "bet_id": "O/0240915/0000038",
@@ -2845,7 +2883,8 @@
     "odds": "+297",
     "wager": 5.0,
     "type": "SGP",
-    "returns": "14.85"
+    "returns": "14.85",
+    "bet_date": "2025-09-07"
   },
   {
     "bet_id": "O/0240915/0000039",
@@ -2883,7 +2922,8 @@
     "odds": "+2746",
     "wager": 10.0,
     "type": "SGP",
-    "returns": "274.60"
+    "returns": "274.60",
+    "bet_date": "2025-09-07"
   },
   {
     "bet_id": "DK638929734797786019",
@@ -2939,7 +2979,8 @@
     "odds": "+355",
     "wager": 4.8,
     "type": "SGP",
-    "returns": "17.04"
+    "returns": "17.04",
+    "bet_date": "2025-09-07"
   },
   {
     "bet_id": "DK638929693228150392",
@@ -2995,7 +3036,8 @@
     "odds": "+2500",
     "wager": 10.0,
     "type": "SGP",
-    "returns": "250.00"
+    "returns": "250.00",
+    "bet_date": "2025-09-07"
   },
   {
     "bet_id": "O/0240915/0000029",
@@ -3051,7 +3093,8 @@
     "odds": "+509",
     "wager": 5.0,
     "type": "SGP",
-    "returns": "25.45"
+    "returns": "25.45",
+    "bet_date": "2025-09-06"
   },
   {
     "bet_id": "O/0240915/0000030",
@@ -3107,7 +3150,8 @@
     "odds": "+247",
     "wager": 5.0,
     "type": "Parlay",
-    "returns": "12.35"
+    "returns": "12.35",
+    "bet_date": "2025-09-06"
   },
   {
     "bet_id": "O/0240915/0000033",
@@ -3127,7 +3171,8 @@
     "odds": "+210",
     "wager": 10.0,
     "type": "SGP",
-    "returns": "21.00"
+    "returns": "21.00",
+    "bet_date": "2025-09-06"
   },
   {
     "bet_id": "O/0240915/0000032",
@@ -3146,7 +3191,8 @@
     "name": "09/07 SGP",
     "odds": "-105",
     "wager": 10.0,
-    "type": "SGP"
+    "type": "SGP",
+    "bet_date": "2025-09-06"
   },
   {
     "bet_id": "O/0240915/0000031",
@@ -3202,7 +3248,8 @@
     "odds": "+501",
     "wager": 10.0,
     "type": "SGP",
-    "returns": "50.10"
+    "returns": "50.10",
+    "bet_date": "2025-09-06"
   },
   {
     "bet_id": "O/0240915/0000036",
@@ -3240,7 +3287,8 @@
     "odds": "+423",
     "wager": 10.0,
     "type": "SGP",
-    "returns": "42.30"
+    "returns": "42.30",
+    "bet_date": "2025-09-06"
   },
   {
     "bet_id": "O/0240915/0000034",
@@ -3259,7 +3307,8 @@
     "name": "09/07 SGP",
     "odds": "-122",
     "wager": 5.0,
-    "type": "SGP"
+    "type": "SGP",
+    "bet_date": "2025-09-06"
   },
   {
     "bet_id": "O/0240915/0000035",
@@ -3288,7 +3337,8 @@
     "odds": "+159",
     "wager": 10.0,
     "type": "SGP",
-    "returns": "15.90"
+    "returns": "15.90",
+    "bet_date": "2025-09-06"
   },
   {
     "bet_id": "O/1368367/0000030",
@@ -3344,7 +3394,8 @@
     "odds": "+688",
     "wager": 5.0,
     "type": "Parlay",
-    "returns": "34.40"
+    "returns": "34.40",
+    "bet_date": "2025-09-03"
   },
   {
     "bet_id": "O/1368367/0000031",
@@ -3400,7 +3451,8 @@
     "odds": "+695",
     "wager": 5.0,
     "type": "Parlay",
-    "returns": "34.75"
+    "returns": "34.75",
+    "bet_date": "2025-09-03"
   },
   {
     "bet_id": "O/1368367/0000032",
@@ -3429,7 +3481,8 @@
     "odds": "+750",
     "wager": 10.0,
     "type": "Parlay",
-    "returns": "75.00"
+    "returns": "75.00",
+    "bet_date": "2025-09-03"
   },
   {
     "bet_id": "O/1368367/0000029",
@@ -3476,7 +3529,8 @@
     "odds": "+322",
     "wager": 10.0,
     "type": "SGP",
-    "returns": "32.20"
+    "returns": "32.20",
+    "bet_date": "2025-09-03"
   },
   {
     "bet_id": "DK638926171300468480",
@@ -3505,7 +3559,8 @@
     "odds": "+380",
     "wager": 4.8,
     "type": "SGP",
-    "returns": "18.24"
+    "returns": "18.24",
+    "bet_date": "2025-09-03"
   },
   {
     "bet_id": "DK638926174744164449",
@@ -3525,6 +3580,7 @@
     "odds": "+1200",
     "wager": 5.0,
     "type": "SGP",
-    "returns": "60.00"
+    "returns": "60.00",
+    "bet_date": "2025-09-03"
   }
 ]
