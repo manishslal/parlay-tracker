@@ -580,6 +580,11 @@ def calculate_bet_value(bet, game_data):
             rec = _get_player_stat_from_boxscore(player_name, "receiving", "YDS", boxscore)
             return rush + rec
         
+        if stat == "passing_rushing_yards":
+            pass_yds = _get_player_stat_from_boxscore(player_name, "passing", "YDS", boxscore)
+            rush_yds = _get_player_stat_from_boxscore(player_name, "rushing", "YDS", boxscore)
+            return pass_yds + rush_yds
+        
         if stat in ["anytime_touchdown", "player_to_score_2_touchdowns", "player_to_score_3_touchdowns"]:
             return _get_touchdowns(player_name, boxscore, scoring_plays)
 

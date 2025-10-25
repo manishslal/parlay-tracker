@@ -383,10 +383,35 @@
     }
     .game-info{display:flex;flex-direction:column;align-items:center;
       gap:.25rem;font-size:.9rem;border:1px solid var(--border);
-      padding:.5rem;border-radius:6px;background:rgba(0,0,0,0.2);}
+      padding:.5rem;border-radius:6px;background:rgba(0,0,0,0.2);
+      position:relative;overflow:hidden;}
     /* Reduce scoreboard font size (web view only) */
     .game-info * {
       font-size: 0.8rem;
+    }
+    /* NFL logo in scoreboards - positioned in background with low opacity */
+    .nfl-logo-bg {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) scale(1.25);
+      width: 100%;
+      height: 100%;
+      opacity: 0.1;
+      pointer-events: none;
+      z-index: 0;
+    }
+    /* Theme-aware NFL logo display */
+    body:not(.light-mode) .nfl-logo-light {
+      display: none;
+    }
+    body.light-mode .nfl-logo-dark {
+      display: none;
+    }
+    /* Ensure scoreboard content is above logo */
+    .game-info > div {
+      position: relative;
+      z-index: 1;
     }
     table{width:100%;border-collapse:separate;border-spacing:0;}
     th,td{padding:.375rem;border-bottom:1px solid var(--border);
@@ -1115,7 +1140,7 @@ function logoutToken() {
     })();
 
     function fmtType(stat){
-      const m={'passing_yards':'Pass Yds','passing_yards_alt':'Alt Pass Yds','receiving_yards':'Rec Yds','receiving_yards_alt':'Alt Rec Yds','rushing_yards':'Rush Yds','rushing_yards_alt':'Alt Rush Yds','rushing_receiving_yards':'Rush + Rec Yds','anytime_touchdown':'Anytime TD','passing_touchdowns':'Pass TDs','rushing_touchdowns':'Rush TDs','receptions':'Receptions','receptions_alt':'Alt Receptions','longest_reception':'Longest Rec','moneyline':'Moneyline','spread':'Spread'};
+      const m={'passing_yards':'Pass Yds','passing_yards_alt':'Alt Pass Yds','receiving_yards':'Rec Yds','receiving_yards_alt':'Alt Rec Yds','rushing_yards':'Rush Yds','rushing_yards_alt':'Alt Rush Yds','rushing_receiving_yards':'Rush + Rec Yds','passing_rushing_yards':'Pass + Rush Yds','anytime_touchdown':'Anytime TD','passing_touchdowns':'Pass TDs','rushing_touchdowns':'Rush TDs','receptions':'Receptions','receptions_alt':'Alt Receptions','longest_reception':'Longest Rec','moneyline':'Moneyline','spread':'Spread'};
       return m[stat]||stat.replace(/_/g,' ').replace(/\b\w/g,l=>l.toUpperCase());
     }
     function getQuarter(p){return p===1?'1st Quarter':p===2?'2nd Quarter':p===3?'3rd Quarter':p===4?'4th Quarter':'Overtime';}
@@ -1499,7 +1524,7 @@ function logoutToken() {
               
               const gameInfoDiv=document.createElement('div');
               gameInfoDiv.className='game-info';
-              gameInfoDiv.innerHTML=`<div class="badge ${gameCls}">${gameStatus}</div>${gameDetails}`;
+              gameInfoDiv.innerHTML=`<img src="media/logos/nfl-logo-1.svg" class="nfl-logo-bg nfl-logo-dark" alt="NFL"><img src="media/logos/nfl-logo-2.svg" class="nfl-logo-bg nfl-logo-light" alt="NFL"><div class="badge ${gameCls}">${gameStatus}</div>${gameDetails}`;
               allGamesDiv.appendChild(gameInfoDiv);
             });
           } else {
@@ -1519,7 +1544,7 @@ function logoutToken() {
               
               const gameInfoDiv=document.createElement('div');
               gameInfoDiv.className='game-info';
-              gameInfoDiv.innerHTML=`<div class="badge ${gameCls}">${gameStatus}</div>${gameDetails}`;
+              gameInfoDiv.innerHTML=`<img src="media/logos/nfl-logo-1.svg" class="nfl-logo-bg nfl-logo-dark" alt="NFL"><img src="media/logos/nfl-logo-2.svg" class="nfl-logo-bg nfl-logo-light" alt="NFL"><div class="badge ${gameCls}">${gameStatus}</div>${gameDetails}`;
               allGamesDiv.appendChild(gameInfoDiv);
             });
           }

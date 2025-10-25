@@ -812,8 +812,8 @@
         "game_date": "2025-10-13"
       },
       {
-        "target": 0,
-        "stat": "receiving_yards",
+        "target": 80,
+        "stat": "rushing_receiving_yards",
         "current": 0,
         "player": "Bijan Robinson",
         "away": "Buffalo Bills",
@@ -1698,8 +1698,8 @@
         "stat": "passing_yards",
         "current": 0,
         "player": "Mac Jones",
-        "away": "Kansas City Chiefs",
-        "home": "Jacksonville Jaguars",
+        "away": "San Francisco 49ers",
+        "home": "Los Angeles Rams",
         "game_date": "2025-10-06"
       },
       {
@@ -1887,8 +1887,8 @@
         "stat": "passing_yards",
         "current": 0,
         "player": "Daniel Jones",
-        "away": "Los Angeles Chargers",
-        "home": "New York Giants",
+        "away": "Indianapolis Colts",
+        "home": "Los Angeles Rams",
         "game_date": "2025-09-28"
       },
       {
@@ -1914,8 +1914,8 @@
         "stat": "receiving_yards",
         "current": 0,
         "player": "Davante Adams",
-        "away": "Chicago Bears",
-        "home": "Las Vegas Raiders",
+        "away": "Los Angeles Chargers",
+        "home": "New York Giants",
         "game_date": "2025-09-28"
       },
       {
@@ -1953,8 +1953,8 @@
         "stat": "rushing_yards",
         "current": 0,
         "player": "Omarion Hampton",
-        "away": "Carolina Panthers",
-        "home": "New England Patriots",
+        "away": "Los Angeles Chargers",
+        "home": "New York Giants",
         "game_date": "2025-09-28"
       },
       {
@@ -2048,8 +2048,8 @@
         "stat": "receiving_yards",
         "current": 0,
         "player": "George Pickens",
-        "away": "Minnesota Vikings",
-        "home": "Pittsburgh Steelers",
+        "away": "Green Bay Packers",
+        "home": "Dallas Cowboys",
         "game_date": "2025-09-28"
       }
     ],
@@ -2296,7 +2296,7 @@
       },
       {
         "target": 0,
-        "stat": "rushing_yards",
+        "stat": "passing_rushing_yards",
         "current": 0,
         "player": "Lamar Jackson",
         "away": "Detroit Lions",
@@ -2702,7 +2702,7 @@
         "game_date": "2025-09-15"
       },
       {
-        "target": 5.0,
+        "target": 2,
         "stat": "passing_touchdowns",
         "current": 0,
         "player": "Justin Herbert",
@@ -3131,9 +3131,9 @@
         "target": 175.0,
         "stat": "passing_yards",
         "current": 0,
-        "player": "Russel Wilson",
-        "away": "Pittsburgh Steelers",
-        "home": "New York Jets",
+        "player": "Russell Wilson",
+        "away": "New York Giants",
+        "home": "Washington Commanders",
         "game_date": "2025-09-07"
       },
       {
@@ -3208,8 +3208,8 @@
         "game_date": "2025-09-07"
       },
       {
-        "target": 0,
-        "stat": "rushing_yards",
+        "target": 225,
+        "stat": "passing_rushing_yards",
         "current": 0,
         "player": "Lamar Jackson",
         "away": "Baltimore Ravens",
@@ -3295,7 +3295,7 @@
     "betting_site": "FanDuel",
     "legs": [
       {
-        "target": 5.0,
+        "target": 2.0,
         "stat": "passing_touchdowns",
         "current": 0,
         "player": "Lamar Jackson",
