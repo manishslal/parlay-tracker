@@ -585,7 +585,7 @@ def calculate_bet_value(bet, game_data):
             rush_yds = _get_player_stat_from_boxscore(player_name, "rushing", "YDS", boxscore)
             return pass_yds + rush_yds
         
-        if stat in ["anytime_touchdown", "player_to_score_2_touchdowns", "player_to_score_3_touchdowns"]:
+        if stat in ["anytime_touchdown", "anytime_td_scorer", "player_to_score_2_touchdowns", "player_to_score_3_touchdowns"]:
             return _get_touchdowns(player_name, boxscore, scoring_plays)
 
         td_plays = [p for p in scoring_plays if "Touchdown" in p.get("type", {}).get("text", "")]
