@@ -1057,7 +1057,9 @@
         </div>
       </div>
       
-      <input type="text" class="search-input" id="search-input" placeholder="Search bets...">
+      <div style="display: flex; align-items: center; height: 40px;">
+        <input type="text" class="search-input" id="search-input" placeholder="Search bets...">
+      </div>
     </div>
     
     <div id="cache-info" style="text-align: center; margin-bottom: 1rem; color: #888; font-size: 0.85rem; display: none;"></div>
@@ -2192,14 +2194,64 @@ function logoutToken() {
                 const homeName = getFriendlyTeamName(p.home);
                 playerDisplay = `${awayName} @ ${homeName}`;
                 
-                // Show score breakdown instead of progress bar
+                // Show progress bar with percentage for total points
                 if (gameData) {
                   const awayScore = gameData.score.away;
                   const homeScore = gameData.score.home;
                   const totalScore = awayScore + homeScore;
                   
                   currentDisplay = totalScore;
-                  progressCol = `<div style="text-align:center;padding:0.5rem;font-weight:bold;">${awayName} ${awayScore} - ${homeScore} ${homeName}</div>`;
+                  
+                  // Calculate percentage and show progress bar
+                  const totalPct = p.target > 0 ? Math.min(100, Math.round(totalScore / p.target * 100)) : 0;
+                  
+                  // Determine if this is an under or over bet
+                  const isTotalUnder = statAdd === 'under' || p.stat === 'total_points_under';
+                  const isTotalOver = statAdd === 'over' || p.stat === 'total_points_over';
+                  
+                  let totalCls = '';
+                  const areAllGamesFinal = parlay.games && parlay.games.every(g => g.statusTypeName === 'STATUS_FINAL');
+                  
+                  if (areAllGamesFinal) {
+                    // Game is over - show green if bet hit, red if missed
+                    if (isTotalUnder) {
+                      // Under bet: hit if total < target
+                      totalCls = (totalScore < p.target) ? 'pct-under-vlow' : 'pct-under-full';
+                    } else {
+                      // Over bet: hit if total > target
+                      totalCls = (totalScore > p.target) ? 'pct-full' : 'pct-vlow';
+                    }
+                  } else {
+                    // Game is live/in progress
+                    if (isTotalUnder) {
+                      // Reverse colors for under bets: 0-60% green, 60-80% yellow, 80-99% orange, 100% red
+                      if (totalPct >= 100) {
+                        totalCls = 'pct-under-full';  // Red at 100%+
+                      } else if (totalPct >= 80) {
+                        totalCls = 'pct-under-high';  // Orange 80-99%
+                      } else if (totalPct >= 60) {
+                        totalCls = 'pct-under-mid';   // Yellow 60-79%
+                      } else {
+                        totalCls = 'pct-under-vlow';  // Green 0-59%
+                      }
+                    } else {
+                      // Normal colors for over bets
+                      if (totalPct >= 100) {
+                        totalCls = 'pct-full';
+                      } else if (totalPct >= 60) {
+                        totalCls = 'pct-mid';
+                      } else if (totalPct >= 20) {
+                        totalCls = 'pct-low';
+                      } else if (totalPct > 0) {
+                        totalCls = 'pct-vlow';
+                      }
+                    }
+                  }
+                  
+                  progressCol = `<div class="progress-bar ${totalCls}">
+                           <div class="progress ${totalCls}" style="width:${totalPct}%"></div>
+                           <div class="progress-text">${totalPct}%</div>
+                         </div>`;
                 } else {
                   progressCol = `<div style="text-align:center;padding:0.5rem;">-</div>`;
                 }
