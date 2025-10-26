@@ -605,7 +605,7 @@ def calculate_bet_value(bet, game_data):
     if stat == "team_total_points":
         return home_score if bet["team"] == game_data["teams"]["home"] else away_score
     
-    if stat == "total_points":
+    if stat == "total_points" or stat == "total_points_under" or stat == "total_points_over":
         return home_score + away_score
 
     if stat == "first_team_to_score":

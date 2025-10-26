@@ -214,24 +214,24 @@
     "legs": [
       {
         "game_date": "2025-10-26",
-        "away": "Baltimore Ravens",
-        "home": "Chicago Bears",
+        "away": "Chicago Bears",
+        "home": "Baltimore Ravens",
         "player": "Rome Odunze",
         "target": 0.5,
         "stat": "anytime_td_scorer"
       },
       {
         "game_date": "2025-10-26",
-        "away": "Baltimore Ravens",
-        "home": "Chicago Bears",
+        "away": "Chicago Bears",
+        "home": "Baltimore Ravens",
         "player": "Rome Odunze",
         "target": 55.5,
         "stat": "receiving_yards"
       },
       {
         "game_date": "2025-10-26",
-        "away": "Baltimore Ravens",
-        "home": "Chicago Bears",
+        "away": "Chicago Bears",
+        "home": "Baltimore Ravens",
         "team": "Chicago Bears",
         "target": 2.5,
         "stat": "spread"
