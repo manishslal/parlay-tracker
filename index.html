@@ -172,7 +172,7 @@
       background: var(--primary);
       color: #fff;
       font-weight: bold;
-      font-size: 1rem;
+      font-size: 0.9rem; /* Match dropdown font size */
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -180,6 +180,21 @@
       top: 0;
       z-index: 10;
       border-radius: 6px 6px 0 0;
+    }
+    
+    .filter-panel-back {
+      background: none;
+      border: none;
+      color: #fff;
+      font-size: 1.2rem;
+      cursor: pointer;
+      padding: 0;
+      width: 24px;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-right: 0.5rem;
     }
     
     .filter-panel-close {
@@ -194,10 +209,12 @@
       display: flex;
       align-items: center;
       justify-content: center;
+      margin-left: 0.5rem;
     }
     
     .filter-panel-content {
       padding: 1rem;
+      font-size: 0.9rem; /* Match dropdown font size */
     }
     
     .filter-category {
@@ -228,7 +245,7 @@
     }
     
     .filter-option-item {
-      padding: 0.75rem 1rem;
+      padding: 0.6rem 1rem; /* Reduced padding to match dropdown */
       margin: 0.5rem 0;
       background: var(--section-bg);
       border: 2px solid var(--border);
@@ -238,6 +255,7 @@
       justify-content: space-between;
       align-items: center;
       transition: all 0.2s;
+      font-size: 0.9rem; /* Match dropdown font size */
     }
     
     .filter-option-item:hover {
@@ -502,7 +520,7 @@
       background:var(--primary);color:#fff;font-weight:bold;
       border:none;border-radius:8px;cursor:pointer;}
     button:hover{opacity:.9;}
-    #status-message{text-align:center;margin-bottom:2rem;color:#aaa;}
+    #status-message{text-align:center;margin:0.5rem 0;color:#aaa;}
     .parlay-section{background:var(--section-bg);margin-bottom:2rem;
       border-radius:12px;padding:1.5rem 1.5rem 1.125rem;border:1px solid #cccccc;}
     .parlay-header{
@@ -665,10 +683,10 @@
       color: #fff !important;
     }
     .progress-bar{background:var(--progress-bg);border-radius:13px;position:relative;height:1.5rem;border:2px solid var(--outline-blue);padding:3px;}
-    .progress-bar.pct-vlow { border-color: var(--error); }
-    .progress-bar.pct-low { border-color: var(--orange); }
-    .progress-bar.pct-mid { border-color: var(--yellow); }
-    .progress-bar.pct-full { border-color: var(--green); }
+    .progress-bar.pct-vlow { border-color: #f44336; }  /* Red */
+    .progress-bar.pct-low { border-color: #ff9800; }   /* Orange */
+    .progress-bar.pct-mid { border-color: #ffeb3b; }   /* Yellow */
+    .progress-bar.pct-full { border-color: #4caf50; }  /* Green */
     .progress{height:100%;transition:width .5s ease-in-out;border-radius:8px;}
     .progress-text{position:absolute;top:0;left:0;width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:bold;}
     .progress.pct-vlow{background:linear-gradient(to right, rgba(244, 67, 54, 0.2), rgba(244, 67, 54, 1));}
@@ -681,11 +699,11 @@
     .progress.pct-under-mid{background:linear-gradient(to right, rgba(255, 235, 59, 0.2), rgba(255, 235, 59, 1));} /* Yellow */
     .progress.pct-under-high{background:linear-gradient(to right, rgba(255, 152, 0, 0.2), rgba(255, 152, 0, 1));} /* Orange */
     .progress.pct-under-full{background:linear-gradient(to right, rgba(244, 67, 54, 0.2), rgba(244, 67, 54, 1));} /* Red */
-    .progress-bar.pct-under-vlow { border-color: var(--green); }
-    .progress-bar.pct-under-low { border-color: var(--green); }
-    .progress-bar.pct-under-mid { border-color: var(--yellow); }
-    .progress-bar.pct-under-high { border-color: var(--orange); }
-    .progress-bar.pct-under-full { border-color: var(--red); }
+    .progress-bar.pct-under-vlow { border-color: #4caf50; }  /* Green */
+    .progress-bar.pct-under-low { border-color: #4caf50; }   /* Green */
+    .progress-bar.pct-under-mid { border-color: #ffeb3b; }   /* Yellow */
+    .progress-bar.pct-under-high { border-color: #ff9800; }  /* Orange */
+    .progress-bar.pct-under-full { border-color: #f44336; }  /* Red */
     .badge{display:inline-block;font-size:.75rem;font-weight:bold;
       margin-bottom:.25rem;padding:2px 6px;border-radius:4px;}
     .status-pregame{background:var(--pregame);color:#ffffff;}
@@ -1037,11 +1055,13 @@
           <button class="collapse-option" data-category="site">Betting Site</button>
           <button class="collapse-option" data-category="sport">Sport</button>
           <button class="collapse-option" data-category="last30">Last 30 Days</button>
+          <button class="collapse-option" id="clear-all-filters">Clear All</button>
         </div>
         
         <!-- Filter Sub-Panel -->
         <div class="filter-sub-panel" id="filter-sub-panel">
           <div class="filter-panel-header">
+            <button class="filter-panel-back" id="back-to-filters">←</button>
             <span id="sub-panel-title">Filter Options</span>
             <button class="filter-panel-close" id="close-sub-panel">×</button>
           </div>
@@ -1052,8 +1072,8 @@
       <div style="position: relative;">
         <button class="toolbar-button" id="collapse-dropdown-btn">Collapse ▼</button>
         <div class="collapse-menu" id="collapse-menu">
-          <button class="collapse-option" id="collapse-all">Collapse All</button>
-          <button class="collapse-option" id="uncollapse-all">Uncollapse All</button>
+          <button class="collapse-option" id="collapse-all">All</button>
+          <button class="collapse-option" id="uncollapse-all">None</button>
         </div>
       </div>
       
@@ -1194,6 +1214,8 @@
     
     filterDropdownBtn.addEventListener('click', (e) => {
       e.stopPropagation();
+      // Close collapse menu if open
+      collapseMenu.classList.remove('active');
       filterMainMenu.classList.toggle('active');
     });
     
@@ -1276,6 +1298,13 @@
       filterSubPanel.classList.remove('active');
     });
     
+    // Back button to return to main filter menu
+    const backToFiltersBtn = document.getElementById('back-to-filters');
+    backToFiltersBtn.addEventListener('click', () => {
+      filterSubPanel.classList.remove('active');
+      filterMainMenu.classList.add('active');
+    });
+    
     // Close sub-panel when clicking outside
     document.addEventListener('click', (e) => {
       if (!filterSubPanel.contains(e.target) && 
@@ -1293,6 +1322,9 @@
     
     collapseDropdownBtn.addEventListener('click', (e) => {
       e.stopPropagation();
+      // Close filter menu and sub-panel if open
+      filterMainMenu.classList.remove('active');
+      filterSubPanel.classList.remove('active');
       collapseMenu.classList.toggle('active');
     });
     
@@ -1324,6 +1356,25 @@
         }
       });
       collapseMenu.classList.remove('active');
+    });
+    
+    // Clear All Filters button
+    const clearAllFiltersBtn = document.getElementById('clear-all-filters');
+    clearAllFiltersBtn.addEventListener('click', () => {
+      // Clear all filter sets
+      activeFilters.status.clear();
+      activeFilters.site.clear();
+      activeFilters.sport.clear();
+      activeFilters.last30Days = false;
+      
+      // Reset "Last 30 Days" button text
+      document.querySelector('.collapse-option[data-category="last30"]').textContent = 'Last 30 Days';
+      
+      // Apply filters to show all bets
+      applyAllFilters();
+      
+      // Close menu
+      filterMainMenu.classList.remove('active');
     });
     
     // Search functionality
