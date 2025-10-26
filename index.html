@@ -96,6 +96,12 @@
       min-height: 40px; /* Ensure minimum height matches button height */
     }
     
+    .toolbar > div {
+      display: flex;
+      align-items: center;
+      height: 40px;
+    }
+    
     .toolbar-button {
       padding: 0.6rem 1.2rem;
       background: var(--primary);
@@ -113,6 +119,7 @@
       align-items: center;
       justify-content: center;
       box-sizing: border-box;
+      line-height: 1;
     }
     
     .toolbar-button:hover {
@@ -131,8 +138,8 @@
       transition: border-color 0.2s;
       height: 40px; /* Fixed height for alignment */
       box-sizing: border-box;
-      display: flex;
-      align-items: center;
+      line-height: 1;
+      vertical-align: middle;
     }
     
     .search-input:focus {
@@ -1718,6 +1725,7 @@ function logoutToken() {
           console.log('Combined parlays:', combinedParlays);
           
           render(combinedParlays, sec);
+          msg.textContent=`Last updated: ${new Date().toLocaleTimeString()}`;
         } else if(activeTab === 'historical') {
           // Try localStorage cache first
           const cachedData = loadHistoricalCache();
@@ -1983,7 +1991,7 @@ function logoutToken() {
                 const countdown = getCountdown(g.startDateTime);
                 gameDetails=`<div style="font-weight:bold;">${getTeamAbbr(g.teams.away)} @ ${getTeamAbbr(g.teams.home)}</div><div style="font-weight:normal;">${countdown || g.startTime}</div>`;
               }
-              else if(isHalftime){gameStatus='HALF';gameCls='status-halftime';gameDetails=`<div style="font-weight:normal;">${getQuarter(g.period)}</div><div style="font-weight:bold;">${getTeamAbbr(g.teams.away)} ${g.score.away} - ${g.score.home} ${getTeamAbbr(g.teams.home)}</div>`;}
+              else if(isHalftime){gameStatus='HALF';gameCls='status-halftime';gameDetails=`<div style="font-weight:bold;">${getTeamAbbr(g.teams.away)} ${g.score.away} - ${g.score.home} ${getTeamAbbr(g.teams.home)}</div>`;}
               else if(isLive){gameStatus='LIVE';gameCls='status-live';gameDetails=`<div style="font-weight:normal;">${getQuarter(g.period)}, ${g.clock}</div><div style="font-weight:bold;">${getTeamAbbr(g.teams.away)} ${g.score.away} - ${g.score.home} ${getTeamAbbr(g.teams.home)}</div>`;}
               else{gameStatus='FINAL';gameCls='status-final';gameDetails=`<div style="font-weight:bold;">${getTeamAbbr(g.teams.away)} ${g.score.away} - ${g.score.home} ${getTeamAbbr(g.teams.home)}</div>`;}
               
@@ -2003,7 +2011,7 @@ function logoutToken() {
                 const countdown = getCountdown(g.startDateTime);
                 gameDetails=`<div style="font-weight:bold;">${getTeamAbbr(g.teams.away)} @ ${getTeamAbbr(g.teams.home)}</div><div style="font-weight:normal;">${countdown || g.startTime}</div>`;
               }
-              else if(isHalftime){gameStatus='HALF';gameCls='status-halftime';gameDetails=`<div style="font-weight:normal;">${getQuarter(g.period)}</div><div style="font-weight:bold;">${getTeamAbbr(g.teams.away)} ${g.score.away} - ${g.score.home} ${getTeamAbbr(g.teams.home)}</div>`;}
+              else if(isHalftime){gameStatus='HALF';gameCls='status-halftime';gameDetails=`<div style="font-weight:bold;">${getTeamAbbr(g.teams.away)} ${g.score.away} - ${g.score.home} ${getTeamAbbr(g.teams.home)}</div>`;}
               else if(isLive){gameStatus='LIVE';gameCls='status-live';gameDetails=`<div style="font-weight:normal;">${getQuarter(g.period)}, ${g.clock}</div><div style="font-weight:bold;">${getTeamAbbr(g.teams.away)} ${g.score.away} - ${g.score.home} ${getTeamAbbr(g.teams.home)}</div>`;}
               else{gameStatus='FINAL';gameCls='status-final';gameDetails=`<div style="font-weight:bold;">${getTeamAbbr(g.teams.away)} ${g.score.away} - ${g.score.home} ${getTeamAbbr(g.teams.home)}</div>`;}
               
@@ -2138,6 +2146,20 @@ function logoutToken() {
                 const betTeam = p.team || '';
                 const betTeamName = betTeam.split(' ').pop(); // Get last word (e.g., "Cowboys")
                 
+                // Determine if bet is currently winning or losing
+                let isWinning = false;
+                let progressColor = '';
+                
+                if (gameData && gameData.statusTypeName !== 'STATUS_SCHEDULED') {
+                  if (p.stat === 'moneyline') {
+                    isWinning = scoreDiff > 0;
+                  } else if (p.stat === 'spread') {
+                    // For spread, check if covering the spread
+                    isWinning = (scoreDiff + p.target) > 0;
+                  }
+                  progressColor = isWinning ? 'color: #4caf50;' : 'color: #f44336;'; // Green if winning, red if losing
+                }
+                
                 // Find opponent team name
                 let opponentTeamName = '';
                 if (gameData) {
@@ -2149,8 +2171,8 @@ function logoutToken() {
                   const betTeamScore = isHome ? gameData.score.home : gameData.score.away;
                   const oppTeamScore = isHome ? gameData.score.away : gameData.score.home;
                   
-                  // Show score in format: "Cowboys 21 - 7 Falcons" (bet team always on left)
-                  progressCol = `<div style="text-align:center;padding:0.5rem;font-weight:bold;">${betTeamName} ${betTeamScore} - ${oppTeamScore} ${opponentTeamName}</div>`;
+                  // Show score in format: "Cowboys 21 - 7 Falcons" with color based on winning/losing
+                  progressCol = `<div style="text-align:center;padding:0.5rem;font-weight:bold;${progressColor}">${betTeamName} ${betTeamScore} - ${oppTeamScore} ${opponentTeamName}</div>`;
                 } else {
                   // No game data yet (scheduled game)
                   progressCol = `<div style="text-align:center;padding:0.5rem;">-</div>`;
@@ -2427,6 +2449,20 @@ function logoutToken() {
       
       // Apply filters after rendering
       applyAllFilters();
+      
+      // Update tab count
+      updateTabCount(container, sortedParlays.length);
+    }
+    
+    // Update tab label with bet count
+    function updateTabCount(container, count) {
+      const isHistorical = container.id === 'historical-sections' || container.dataset.tab === 'historical';
+      const tabButton = document.querySelector(`.tab[data-tab="${isHistorical ? 'historical' : 'current'}"]`);
+      
+      if (tabButton) {
+        const baseText = isHistorical ? 'Historical Bets' : 'Live Bets';
+        tabButton.textContent = `${baseText} (${count})`;
+      }
     }
 
     btn.addEventListener('click',update);
@@ -2454,11 +2490,13 @@ function logoutToken() {
         cachedLive = null;
         cachedHistorical = null;
         clearHistoricalCache();
+        
+        // Update twice to ensure all data is refreshed properly
         await update();
         
-        // Refresh the page to show rearranged bets
-        setTimeout(() => {
-          window.location.reload();
+        // Small delay then update again to show the rearranged bets
+        setTimeout(async () => {
+          await update();
         }, 500);
       } catch (e) {
         console.error('Error moving completed:', e);
