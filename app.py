@@ -988,7 +988,8 @@ def admin_move_completed():
             for leg in parlay['legs']:
                 game_date = leg.get('game_date')
                 if not game_date:
-                    continue
+                    all_games_complete = False
+                    break
                 
                 events = get_events(game_date)
                 found_game = False
@@ -1000,6 +1001,14 @@ def admin_move_completed():
                         if status != 'STATUS_FINAL':
                             all_games_complete = False
                             break
+                        # If we get here, game is FINAL - keep checking other legs
+                        break  # Break out of events loop, continue to next leg
+                
+                # If we never found this game in the events, it's not complete
+                if not found_game:
+                    app.logger.warning(f"[Todays_Bets] Game not found in events: {leg['away']} @ {leg['home']} on {game_date}")
+                    all_games_complete = False
+                    break
                 
                 if not all_games_complete:
                     break
@@ -1012,6 +1021,8 @@ def admin_move_completed():
                 existing_historical.add(parlay_id)  # Prevent duplicates in same operation
                 app.logger.info(f"Moving completed parlay from Todays_Bets to historical: {parlay['name']}")
             else:
+                if not all_games_complete:
+                    app.logger.debug(f"[Todays_Bets] Parlay not complete: {parlay['name']}")
                 remaining_today.append(parlay)
         
         # Check each parlay from Live_Bets.json
@@ -1025,7 +1036,8 @@ def admin_move_completed():
             for leg in parlay['legs']:
                 game_date = leg.get('game_date')
                 if not game_date:
-                    continue
+                    all_games_complete = False
+                    break
                 
                 events = get_events(game_date)
                 found_game = False
@@ -1037,6 +1049,14 @@ def admin_move_completed():
                         if status != 'STATUS_FINAL':
                             all_games_complete = False
                             break
+                        # If we get here, game is FINAL - keep checking other legs
+                        break  # Break out of events loop, continue to next leg
+                
+                # If we never found this game in the events, it's not complete
+                if not found_game:
+                    app.logger.warning(f"[Live_Bets] Game not found in events: {leg['away']} @ {leg['home']} on {game_date}")
+                    all_games_complete = False
+                    break
                 
                 if not all_games_complete:
                     break
@@ -1049,6 +1069,8 @@ def admin_move_completed():
                 existing_historical.add(parlay_id)  # Prevent duplicates in same operation
                 app.logger.info(f"Moving completed parlay from Live_Bets to historical: {parlay['name']}")
             else:
+                if not all_games_complete:
+                    app.logger.debug(f"[Live_Bets] Parlay not complete: {parlay['name']}")
                 remaining_live.append(parlay)
         
         # Save updated files (ALL THREE)
