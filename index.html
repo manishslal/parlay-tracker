@@ -93,6 +93,7 @@
       gap: 1rem;
       margin: 1rem 0;
       flex-wrap: wrap;
+      min-height: 40px; /* Ensure minimum height matches button height */
     }
     
     .toolbar-button {
@@ -111,6 +112,7 @@
       display: flex;
       align-items: center;
       justify-content: center;
+      box-sizing: border-box;
     }
     
     .toolbar-button:hover {
@@ -129,6 +131,8 @@
       transition: border-color 0.2s;
       height: 40px; /* Fixed height for alignment */
       box-sizing: border-box;
+      display: flex;
+      align-items: center;
     }
     
     .search-input:focus {
@@ -1774,24 +1778,60 @@ function logoutToken() {
       // Check if this is the historical section
       const isHistoricalSection = container.id === 'historical-sections' || container.dataset.tab === 'historical';
       
-      // Sort parlays by earliest game date
+      // Sort parlays by game date and time
       const sortedParlays = [...parlays].sort((a, b) => {
-        // Find earliest date in each parlay
-        const getEarliestDate = (parlay) => {
+        // For historical: use earliest date (latest games first - descending)
+        // For live: use latest date (earliest games first - ascending)
+        const getRelevantDate = (parlay) => {
           if (!parlay.legs || parlay.legs.length === 0) return new Date('9999-12-31');
+          
           const dates = parlay.legs
             .map(leg => leg.game_date)
             .filter(date => date)
             .map(date => new Date(date));
-          return dates.length > 0 ? new Date(Math.min(...dates)) : new Date('9999-12-31');
+          
+          if (dates.length === 0) return new Date('9999-12-31');
+          
+          // For live bets: use LATEST game date (so multi-game parlays sort by their last game)
+          // For historical: use EARLIEST game date (to show most recent first)
+          if (isHistoricalSection) {
+            return new Date(Math.min(...dates));
+          } else {
+            return new Date(Math.max(...dates));
+          }
         };
         
-        const dateA = getEarliestDate(a);
-        const dateB = getEarliestDate(b);
+        // Get game start time from the parlay's games data
+        const getStartTime = (parlay, relevantDate) => {
+          if (!parlay.games || parlay.games.length === 0) return null;
+          
+          // Find the game matching the relevant date
+          const relevantDateStr = relevantDate.toISOString().split('T')[0];
+          const game = parlay.games.find(g => g.game_date === relevantDateStr);
+          
+          if (game && game.startDateTime) {
+            return new Date(game.startDateTime);
+          }
+          return null;
+        };
         
-        // For historical: latest games first (descending)
-        // For live: earliest games first (ascending)
-        return isHistoricalSection ? dateB - dateA : dateA - dateB;
+        const dateA = getRelevantDate(a);
+        const dateB = getRelevantDate(b);
+        
+        // First sort by date
+        const dateCompare = isHistoricalSection ? dateB - dateA : dateA - dateB;
+        
+        // If dates are the same, sort by start time
+        if (dateCompare === 0) {
+          const timeA = getStartTime(a, dateA);
+          const timeB = getStartTime(b, dateB);
+          
+          if (timeA && timeB) {
+            return isHistoricalSection ? timeB - timeA : timeA - timeB;
+          }
+        }
+        
+        return dateCompare;
       });
 
       // Show a helpful empty-state when there's no data for the tab
@@ -2070,9 +2110,16 @@ function logoutToken() {
               
               // Handle total points over/under - show matchup as "player"
               if (isTotalPoints) {
-                const awayAbbr = getTeamAbbr(p.away);
-                const homeAbbr = getTeamAbbr(p.home);
-                playerDisplay = `${awayAbbr} @ ${homeAbbr}`;
+                // Get friendly team names (e.g., "Tampa" instead of "TB", "Saints" instead of "NO")
+                const getFriendlyTeamName = (fullName) => {
+                  // Extract the last word (team name) from full name
+                  const parts = fullName.split(' ');
+                  return parts[parts.length - 1]; // Returns "Buccaneers", "Saints", etc.
+                };
+                
+                const awayName = getFriendlyTeamName(p.away);
+                const homeName = getFriendlyTeamName(p.home);
+                playerDisplay = `${awayName} @ ${homeName}`;
                 
                 // Show score breakdown instead of progress bar
                 if (gameData) {
@@ -2081,7 +2128,7 @@ function logoutToken() {
                   const totalScore = awayScore + homeScore;
                   
                   currentDisplay = totalScore;
-                  progressCol = `<div style="text-align:center;padding:0.5rem;font-weight:bold;">${awayAbbr} ${awayScore} - ${homeScore} ${homeAbbr}</div>`;
+                  progressCol = `<div style="text-align:center;padding:0.5rem;font-weight:bold;">${awayName} ${awayScore} - ${homeScore} ${homeName}</div>`;
                 } else {
                   progressCol = `<div style="text-align:center;padding:0.5rem;">-</div>`;
                 }
@@ -2132,9 +2179,18 @@ function logoutToken() {
                 // For spread: format target with +/- sign
                 if (p.stat === 'spread') {
                   targetDisplay = p.target > 0 ? `+${p.target}` : `${p.target}`;
-                  // Current shows Win/Loss for final games, 0/1 otherwise
+                  // Current shows Up/Down for live games, Win/Loss for final games
                   if (gameData && gameData.statusTypeName === 'STATUS_FINAL') {
                     currentDisplay = current === 1 ? 'Win' : 'Loss';
+                  } else if (gameData && gameData.statusTypeName !== 'STATUS_SCHEDULED') {
+                    // Show Up/Down during live game
+                    if (scoreDiff > 0) {
+                      currentDisplay = `Up ${scoreDiff}`;
+                    } else if (scoreDiff < 0) {
+                      currentDisplay = `Down ${Math.abs(scoreDiff)}`;
+                    } else {
+                      currentDisplay = 'Tied';
+                    }
                   } else {
                     currentDisplay = current;
                   }
@@ -2399,6 +2455,11 @@ function logoutToken() {
         cachedHistorical = null;
         clearHistoricalCache();
         await update();
+        
+        // Refresh the page to show rearranged bets
+        setTimeout(() => {
+          window.location.reload();
+        }, 500);
       } catch (e) {
         console.error('Error moving completed:', e);
         msg.textContent = `Error: ${e.message}`;

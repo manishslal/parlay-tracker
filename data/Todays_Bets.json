@@ -195,7 +195,7 @@
         "game_date": "2025-10-26",
         "away": "New York Jets",
         "home": "Cincinnati Bengals",
-        "player": null,
+        "player": "NYJ @ CIN",
         "target": 43.5,
         "stat": "total_points_under"
       }
@@ -282,7 +282,7 @@
         "game_date": "2025-10-26",
         "away": "Tampa Bay Buccaneers",
         "home": "New Orleans Saints",
-        "player": null,
+        "player": "TB @ NO",
         "target": 46.5,
         "stat": "total_points_under"
       },
