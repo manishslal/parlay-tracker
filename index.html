@@ -1875,11 +1875,44 @@ function logoutToken() {
         // Enhance parlay name with team matchup if applicable
         const displayName = enhanceParlayName(parlay);
         
-        // Check if all legs are at 100% (winning bet)
+        // Check if all legs are Hit AND all games are final (winning bet deserves trophy)
         const allLegsComplete = parlay.legs && parlay.legs.length > 0 && 
           parlay.legs.every(leg => {
-            const pct = leg.target > 0 ? Math.min(100, Math.round(leg.current / leg.target * 100)) : 0;
-            return pct === 100;
+            // Get game data for this leg
+            const gameData = parlay.games ? parlay.games.find(g => 
+              g.teams.away === leg.away && g.teams.home === leg.home
+            ) : null;
+            
+            // Game must be final to count as complete
+            if (!gameData || gameData.statusTypeName !== 'STATUS_FINAL') {
+              return false;
+            }
+            
+            const current = leg.current ?? 0;
+            const pct = leg.target > 0 ? Math.min(100, Math.round(current / leg.target * 100)) : 0;
+            const isSpreadOrML = leg.stat === 'spread' || leg.stat === 'moneyline';
+            const isTotalPoints = leg.stat === 'total_points_under' || leg.stat === 'total_points_over';
+            
+            // Check if leg actually Hit (not just 100%)
+            if (isSpreadOrML) {
+              const scoreDiff = leg.score_diff ?? 0;
+              if (leg.stat === 'moneyline') {
+                return scoreDiff > 0; // Win = positive score diff
+              } else if (leg.stat === 'spread') {
+                return (scoreDiff + leg.target) > 0; // Covering spread
+              }
+            } else if (isTotalPoints) {
+              if (leg.stat === 'total_points_under') {
+                return current < leg.target; // Under = current less than target
+              } else if (leg.stat === 'total_points_over') {
+                return current > leg.target; // Over = current more than target
+              }
+            } else {
+              // Player props: Hit when 100%
+              return pct === 100;
+            }
+            
+            return false;
           });
         
         // Get game date for single game parlays

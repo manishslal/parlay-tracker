@@ -114,7 +114,7 @@ PLAYER_TEAMS_2025 = {
     "Xavier Worthy": "Kansas City Chiefs",
     "Travis Kelce": "Kansas City Chiefs",
     "Marquise Brown": "Kansas City Chiefs",
-    "Travis Hunter": "Colorado Buffaloes",  # College player
+    "Travis Hunter": "Colorado Buffaloes",
     "Travis Etienne": "Jacksonville Jaguars",
     "Jahmyr Gibbs": "Detroit Lions",
     "Tyler Allgeier": "Atlanta Falcons",
@@ -132,6 +132,8 @@ PLAYER_TEAMS_2025 = {
     "Michael Penix Jr.": "Atlanta Falcons",
     "Cade Otton": "Tampa Bay Buccaneers",
     "Baker Mayfield": "Tampa Bay Buccaneers",
+    "Rhamondre Stevenson": "New England Patriots",
+    "Rico Dowdle": "Dallas Cowboys",
 }
 
 # Legacy alias for backwards compatibility
