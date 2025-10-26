@@ -1573,9 +1573,18 @@ function logoutToken() {
       }catch(e){ console.warn('Prefetch historical failed', e); }
     })();
 
-    function fmtType(stat){
-      const m={'passing_yards':'Pass Yds','passing_yards_alt':'Alt Pass Yds','receiving_yards':'Rec Yds','receiving_yards_alt':'Alt Rec Yds','rushing_yards':'Rush Yds','rushing_yards_alt':'Alt Rush Yds','rushing_receiving_yards':'Rush + Rec Yds','passing_rushing_yards':'Pass + Rush Yds','anytime_touchdown':'Anytime TD','anytime_td_scorer':'Anytime TD','passing_touchdowns':'Pass TDs','rushing_touchdowns':'Rush TDs','receptions':'Receptions','receptions_alt':'Alt Receptions','longest_reception':'Longest Rec','moneyline':'Moneyline','spread':'Spread','total_points_under':'Total Points Under','total_points_over':'Total Points Over'};
-      return m[stat]||stat.replace(/_/g,' ').replace(/\b\w/g,l=>l.toUpperCase());
+    function fmtType(stat, stat_add = null){
+      const m={'passing_yards':'Pass Yds','passing_yards_alt':'Alt Pass Yds','receiving_yards':'Rec Yds','receiving_yards_alt':'Alt Rec Yds','rushing_yards':'Rush Yds','rushing_yards_alt':'Alt Rush Yds','rushing_receiving_yards':'Rush + Rec Yds','passing_rushing_yards':'Pass + Rush Yds','anytime_touchdown':'Anytime TD','anytime_td_scorer':'Anytime TD','passing_touchdowns':'Pass TDs','rushing_touchdowns':'Rush TDs','receptions':'Receptions','receptions_alt':'Alt Receptions','longest_reception':'Longest Rec','moneyline':'Moneyline','spread':'Spread','total_points':'Total Points','total_points_under':'Total Points Under','total_points_over':'Total Points Over','interceptions_thrown':'INTs Thrown'};
+      const baseName = m[stat]||stat.replace(/_/g,' ').replace(/\b\w/g,l=>l.toUpperCase());
+      
+      // Add Over/Under suffix if stat_add is provided
+      if (stat_add === 'over') {
+        return baseName + ' (O)';
+      } else if (stat_add === 'under') {
+        return baseName + ' (U)';
+      }
+      
+      return baseName;
     }
     function getQuarter(p){return p===1?'1st Q':p===2?'2nd Q':p===3?'3rd Q':p===4?'4th Q':'OT';}
 
@@ -1891,7 +1900,8 @@ function logoutToken() {
             const current = leg.current ?? 0;
             const pct = leg.target > 0 ? Math.min(100, Math.round(current / leg.target * 100)) : 0;
             const isSpreadOrML = leg.stat === 'spread' || leg.stat === 'moneyline';
-            const isTotalPoints = leg.stat === 'total_points_under' || leg.stat === 'total_points_over';
+            const isTotalPoints = leg.stat === 'total_points' || leg.stat === 'total_points_under' || leg.stat === 'total_points_over';
+            const statAdd = leg.stat_add || null;
             
             // Check if leg actually Hit (not just 100%)
             if (isSpreadOrML) {
@@ -1902,14 +1912,24 @@ function logoutToken() {
                 return (scoreDiff + leg.target) > 0; // Covering spread
               }
             } else if (isTotalPoints) {
-              if (leg.stat === 'total_points_under') {
+              // Use stat_add to determine if it's over or under
+              // Fall back to old stat names for backward compatibility
+              const isUnder = statAdd === 'under' || leg.stat === 'total_points_under';
+              const isOver = statAdd === 'over' || leg.stat === 'total_points_over';
+              
+              if (isUnder) {
                 return current < leg.target; // Under = current less than target
-              } else if (leg.stat === 'total_points_over') {
+              } else if (isOver) {
                 return current > leg.target; // Over = current more than target
               }
             } else {
-              // Player props: Hit when 100%
-              return pct === 100;
+              // Player props: Check stat_add for over/under
+              if (statAdd === 'under') {
+                return current < leg.target; // Under props
+              } else if (statAdd === 'over' || statAdd === null) {
+                // Default to "over" behavior (reach target)
+                return pct === 100;
+              }
             }
             
             return false;
@@ -2137,7 +2157,8 @@ function logoutToken() {
               const isSpreadOrML = p.stat === 'spread' || p.stat === 'moneyline';
               
               // Check if this is a total points over/under bet
-              const isTotalPoints = p.stat === 'total_points_under' || p.stat === 'total_points_over';
+              const isTotalPoints = p.stat === 'total_points' || p.stat === 'total_points_under' || p.stat === 'total_points_over';
+              const statAdd = p.stat_add || null;
               
               // Get game data for this leg
               const gameData = parlay.games ? parlay.games.find(g => 
@@ -2276,9 +2297,14 @@ function logoutToken() {
               // Determine win/loss for total points over/under
               if (isTotalPoints && gameData) {
                 const totalScore = current;
-                if (p.stat === 'total_points_under') {
+                // Use stat_add to determine if it's over or under
+                // Fall back to old stat names for backward compatibility
+                const isUnder = statAdd === 'under' || p.stat === 'total_points_under';
+                const isOver = statAdd === 'over' || p.stat === 'total_points_over';
+                
+                if (isUnder) {
                   isWinningBet = totalScore < p.target;
-                } else if (p.stat === 'total_points_over') {
+                } else if (isOver) {
                   isWinningBet = totalScore > p.target;
                 }
               }
@@ -2322,7 +2348,7 @@ function logoutToken() {
               
               // Format for mobile display
               const playerOrTeam = playerDisplay; // Use the calculated playerDisplay
-              const statType = fmtType(p.stat);
+              const statType = fmtType(p.stat, statAdd);
               const mobileCurrentDisplay = formatStatForMobile(currentDisplay, p.stat);
               const mobileTargetDisplay = formatStatForMobile(targetDisplay, p.stat);
               
@@ -2347,7 +2373,7 @@ function logoutToken() {
                     </div>
                   </td>
                   <td>${p.player || p.team || 'N/A'}</td>
-                  <td>${fmtType(p.stat)}</td>
+                  <td>${fmtType(p.stat, statAdd)}</td>
                   <td>${currentDisplay}</td>
                   <td>${targetDisplay}</td>
                   <td>${progressCol}</td>
