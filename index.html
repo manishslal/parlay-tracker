@@ -522,7 +522,7 @@
       flex-wrap: nowrap;
     }
     .parlay-footer{
-      background:linear-gradient(135deg, rgba(20, 13, 82, 0.7) 0%, var(--primary) 100%);
+      background:linear-gradient(135deg, var(--primary) 0%, rgba(20, 13, 82, 0.7) 100%);
       color:#fff;
       margin:1.125rem -1.5rem -1.125rem -1.5rem;padding:0.375rem 1.5rem;
       border-radius:0 0 10px 10px;display:flex;
@@ -675,6 +675,17 @@
     .progress.pct-low{background:linear-gradient(to right, rgba(255, 152, 0, 0.2), rgba(255, 152, 0, 1));}
     .progress.pct-mid{background:linear-gradient(to right, rgba(255, 235, 59, 0.2), rgba(255, 235, 59, 1));}
     .progress.pct-full{background:linear-gradient(to right, rgba(76, 175, 80, 0.2), rgba(76, 175, 80, 1));}
+    /* Reverse colors for UNDER bets (0-60% green, 60-80% yellow, 80-99% orange, 100% red) */
+    .progress.pct-under-vlow{background:linear-gradient(to right, rgba(76, 175, 80, 0.2), rgba(76, 175, 80, 1));} /* Green */
+    .progress.pct-under-low{background:linear-gradient(to right, rgba(76, 175, 80, 0.2), rgba(76, 175, 80, 1));} /* Green */
+    .progress.pct-under-mid{background:linear-gradient(to right, rgba(255, 235, 59, 0.2), rgba(255, 235, 59, 1));} /* Yellow */
+    .progress.pct-under-high{background:linear-gradient(to right, rgba(255, 152, 0, 0.2), rgba(255, 152, 0, 1));} /* Orange */
+    .progress.pct-under-full{background:linear-gradient(to right, rgba(244, 67, 54, 0.2), rgba(244, 67, 54, 1));} /* Red */
+    .progress-bar.pct-under-vlow { border-color: var(--green); }
+    .progress-bar.pct-under-low { border-color: var(--green); }
+    .progress-bar.pct-under-mid { border-color: var(--yellow); }
+    .progress-bar.pct-under-high { border-color: var(--orange); }
+    .progress-bar.pct-under-full { border-color: var(--red); }
     .badge{display:inline-block;font-size:.75rem;font-weight:bold;
       margin-bottom:.25rem;padding:2px 6px;border-radius:4px;}
     .status-pregame{background:var(--pregame);color:#ffffff;}
@@ -1577,10 +1588,8 @@ function logoutToken() {
       const m={'passing_yards':'Pass Yds','passing_yards_alt':'Alt Pass Yds','receiving_yards':'Rec Yds','receiving_yards_alt':'Alt Rec Yds','rushing_yards':'Rush Yds','rushing_yards_alt':'Alt Rush Yds','rushing_receiving_yards':'Rush + Rec Yds','passing_rushing_yards':'Pass + Rush Yds','anytime_touchdown':'Anytime TD','anytime_td_scorer':'Anytime TD','passing_touchdowns':'Pass TDs','rushing_touchdowns':'Rush TDs','receptions':'Receptions','receptions_alt':'Alt Receptions','longest_reception':'Longest Rec','moneyline':'Moneyline','spread':'Spread','total_points':'Total Points','total_points_under':'Total Points Under','total_points_over':'Total Points Over','interceptions_thrown':'INTs Thrown'};
       const baseName = m[stat]||stat.replace(/_/g,' ').replace(/\b\w/g,l=>l.toUpperCase());
       
-      // Add Over/Under suffix if stat_add is provided
-      if (stat_add === 'over') {
-        return baseName + ' (O)';
-      } else if (stat_add === 'under') {
+      // Only add (U) suffix for under bets, over is default/implied
+      if (stat_add === 'under') {
         return baseName + ' (U)';
       }
       
@@ -2275,17 +2284,41 @@ function logoutToken() {
               } else {
                 // Regular progress bar for numeric stats
                 let cls = '';
+                const isUnderBet = statAdd === 'under';
+                
                 if (areAllGamesFinal) {
-                  cls = (pct === 100) ? 'pct-full' : 'pct-vlow';
+                  // Game is over - show green if bet hit, red if missed
+                  if (isUnderBet) {
+                    // Under bet: hit if current < target
+                    cls = (current < p.target) ? 'pct-under-vlow' : 'pct-under-full';
+                  } else {
+                    // Over bet: hit if 100%
+                    cls = (pct === 100) ? 'pct-full' : 'pct-vlow';
+                  }
                 } else {
-                  if (pct === 100) {
-                    cls = 'pct-full';
-                  } else if (pct >= 60) {
-                    cls = 'pct-mid';
-                  } else if (pct >= 20) {
-                    cls = 'pct-low';
-                  } else if (pct > 0) {
-                    cls = 'pct-vlow';
+                  // Game is live/in progress
+                  if (isUnderBet) {
+                    // Reverse colors for under bets: 0-60% green, 60-80% yellow, 80-99% orange, 100% red
+                    if (pct === 100) {
+                      cls = 'pct-under-full';  // Red at 100%
+                    } else if (pct >= 80) {
+                      cls = 'pct-under-high';  // Orange 80-99%
+                    } else if (pct >= 60) {
+                      cls = 'pct-under-mid';   // Yellow 60-79%
+                    } else {
+                      cls = 'pct-under-vlow';  // Green 0-59%
+                    }
+                  } else {
+                    // Normal colors for over bets
+                    if (pct === 100) {
+                      cls = 'pct-full';
+                    } else if (pct >= 60) {
+                      cls = 'pct-mid';
+                    } else if (pct >= 20) {
+                      cls = 'pct-low';
+                    } else if (pct > 0) {
+                      cls = 'pct-vlow';
+                    }
                   }
                 }
                 progressCol = `<div class="progress-bar ${cls}">
@@ -2401,6 +2434,15 @@ function logoutToken() {
         const betIdText = parlay.bet_id || 'N/A';
         const siteText = parlay.betting_site || 'N/A';
         
+        // Calculate winnings if bet won (all games final and all legs hit)
+        let winningsText = '$0.00';
+        const allGamesFinal = parlay.games && parlay.games.every(g => g.statusTypeName === 'STATUS_FINAL');
+        
+        if (allGamesFinal && allLegsComplete && parlay.returns && parlay.wager) {
+          const winnings = parlay.returns - parlay.wager;
+          winningsText = `$${winnings.toFixed(2)}`;
+        }
+        
         // Determine which logo to use based on theme and betting site
         const isDarkMode = !document.body.classList.contains('light-mode');
         const logoSuffix = isDarkMode ? '1' : '2'; // 1=white (dark mode), 2=colored (light mode)
@@ -2423,6 +2465,7 @@ function logoutToken() {
           <div class="footer-left">
             <div class="footer-odds">Odds: ${oddsText}</div>
             <div class="footer-wager">Wager: ${wagerText}</div>
+            <div class="footer-winnings">Winnings: ${winningsText}</div>
           </div>
           <div class="footer-right">
             <div class="footer-betid">Bet ID: ${betIdText}</div>
