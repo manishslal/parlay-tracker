@@ -181,5 +181,195 @@
     ],
     "bet_date": "2025-10-22",
     "sport": "NFL"
+  },
+  {
+    "type": "Single Bet",
+    "name": "Under 43.5 Total Match Points",
+    "odds": "-110",
+    "wager": 10.0,
+    "returns": 19.09,
+    "bet_id": "O/0240915/0000061",
+    "betting_site": "FanDuel",
+    "legs": [
+      {
+        "game_date": "2025-10-26",
+        "away": "New York Jets",
+        "home": "Cincinnati Bengals",
+        "player": null,
+        "target": 43.5,
+        "stat": "total_points_under"
+      }
+    ],
+    "bet_date": "2025-10-26",
+    "sport": "NFL"
+  },
+  {
+    "type": "Same Game Parlay",
+    "name": "Rome Odunze Bet",
+    "odds": "+551",
+    "wager": 10.0,
+    "returns": 65.14,
+    "bet_id": "O/0240915/0000060",
+    "betting_site": "FanDuel",
+    "legs": [
+      {
+        "game_date": "2025-10-26",
+        "away": "Baltimore Ravens",
+        "home": "Chicago Bears",
+        "player": "Rome Odunze",
+        "target": 0.5,
+        "stat": "anytime_td_scorer"
+      },
+      {
+        "game_date": "2025-10-26",
+        "away": "Baltimore Ravens",
+        "home": "Chicago Bears",
+        "player": "Rome Odunze",
+        "target": 55.5,
+        "stat": "receiving_yards"
+      },
+      {
+        "game_date": "2025-10-26",
+        "away": "Baltimore Ravens",
+        "home": "Chicago Bears",
+        "team": "Chicago Bears",
+        "target": 2.5,
+        "stat": "spread"
+      }
+    ],
+    "bet_date": "2025-10-26",
+    "sport": "NFL"
+  },
+  {
+    "type": "Same Game Parlay",
+    "name": "Matthew Golden, Over 41.5",
+    "odds": "+355",
+    "wager": 5.0,
+    "returns": 22.75,
+    "bet_id": "DK638970942865968478",
+    "betting_site": "DraftKings",
+    "legs": [
+      {
+        "game_date": "2025-10-26",
+        "away": "Green Bay Packers",
+        "home": "Pittsburgh Steelers",
+        "player": "Matthew Golden",
+        "target": 0.5,
+        "stat": "anytime_td_scorer"
+      },
+      {
+        "game_date": "2025-10-26",
+        "away": "Green Bay Packers",
+        "home": "Pittsburgh Steelers",
+        "player": "Matthew Golden",
+        "target": 41.5,
+        "stat": "receiving_yards"
+      }
+    ],
+    "bet_date": "2025-10-26",
+    "sport": "NFL"
+  },
+  {
+    "type": "Same Game Parlay",
+    "name": "Under 46.5, Over 213.5, 190+, 40+",
+    "odds": "+575",
+    "wager": 10.0,
+    "returns": 67.5,
+    "bet_id": "DK638970935966093630",
+    "betting_site": "DraftKings",
+    "legs": [
+      {
+        "game_date": "2025-10-26",
+        "away": "Tampa Bay Buccaneers",
+        "home": "New Orleans Saints",
+        "player": null,
+        "target": 46.5,
+        "stat": "total_points_under"
+      },
+      {
+        "game_date": "2025-10-26",
+        "away": "Tampa Bay Buccaneers",
+        "home": "New Orleans Saints",
+        "player": "Spencer Rattler",
+        "target": 213.5,
+        "stat": "passing_yards"
+      },
+      {
+        "game_date": "2025-10-26",
+        "away": "Tampa Bay Buccaneers",
+        "home": "New Orleans Saints",
+        "player": "Baker Mayfield",
+        "target": 190,
+        "stat": "passing_yards"
+      },
+      {
+        "game_date": "2025-10-26",
+        "away": "Tampa Bay Buccaneers",
+        "home": "New Orleans Saints",
+        "player": "Emeka Egbuka",
+        "target": 40,
+        "stat": "receiving_yards"
+      }
+    ],
+    "bet_date": "2025-10-26",
+    "sport": "NFL"
+  },
+  {
+    "type": "Same Game Parlay",
+    "name": "1+, NE Patriots",
+    "odds": "+104",
+    "wager": 10.0,
+    "returns": 20.4,
+    "bet_id": "DK638970316699912668",
+    "betting_site": "DraftKings",
+    "legs": [
+      {
+        "game_date": "2025-10-26",
+        "away": "Cleveland Browns",
+        "home": "New England Patriots",
+        "player": "Dillon Gabriel",
+        "target": 1,
+        "stat": "interceptions_thrown"
+      },
+      {
+        "game_date": "2025-10-26",
+        "away": "Cleveland Browns",
+        "home": "New England Patriots",
+        "team": "New England Patriots",
+        "target": 1,
+        "stat": "moneyline"
+      }
+    ],
+    "bet_date": "2025-10-26",
+    "sport": "NFL"
+  },
+  {
+    "type": "Parlay",
+    "name": "TD Scorers - Cook, Taylor",
+    "odds": "+151",
+    "wager": 10.0,
+    "returns": 25.1,
+    "bet_id": "DK638970315326425376",
+    "betting_site": "DraftKings",
+    "legs": [
+      {
+        "game_date": "2025-10-26",
+        "away": "Buffalo Bills",
+        "home": "Carolina Panthers",
+        "player": "James Cook",
+        "target": 0.5,
+        "stat": "anytime_td_scorer"
+      },
+      {
+        "game_date": "2025-10-26",
+        "away": "Tennessee Titans",
+        "home": "Indianapolis Colts",
+        "player": "Jonathan Taylor",
+        "target": 0.5,
+        "stat": "anytime_td_scorer"
+      }
+    ],
+    "bet_date": "2025-10-26",
+    "sport": "NFL"
   }
 ]
