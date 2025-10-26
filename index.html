@@ -2338,8 +2338,18 @@ function logoutToken() {
                 // For spread/moneyline/totals, only show Hit/Miss when game is FINAL
                 txt = isWinningBet ? '✅ Hit' : '🚫 Miss';
               } else if(!isSpreadOrML && !isTotalPoints) {
-                // For numeric stats (player props), show Hit if 100% reached even during live game
-                if(pct===100) txt='✅ Hit';
+                // For numeric stats (player props), check stat_add for over/under
+                let isHit = false;
+                
+                if (statAdd === 'under') {
+                  // Under props: Hit when current < target
+                  isHit = current < p.target;
+                } else {
+                  // Over props (or null/default): Hit when 100%
+                  isHit = pct === 100;
+                }
+                
+                if(isHit) txt='✅ Hit';
                 else if(areAllGamesFinal) txt='🚫 Miss';
                 else txt='⏳ In Progress';
               } else {
