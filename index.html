@@ -862,7 +862,7 @@
       
       .parlay-footer {
         margin: 1rem -0.5rem -1rem -0.5rem;
-        padding: 0.75rem 0.5rem;
+        padding: 0.375rem 0.5rem; /* Reduced from 0.75rem to 50% (0.375rem) */
         font-size: 0.7rem;
       }
       
@@ -934,8 +934,8 @@
       
       tr {
         display: block;
-        margin-bottom: 0.5rem;
-        padding: 0.4rem; /* Reduced by 20% from 0.5rem for shorter vertical height */
+        margin-bottom: 0.25rem; /* Reduced from 0.5rem to 50% */
+        padding: 0.3rem; /* Reduced from 0.4rem to 75% of original size */
         background: var(--surface);
         border-radius: 8px;
         border: 1px solid rgba(255, 204, 0, 0.2);
@@ -943,17 +943,17 @@
       
       /* Reduce spacing between header and first leg */
       tr:first-child {
-        margin-top: -0.5rem;
+        margin-top: -0.25rem; /* Reduced from -0.5rem to match leg gap */
       }
       
       /* Reduce spacing between last leg and footer */
       tr:last-child {
-        margin-bottom: -0.5rem;
+        margin-bottom: -0.25rem; /* Reduced from -0.5rem to match leg gap */
       }
       
       td {
         display: block;
-        padding: 0.15rem 0;
+        padding: 0.1rem 0; /* Reduced from 0.15rem to further compact */
         border: none;
         background: transparent;
         text-align: left !important;
