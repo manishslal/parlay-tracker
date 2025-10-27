@@ -7,10 +7,10 @@
   <style>
     :root {
       /* Dark mode colors (default) */
-      --bg:#121212;--surface:#1a1a1a;--primary:#140d52;
+      --bg:#121212;--surface:#252525;--primary:#140d52;
       --text:#e0e0e0;--border:#ffcc00a4;--green:#4caf50;
       --orange:#ff9800;--yellow:#ffeb3b;--pregame:#ffc107;
-      --error:#f44336;--progress-bg:#444;--section-bg:#252525;
+      --error:#f44336;--progress-bg:#444;--section-bg:#1a1a1a;
       --outline-blue: #03a9f4; --title-color: #e657ff;
       --tab-active: #2a2a2a;
       
@@ -22,10 +22,10 @@
     
     /* Light mode colors */
     body.light-mode {
-      --bg:#f5f5f5;--surface:#ffffff;--primary:#5e35b1;
+      --bg:#f5f5f5;--surface:#f0f0f0;--primary:#5e35b1;
       --text:#212121;--border:#ffcc00;--green:#388e3c;
       --orange:#f57c00;--yellow:#fbc02d;--pregame:#ff6f00;
-      --error:#c62828;--progress-bg:#e0e0e0;--section-bg:#fafafa;
+      --error:#c62828;--progress-bg:#e0e0e0;--section-bg:#ffffff;
       --outline-blue: #0288d1; --title-color: #7b1fa2;
       --tab-active: #e0e0e0;
     }
@@ -946,14 +946,14 @@
         border: 1px solid rgba(255, 204, 0, 0.2);
       }
       
-      /* Reduce spacing between header and first leg */
+      /* Remove negative margins since header/footer margins now handle gaps */
       tr:first-child {
-        margin-top: -0.25rem; /* Reduced from -0.5rem to match leg gap */
+        margin-top: 0; /* Changed from -0.25rem to allow header margin to work */
       }
       
-      /* Reduce spacing between last leg and footer */
+      /* Remove negative margins since header/footer margins now handle gaps */
       tr:last-child {
-        margin-bottom: -0.25rem; /* Reduced from -0.5rem to match leg gap */
+        margin-bottom: 0.25rem; /* Keep normal gap, footer margin handles it */
       }
       
       td {
