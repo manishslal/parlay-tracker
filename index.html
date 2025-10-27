@@ -91,12 +91,25 @@
       justify-content: center;
       align-items: center;
       gap: 1rem;
-      margin: 1rem 0;
+      margin: 1rem 0 1rem 0; /* Consistent margin */
       flex-wrap: wrap;
       min-height: 40px; /* Ensure minimum height matches button height */
     }
     
-    .toolbar > div {
+    .toolbar-controls {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      height: 40px;
+    }
+    
+    .toolbar-controls > div {
+      display: flex;
+      align-items: center;
+      height: 40px;
+    }
+    
+    .toolbar-search {
       display: flex;
       align-items: center;
       height: 40px;
@@ -168,18 +181,19 @@
     }
     
     .filter-panel-header {
-      padding: 0.5rem; /* Match collapse-menu padding */
+      padding: 0.3rem 0.5rem; /* Reduced vertical padding by 33% (from 0.5rem to 0.3rem) */
       background: var(--primary);
       color: #fff;
       font-weight: bold;
       font-size: 0.9rem; /* Match dropdown font size */
       display: flex;
-      justify-content: space-between;
+      justify-content: center;
       align-items: center;
       position: sticky;
       top: 0;
       z-index: 10;
       border-radius: 6px 6px 0 0;
+      min-height: 30px; /* Reduced from default */
     }
     
     .filter-panel-back {
@@ -194,7 +208,10 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      margin-right: 0.25rem; /* Reduced margin */
+      position: absolute;
+      left: 0.5rem; /* Position in top-left corner */
+      top: 50%;
+      transform: translateY(-50%);
     }
     
     .filter-panel-close {
@@ -209,7 +226,10 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      margin-left: 0.25rem; /* Reduced margin */
+      position: absolute;
+      right: 0.5rem; /* Position in top-right corner */
+      top: 50%;
+      transform: translateY(-50%);
     }
     
     .filter-panel-content {
@@ -1003,19 +1023,29 @@
         margin: 0.5rem 0.5rem 1.5rem 0.5rem; /* Increased bottom margin for mobile */
       }
       
+      /* Mobile: Toolbar layout - buttons on one line, search below */
+      .toolbar {
+        flex-direction: column;
+        padding: 0 0.5rem;
+        gap: 0.5rem;
+        align-items: stretch;
+      }
+      
+      .toolbar-controls {
+        display: flex;
+        justify-content: center;
+        gap: 0.5rem;
+        width: 100%;
+      }
+      
+      .toolbar-search {
+        width: 100%;
+      }
+      
       /* Mobile: Make search bar full width */
       .search-input {
         width: 100% !important;
         max-width: none !important;
-      }
-      
-      /* Mobile: Ensure toolbar items stack properly */
-      .toolbar {
-        padding: 0 0.5rem;
-      }
-      
-      .toolbar > div {
-        width: 100%;
       }
     }
     
@@ -1063,36 +1093,38 @@
     
     <!-- New Toolbar -->
     <div class="toolbar">
-      <div style="position: relative;">
-        <button class="toolbar-button" id="filter-dropdown-btn">Filter ▼</button>
-        <div class="collapse-menu" id="filter-main-menu">
-          <button class="collapse-option" data-category="status">Status</button>
-          <button class="collapse-option" data-category="site">Betting Site</button>
-          <button class="collapse-option" data-category="sport">Sport</button>
-          <button class="collapse-option" data-category="last30">Last 30 Days</button>
-          <button class="collapse-option" id="clear-all-filters">Clear All</button>
+      <div class="toolbar-controls">
+        <div style="position: relative;">
+          <button class="toolbar-button" id="filter-dropdown-btn">Filter ▼</button>
+          <div class="collapse-menu" id="filter-main-menu">
+            <button class="collapse-option" data-category="status">Status</button>
+            <button class="collapse-option" data-category="site">Betting Site</button>
+            <button class="collapse-option" data-category="sport">Sport</button>
+            <button class="collapse-option" data-category="last30">Last 30 Days</button>
+            <button class="collapse-option" id="clear-all-filters">Clear All</button>
+          </div>
+          
+          <!-- Filter Sub-Panel -->
+          <div class="filter-sub-panel" id="filter-sub-panel">
+            <div class="filter-panel-header">
+              <button class="filter-panel-back" id="back-to-filters">←</button>
+              <span id="sub-panel-title">Filter Options</span>
+              <button class="filter-panel-close" id="close-sub-panel">×</button>
+            </div>
+            <div class="filter-panel-content" id="sub-panel-content"></div>
+          </div>
         </div>
         
-        <!-- Filter Sub-Panel -->
-        <div class="filter-sub-panel" id="filter-sub-panel">
-          <div class="filter-panel-header">
-            <button class="filter-panel-back" id="back-to-filters">←</button>
-            <span id="sub-panel-title">Filter Options</span>
-            <button class="filter-panel-close" id="close-sub-panel">×</button>
+        <div style="position: relative;">
+          <button class="toolbar-button" id="collapse-dropdown-btn">Collapse ▼</button>
+          <div class="collapse-menu" id="collapse-menu">
+            <button class="collapse-option" id="collapse-all">All</button>
+            <button class="collapse-option" id="uncollapse-all">None</button>
           </div>
-          <div class="filter-panel-content" id="sub-panel-content"></div>
         </div>
       </div>
       
-      <div style="position: relative;">
-        <button class="toolbar-button" id="collapse-dropdown-btn">Collapse ▼</button>
-        <div class="collapse-menu" id="collapse-menu">
-          <button class="collapse-option" id="collapse-all">All</button>
-          <button class="collapse-option" id="uncollapse-all">None</button>
-        </div>
-      </div>
-      
-      <div style="display: flex; align-items: center; height: 40px;">
+      <div class="toolbar-search">
         <input type="text" class="search-input" id="search-input" placeholder="Search bets...">
       </div>
     </div>
