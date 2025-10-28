@@ -222,8 +222,8 @@
     "type": "Parlay",
     "name": "3 Picks (All-In)",
     "odds": "6x",
-    "wager": 10.0,
-    "returns": 60.0,
+    "wager": 5.0,
+    "returns": 30.0,
     "bet_id": "dabble-2025-10-27-001",
     "betting_site": "Dabble",
     "legs": [
@@ -262,8 +262,8 @@
     "type": "Parlay",
     "name": "3 Picks (All-In)",
     "odds": "7.2x",
-    "wager": 10.0,
-    "returns": 72.0,
+    "wager": 5.0,
+    "returns": 36.0,
     "bet_id": "dabble-2025-10-27-002",
     "betting_site": "Dabble",
     "legs": [

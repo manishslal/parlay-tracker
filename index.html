@@ -1967,7 +1967,16 @@ function logoutToken() {
           const timeB = getStartTime(b, dateB);
           
           if (timeA && timeB) {
-            return isHistoricalSection ? timeB - timeA : timeA - timeB;
+            const timeCompare = isHistoricalSection ? timeB - timeA : timeA - timeB;
+            
+            // If times are also the same, sort by number of legs (fewer legs first)
+            if (timeCompare === 0) {
+              const legsA = a.legs ? a.legs.length : 0;
+              const legsB = b.legs ? b.legs.length : 0;
+              return legsA - legsB; // Ascending order (fewer legs first)
+            }
+            
+            return timeCompare;
           }
         }
         
