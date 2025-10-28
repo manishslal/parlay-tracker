@@ -870,13 +870,13 @@
       
       .parlay-footer {
         margin: 0.40rem -0.5rem -1rem -0.5rem; /* Top margin increased from 0.25rem to 0.40rem */
-        padding: 0.375rem 0.5rem; /* Reduced from 0.75rem to 50% (0.375rem) */
+        padding: 0.3375rem 0.5rem; /* Reduced by 10% from 0.375rem to 0.3375rem */
         font-size: 0.7rem;
       }
       
-      /* Reduce line spacing in footer for mobile */
+      /* Reduce line spacing in footer for mobile - halved again */
       .footer-left, .footer-right {
-        gap: 0.1rem; /* Reduced from 0.25rem for tighter line spacing */
+        gap: 0.05rem; /* Reduced by 50% from 0.1rem for even tighter line spacing */
       }
       
       /* Adjust trophy icon for mobile */
@@ -970,6 +970,11 @@
         border: none;
         background: transparent;
         text-align: left !important;
+      }
+      
+      /* Remove desktop padding override for mobile - keep consistent padding */
+      td:nth-child(1) {
+        padding-left: 0 !important;
       }
       
       /* Hide desktop columns 3-8 (individual cells) */
