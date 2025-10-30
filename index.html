@@ -649,10 +649,63 @@
     .game-info{display:flex;flex-direction:column;align-items:center;
       gap:.25rem;font-size:.9rem;border:1px solid var(--border);
       padding:.5rem;border-radius:6px;background:rgba(0,0,0,0.2);
-      position:relative;overflow:hidden;}
+      position:relative;overflow:hidden;
+      width: 12ch; /* Fixed width: 12 characters (e.g., "LAC 13 - 99 LAR") */
+      min-width: 12ch;
+      max-width: 12ch;
+    }
     /* Reduce scoreboard font size (web view only) */
     .game-info * {
       font-size: 0.8rem;
+    }
+    
+    /* Show Scores toggle button */
+    .show-scores-btn {
+      position: absolute;
+      bottom: 0.5rem;
+      right: 0.5rem;
+      background: rgba(20, 13, 82, 0.8);
+      color: #fff;
+      border: 1px solid rgba(255, 204, 0, 0.3);
+      padding: 0.25rem 0.5rem;
+      border-radius: 4px;
+      font-size: 0.7rem;
+      cursor: pointer;
+      z-index: 10;
+      transition: background 0.2s;
+    }
+    .show-scores-btn:hover {
+      background: rgba(20, 13, 82, 1);
+    }
+    
+    /* Scoreboard block - hidden by default */
+    .scoreboard-block {
+      display: none;
+      width: 100%;
+      margin-top: 1rem;
+      padding: 0.75rem 0;
+      border-top: 1px solid rgba(255, 204, 0, 0.2);
+    }
+    .scoreboard-block.active {
+      display: block;
+    }
+    
+    /* Scoreboard rows */
+    .scoreboard-row {
+      display: flex;
+      justify-content: space-evenly;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 0.5rem;
+      flex-wrap: nowrap;
+    }
+    .scoreboard-row:last-child {
+      margin-bottom: 0;
+    }
+    
+    /* Second and subsequent rows centered */
+    .scoreboard-row:not(:first-child) {
+      justify-content: center;
     }
     /* NFL logo in scoreboards - positioned in background with low opacity */
     .nfl-logo-bg {
@@ -884,36 +937,33 @@
         opacity: 0.25;
       }
 
-      /* Compact scoreboards - max 3 per row, populate right to left */
-      .game-info-wrapper {
-        gap: 0.5rem;
-        justify-content: flex-end !important;
-        flex-wrap: wrap;
-        width: 100%;
-        display: flex;
-        flex-direction: row-reverse;
-      }
-      
-      /* Single scoreboard - align to right, auto width, no reversal, no size constraints */
-      .game-info-wrapper:has(.game-info:only-child) {
-        justify-content: flex-end !important;
-        width: auto;
-        flex-direction: row;
-      }
-      
-      .game-info-wrapper:has(.game-info:only-child) .game-info {
-        flex: 0 0 auto;
+      /* Mobile scoreboard styling */
+      .game-info {
+        width: auto; /* Override fixed width on mobile */
+        min-width: auto;
         max-width: none;
-      }
-      
-      /* Multiple games: max 3 per row on mobile */
-      .game-info-wrapper:not(:has(.game-info:only-child)) .game-info {
         font-size: 0.65rem;
         padding: 0.35rem 0.5rem;
         gap: 0.15rem;
-        flex: 0 0 calc(33.333% - 0.35rem); /* Max 3 per row on mobile */
+      }
+      
+      /* Show Scores button smaller on mobile */
+      .show-scores-btn {
+        font-size: 0.6rem;
+        padding: 0.2rem 0.4rem;
+        bottom: 0.35rem;
+        right: 0.35rem;
+      }
+      
+      /* Scoreboard block - 3 per row on mobile */
+      .scoreboard-row {
+        flex-wrap: wrap;
+        justify-content: space-evenly;
+      }
+      
+      .scoreboard-row .game-info {
+        flex: 0 0 calc(33.333% - 0.35rem); /* 3 per row */
         max-width: calc(33.333% - 0.35rem);
-        box-sizing: border-box;
       }
       
       /* Multiple games: center items that wrap to second row (4th item onwards) */
@@ -1829,6 +1879,133 @@ function logoutToken() {
       return parlay.name;
     }
 
+    // Player position mapping
+    const playerPositions = {
+      // Quarterbacks
+      "Patrick Mahomes": "QB", "Jayden Daniels": "QB", "Josh Allen": "QB", "Lamar Jackson": "QB",
+      "Baker Mayfield": "QB", "Geno Smith": "QB", "Sam Darnold": "QB", "Kyler Murray": "QB",
+      "Jared Goff": "QB", "Matthew Stafford": "QB", "Justin Herbert": "QB", "Joe Burrow": "QB",
+      "Jalen Hurts": "QB", "Dak Prescott": "QB", "Bo Nix": "QB", "Jordan Love": "QB",
+      "Mac Jones": "QB", "Caleb Williams": "QB", "Drake Maye": "QB", "Aaron Rodgers": "QB",
+      "Trevor Lawrence": "QB", "Russell Wilson": "QB", "Daniel Jones": "QB", "Joe Flacco": "QB",
+      "Spencer Rattler": "QB", "Michael Penix Jr.": "QB",
+      // Running Backs
+      "Isiah Pacheco": "RB", "Saquon Barkley": "RB", "Christian McCaffrey": "RB", "Derrick Henry": "RB",
+      "Jordan Mason": "RB", "Kenneth Walker III": "RB", "Bucky Irving": "RB", "Bijan Robinson": "RB",
+      "Aaron Jones": "RB", "D'Andre Swift": "RB", "Kyren Williams": "RB", "Javonte Williams": "RB",
+      "Jonathan Taylor": "RB", "David Montgomery": "RB", "Jahmyr Gibbs": "RB", "James Cook": "RB",
+      "Travis Etienne": "RB", "Trey Benson": "RB", "Zach Charbonnet": "RB", "Omarion Hampton": "RB",
+      "Tyler Allgeier": "RB", "Roschon Johnson": "RB", "Jaylen Warren": "RB", "Rhamondre Stevenson": "RB",
+      "Rico Dowdle": "RB",
+      // Wide Receivers
+      "Rashee Rice": "WR", "Terry McLaurin": "WR", "Xavier Worthy": "WR", "Marquise Brown": "WR",
+      "Deebo Samuel": "WR", "CeeDee Lamb": "WR", "George Pickens": "WR", "A.J. Brown": "WR",
+      "DeVonta Smith": "WR", "Devonta Smith": "WR", "Malik Nabers": "WR", "Zay Flowers": "WR",
+      "Khalil Shakir": "WR", "Justin Jefferson": "WR", "D.J. Moore": "WR", "Jakobi Meyers": "WR",
+      "Keenan Allen": "WR", "Amon-Ra St. Brown": "WR", "Jaxon Smith-Njigba": "WR", 
+      "Marvin Harrison Jr.": "WR", "Michael Wilson": "WR", "Puka Nacua": "WR", "Cooper Kupp": "WR",
+      "Davante Adams": "WR", "Michael Pittman Jr.": "WR", "Stefon Diggs": "WR", "Dyami Brown": "WR",
+      "Drake London": "WR", "Ja'Marr Chase": "WR", "DK Metcalf": "WR", "Rome Odunze": "WR",
+      // Tight Ends
+      "Travis Kelce": "TE", "Dalton Kincaid": "TE", "Mark Andrews": "TE", "T.J. Hockenson": "TE",
+      "Tucker Kraft": "TE", "Sam LaPorta": "TE", "Trey McBride": "TE", "Dallas Goedert": "TE",
+      "Jake Ferguson": "TE", "Zach Ertz": "TE", "Cade Otton": "TE"
+    };
+
+    // Helper to get player team abbreviation from full team name
+    function getPlayerTeamAbbr(playerName, teamFull) {
+      if (!teamFull) return '';
+      const teamAbbrevMap = {
+        'Atlanta Falcons': 'Falcons', 'Buffalo Bills': 'Bills', 'Carolina Panthers': 'Panthers',
+        'Chicago Bears': 'Bears', 'Cincinnati Bengals': 'Bengals', 'Cleveland Browns': 'Browns',
+        'Dallas Cowboys': 'Cowboys', 'Denver Broncos': 'Broncos', 'Detroit Lions': 'Lions',
+        'Green Bay Packers': 'Packers', 'Houston Texans': 'Texans', 'Indianapolis Colts': 'Colts',
+        'Jacksonville Jaguars': 'Jaguars', 'Kansas City Chiefs': 'Chiefs', 'Las Vegas Raiders': 'Raiders',
+        'Los Angeles Chargers': 'Chargers', 'Los Angeles Rams': 'Rams', 'Miami Dolphins': 'Dolphins',
+        'Minnesota Vikings': 'Vikings', 'New England Patriots': 'Patriots', 'New Orleans Saints': 'Saints',
+        'New York Giants': 'Giants', 'New York Jets': 'Jets', 'Philadelphia Eagles': 'Eagles',
+        'Pittsburgh Steelers': 'Steelers', 'San Francisco 49ers': '49ers', 'Seattle Seahawks': 'Seahawks',
+        'Tampa Bay Buccaneers': 'Buccaneers', 'Tennessee Titans': 'Titans', 'Washington Commanders': 'Commanders',
+        'Arizona Cardinals': 'Cardinals', 'Baltimore Ravens': 'Ravens'
+      };
+      return teamAbbrevMap[teamFull] || teamFull.split(' ').pop(); // Fallback to last word
+    }
+
+    // Player to team mapping (from backend)
+    const playerTeams = {
+      "Saquon Barkley": "Philadelphia Eagles", "A.J. Brown": "Philadelphia Eagles",
+      "DeVonta Smith": "Philadelphia Eagles", "Devonta Smith": "Philadelphia Eagles",
+      "George Pickens": "Dallas Cowboys", "CeeDee Lamb": "Dallas Cowboys",
+      "Jake Ferguson": "Dallas Cowboys", "Dallas Goedert": "Philadelphia Eagles",
+      "Javonte Williams": "Denver Broncos", "Terry McLaurin": "Washington Commanders",
+      "Malik Nabers": "New York Giants", "Jayden Daniels": "Washington Commanders",
+      "Russell Wilson": "New York Giants", "Lamar Jackson": "Baltimore Ravens",
+      "Josh Allen": "Buffalo Bills", "Zay Flowers": "Baltimore Ravens",
+      "Khalil Shakir": "Buffalo Bills", "James Cook": "Buffalo Bills",
+      "Dalton Kincaid": "Buffalo Bills", "Derrick Henry": "Baltimore Ravens",
+      "Mark Andrews": "Baltimore Ravens", "Aaron Jones": "Minnesota Vikings",
+      "D'Andre Swift": "Chicago Bears", "T.J. Hockenson": "Minnesota Vikings",
+      "Justin Jefferson": "Minnesota Vikings", "Caleb Williams": "Chicago Bears",
+      "D.J. Moore": "Chicago Bears", "Tucker Kraft": "Green Bay Packers",
+      "Kyren Williams": "Los Angeles Rams", "Geno Smith": "Seattle Seahawks",
+      "Justin Herbert": "Los Angeles Chargers", "Jakobi Meyers": "Las Vegas Raiders",
+      "Keenan Allen": "Chicago Bears", "Patrick Mahomes": "Kansas City Chiefs",
+      "Bucky Irving": "Tampa Bay Buccaneers", "Bijan Robinson": "Atlanta Falcons",
+      "Jordan Mason": "San Francisco 49ers", "Kenneth Walker III": "Seattle Seahawks",
+      "Amon-Ra St. Brown": "Detroit Lions", "Jared Goff": "Detroit Lions",
+      "Sam LaPorta": "Detroit Lions", "Kyler Murray": "Arizona Cardinals",
+      "Sam Darnold": "Seattle Seahawks", "Trey Benson": "Arizona Cardinals",
+      "Jaxon Smith-Njigba": "Seattle Seahawks", "Marvin Harrison Jr.": "Arizona Cardinals",
+      "Trey McBride": "Arizona Cardinals", "Michael Wilson": "Arizona Cardinals",
+      "Zach Charbonnet": "Seattle Seahawks", "Matthew Stafford": "Los Angeles Rams",
+      "Daniel Jones": "Indianapolis Colts", "Puka Nacua": "Los Angeles Rams",
+      "Cooper Kupp": "Los Angeles Rams", "Jonathan Taylor": "Indianapolis Colts",
+      "Davante Adams": "Los Angeles Chargers", "Michael Pittman Jr.": "Indianapolis Colts",
+      "Omarion Hampton": "Los Angeles Chargers", "Spencer Rattler": "New Orleans Saints",
+      "David Montgomery": "Detroit Lions", "Jordan Love": "Green Bay Packers",
+      "Mac Jones": "San Francisco 49ers", "Christian McCaffrey": "San Francisco 49ers",
+      "Bo Nix": "Denver Broncos", "Jalen Hurts": "Philadelphia Eagles",
+      "Stefon Diggs": "Houston Texans", "Drake Maye": "New England Patriots",
+      "Dyami Brown": "Washington Commanders", "Isiah Pacheco": "Kansas City Chiefs",
+      "Trevor Lawrence": "Jacksonville Jaguars", "Xavier Worthy": "Kansas City Chiefs",
+      "Travis Kelce": "Kansas City Chiefs", "Marquise Brown": "Kansas City Chiefs",
+      "Travis Etienne": "Jacksonville Jaguars", "Jahmyr Gibbs": "Detroit Lions",
+      "Tyler Allgeier": "Atlanta Falcons", "Drake London": "Atlanta Falcons",
+      "Roschon Johnson": "Chicago Bears", "Zach Ertz": "Washington Commanders",
+      "Aaron Rodgers": "New York Jets", "Joe Flacco": "Indianapolis Colts",
+      "Ja'Marr Chase": "Cincinnati Bengals", "DK Metcalf": "Seattle Seahawks",
+      "Jaylen Warren": "Pittsburgh Steelers", "Rome Odunze": "Chicago Bears",
+      "Michael Penix Jr.": "Atlanta Falcons", "Cade Otton": "Tampa Bay Buccaneers",
+      "Baker Mayfield": "Tampa Bay Buccaneers", "Rhamondre Stevenson": "New England Patriots",
+      "Rico Dowdle": "Dallas Cowboys", "Deebo Samuel": "San Francisco 49ers",
+      "Rashee Rice": "Kansas City Chiefs"
+    };
+
+    // Helper to get player team and position display
+    function getPlayerTeamPosition(leg) {
+      if (!leg.player) return ''; // No player = team bet (moneyline/spread)
+      
+      const isSpreadOrML = leg.stat === 'spread' || leg.stat === 'moneyline';
+      if (isSpreadOrML) return ''; // Don't show for team bets
+      
+      // Look up position
+      const position = playerPositions[leg.player] || '';
+      
+      // Look up team from player mapping
+      const playerTeam = playerTeams[leg.player];
+      const teamAbbr = playerTeam ? getPlayerTeamAbbr(leg.player, playerTeam) : '';
+      
+      if (position && teamAbbr) {
+        return `${teamAbbr} ${position}`;
+      } else if (teamAbbr) {
+        return teamAbbr;
+      } else if (position) {
+        return position;
+      }
+      
+      return '';
+    }
+
     async function update(){
       msg.textContent='Fetching data...';
       try{
@@ -2132,6 +2309,21 @@ function logoutToken() {
               } catch (e) {
                 console.error('Error parsing date:', dateStr, e);
               }
+            } else if (uniqueDates.length > 1) {
+              // Multi-game parlay: show bet_date if available
+              if (parlay.bet_date) {
+                try {
+                  const betDate = new Date(parlay.bet_date);
+                  if (betDate && !isNaN(betDate.getTime())) {
+                    const monthName = betDate.toLocaleDateString('en-US', { month: 'short' });
+                    const dayNum = betDate.getDate();
+                    const yearNum = betDate.getFullYear();
+                    formattedDate = `Bet Date: ${monthName} ${dayNum}, ${yearNum}`;
+                  }
+                } catch (e) {
+                  console.error('Error parsing bet_date:', parlay.bet_date, e);
+                }
+              }
             }
           }
         }
@@ -2149,17 +2341,35 @@ function logoutToken() {
           </div>
         `;
 
-        const allGamesDiv=document.createElement('div');
-        allGamesDiv.className='game-info-wrapper';
+        // Helper function to create scoreboard HTML
+        const createScoreboard = (g) => {
+          const stn=g.statusTypeName,isSched=stn==='STATUS_SCHEDULED',isLive=stn==='STATUS_IN_PROGRESS',isHalftime=stn==='STATUS_HALFTIME',isFinal=stn==='STATUS_FINAL';
+          let gameStatus,gameCls,gameDetails;
+          if(isSched){
+            gameStatus='🔜';
+            gameCls='status-pregame';
+            const countdown = getCountdown(g.startDateTime);
+            gameDetails=`<div style="font-weight:bold;">${getTeamAbbr(g.teams.away)} @ ${getTeamAbbr(g.teams.home)}</div><div style="font-weight:normal;font-size:0.7rem;">${countdown || g.startTime}</div>`;
+          }
+          else if(isHalftime){gameStatus='HALF';gameCls='status-halftime';gameDetails=`<div style="font-weight:bold;">${getTeamAbbr(g.teams.away)} ${g.score.away} - ${g.score.home} ${getTeamAbbr(g.teams.home)}</div>`;}
+          else if(isLive){gameStatus='LIVE';gameCls='status-live';gameDetails=`<div style="font-weight:normal;font-size:0.7rem;">${getQuarter(g.period)}, ${g.clock}</div><div style="font-weight:bold;">${getTeamAbbr(g.teams.away)} ${g.score.away} - ${g.score.home} ${getTeamAbbr(g.teams.home)}</div>`;}
+          else{gameStatus='FINAL';gameCls='status-final';gameDetails=`<div style="font-weight:bold;">${getTeamAbbr(g.teams.away)} ${g.score.away} - ${g.score.home} ${getTeamAbbr(g.teams.home)}</div>`;}
+          
+          const gameInfoDiv=document.createElement('div');
+          gameInfoDiv.className=isFinal?'game-info two-line':'game-info';
+          gameInfoDiv.innerHTML=`<img src="media/logos/nfl-logo-1.svg" class="nfl-logo-bg nfl-logo-dark" alt="NFL"><img src="media/logos/nfl-logo-2.svg" class="nfl-logo-bg nfl-logo-light" alt="NFL"><div class="badge ${gameCls}">${gameStatus}</div>${gameDetails}`;
+          return gameInfoDiv;
+        };
 
-        // Debug logging
-        console.log('Parlay:', parlay.name, 'has games:', parlay.games ? parlay.games.length : 'undefined');
-
-        // Show scoreboard if games data exists
+        // Determine if we should show scoreboards inline or with toggle
+        const isSingleBet = parlay.type === 'Single Bet' || parlay.legs.length === 1;
+        const isSGP = parlay.type === 'Same Game Parlay' || parlay.type === 'SGP';
+        
+        // Collect all games
+        let gamesToShow = [];
         if (parlay.games && parlay.games.length > 0) {
-          // For non-SGPs, we want to show all relevant games
-          if (parlay.type !== 'SGP') {
-            // Create a map of unique games based on away+home team combination
+          if (parlay.type !== 'SGP' && parlay.type !== 'Same Game Parlay') {
+            // For non-SGPs, get unique games
             const uniqueGames = new Map();
             parlay.legs.forEach(leg => {
               const gameKey = `${leg.away}-${leg.home}`;
@@ -2170,49 +2380,48 @@ function logoutToken() {
                 uniqueGames.set(gameKey, game);
               }
             });
-            
-            // Show all unique games involved in the parlay
-            uniqueGames.forEach(g => {
-              const stn=g.statusTypeName,isSched=stn==='STATUS_SCHEDULED',isLive=stn==='STATUS_IN_PROGRESS',isHalftime=stn==='STATUS_HALFTIME',isFinal=stn==='STATUS_FINAL';
-              let gameStatus,gameCls,gameDetails;
-              if(isSched){
-                gameStatus='🔜 Not Started';
-                gameCls='status-pregame';
-                const countdown = getCountdown(g.startDateTime);
-                gameDetails=`<div style="font-weight:bold;">${getTeamAbbr(g.teams.away)} @ ${getTeamAbbr(g.teams.home)}</div><div style="font-weight:normal;">${countdown || g.startTime}</div>`;
-              }
-              else if(isHalftime){gameStatus='HALF';gameCls='status-halftime';gameDetails=`<div style="font-weight:bold;">${getTeamAbbr(g.teams.away)} ${g.score.away} - ${g.score.home} ${getTeamAbbr(g.teams.home)}</div>`;}
-              else if(isLive){gameStatus='LIVE';gameCls='status-live';gameDetails=`<div style="font-weight:normal;">${getQuarter(g.period)}, ${g.clock}</div><div style="font-weight:bold;">${getTeamAbbr(g.teams.away)} ${g.score.away} - ${g.score.home} ${getTeamAbbr(g.teams.home)}</div>`;}
-              else{gameStatus='FINAL';gameCls='status-final';gameDetails=`<div style="font-weight:bold;">${getTeamAbbr(g.teams.away)} ${g.score.away} - ${g.score.home} ${getTeamAbbr(g.teams.home)}</div>`;}
-              
-              const gameInfoDiv=document.createElement('div');
-              gameInfoDiv.className=isFinal?'game-info two-line':'game-info';
-              gameInfoDiv.innerHTML=`<img src="media/logos/nfl-logo-1.svg" class="nfl-logo-bg nfl-logo-dark" alt="NFL"><img src="media/logos/nfl-logo-2.svg" class="nfl-logo-bg nfl-logo-light" alt="NFL"><div class="badge ${gameCls}">${gameStatus}</div>${gameDetails}`;
-              allGamesDiv.appendChild(gameInfoDiv);
-            });
+            gamesToShow = Array.from(uniqueGames.values());
           } else {
-            // For SGPs, show the game info as before
-            parlay.games.forEach(g=>{
-              const stn=g.statusTypeName,isSched=stn==='STATUS_SCHEDULED',isLive=stn==='STATUS_IN_PROGRESS',isHalftime=stn==='STATUS_HALFTIME',isFinal=stn==='STATUS_FINAL';
-              let gameStatus,gameCls,gameDetails;
-              if(isSched){
-                gameStatus='🔜 Not Started';
-                gameCls='status-pregame';
-                const countdown = getCountdown(g.startDateTime);
-                gameDetails=`<div style="font-weight:bold;">${getTeamAbbr(g.teams.away)} @ ${getTeamAbbr(g.teams.home)}</div><div style="font-weight:normal;">${countdown || g.startTime}</div>`;
-              }
-              else if(isHalftime){gameStatus='HALF';gameCls='status-halftime';gameDetails=`<div style="font-weight:bold;">${getTeamAbbr(g.teams.away)} ${g.score.away} - ${g.score.home} ${getTeamAbbr(g.teams.home)}</div>`;}
-              else if(isLive){gameStatus='LIVE';gameCls='status-live';gameDetails=`<div style="font-weight:normal;">${getQuarter(g.period)}, ${g.clock}</div><div style="font-weight:bold;">${getTeamAbbr(g.teams.away)} ${g.score.away} - ${g.score.home} ${getTeamAbbr(g.teams.home)}</div>`;}
-              else{gameStatus='FINAL';gameCls='status-final';gameDetails=`<div style="font-weight:bold;">${getTeamAbbr(g.teams.away)} ${g.score.away} - ${g.score.home} ${getTeamAbbr(g.teams.home)}</div>`;}
-              
-              const gameInfoDiv=document.createElement('div');
-              gameInfoDiv.className=isFinal?'game-info two-line':'game-info';
-              gameInfoDiv.innerHTML=`<img src="media/logos/nfl-logo-1.svg" class="nfl-logo-bg nfl-logo-dark" alt="NFL"><img src="media/logos/nfl-logo-2.svg" class="nfl-logo-bg nfl-logo-light" alt="NFL"><div class="badge ${gameCls}">${gameStatus}</div>${gameDetails}`;
-              allGamesDiv.appendChild(gameInfoDiv);
-            });
+            gamesToShow = parlay.games;
           }
         }
-        header.appendChild(allGamesDiv);
+
+        // Show inline scoreboards for Single Bet or SGP
+        if ((isSingleBet || isSGP) && gamesToShow.length > 0) {
+          const allGamesDiv=document.createElement('div');
+          allGamesDiv.className='game-info-wrapper';
+          gamesToShow.forEach(g => allGamesDiv.appendChild(createScoreboard(g)));
+          header.appendChild(allGamesDiv);
+        }
+        // For multi-game parlays, add "Show Scores" toggle
+        else if (gamesToShow.length > 1) {
+          const showScoresBtn = document.createElement('button');
+          showScoresBtn.className = 'show-scores-btn';
+          showScoresBtn.textContent = 'Show Scores ▼';
+          showScoresBtn.onclick = (e) => {
+            e.stopPropagation();
+            const scoreboardBlock = section.querySelector('.scoreboard-block');
+            scoreboardBlock.classList.toggle('active');
+            showScoresBtn.textContent = scoreboardBlock.classList.contains('active') ? 'Hide Scores ▲' : 'Show Scores ▼';
+          };
+          header.appendChild(showScoresBtn);
+
+          // Create collapsible scoreboard block
+          const scoreboardBlock = document.createElement('div');
+          scoreboardBlock.className = 'scoreboard-block';
+          
+          // Split games into rows (9 per row for web, 3 per row for mobile - handled by CSS)
+          const gamesPerRow = window.innerWidth > 768 ? 9 : 3;
+          for (let i = 0; i < gamesToShow.length; i += gamesPerRow) {
+            const rowGames = gamesToShow.slice(i, i + gamesPerRow);
+            const row = document.createElement('div');
+            row.className = 'scoreboard-row';
+            rowGames.forEach(g => row.appendChild(createScoreboard(g)));
+            scoreboardBlock.appendChild(row);
+          }
+          
+          header.appendChild(scoreboardBlock);
+        }
 
         const isAnyGameLive = parlay.games && parlay.games.some(g=>g.statusTypeName==='STATUS_IN_PROGRESS' || g.statusTypeName==='STATUS_HALFTIME');
         const areAllGamesFinal = parlay.games && parlay.games.every(g=>g.statusTypeName==='STATUS_FINAL');
@@ -2573,6 +2782,13 @@ function logoutToken() {
               const mobileCurrentDisplay = formatStatForMobile(currentDisplay, p.stat);
               const mobileTargetDisplay = formatStatForMobile(targetDisplay, p.stat);
               
+              // Get team and position for player props
+              const teamPosition = getPlayerTeamPosition(p);
+              const playerCellContent = p.player || p.team || 'N/A';
+              const playerCellHTML = teamPosition ? 
+                `<div>${playerCellContent}</div><div style="font-size:0.65rem;color:#999;margin-top:0.15rem;">${teamPosition}</div>` : 
+                playerCellContent;
+              
               return`
                 <tr>
                   <td>
@@ -2593,7 +2809,7 @@ function logoutToken() {
                       <span>${mobileTargetDisplay}</span>
                     </div>
                   </td>
-                  <td>${p.player || p.team || 'N/A'}</td>
+                  <td>${playerCellHTML}</td>
                   <td>${fmtType(p.stat, statAdd)}</td>
                   <td>${currentDisplay}</td>
                   <td>${targetDisplay}</td>
