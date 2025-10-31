@@ -1109,8 +1109,8 @@ def admin_export_files():
         return jsonify({"error": str(e)}), 500
 
 @app.route('/')
-@require_admin_token
 def index():
+    """Serve the main app page - must be public for PWA to work"""
     return send_from_directory('.', 'index.html')
 
 # PWA Support - These routes must be public for PWA to work
