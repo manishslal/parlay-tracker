@@ -2803,16 +2803,16 @@ function logoutToken() {
                 `<div>${playerCellContent}</div><div style="font-size:0.65rem;color:#999;margin-top:0.15rem;">${teamPosition}</div>` : 
                 playerCellContent;
               
-              // Mobile player name with team/position below (bold)
+              // Mobile player name with stat type on same line, team/position below
               const mobilePlayerHTML = teamPosition ? 
-                `<strong>${playerOrTeam}</strong><div style="font-size:0.65rem;font-weight:bold;color:#999;margin-top:0.15rem;">${teamPosition}</div>` : 
-                `<strong>${playerOrTeam}</strong>`;
+                `<strong>${playerOrTeam}</strong><span style="font-weight:normal;"> - ${statType}</span><div style="font-size:0.65rem;font-weight:bold;color:#999;margin-top:0.15rem;">${teamPosition}</div>` : 
+                `<strong>${playerOrTeam}</strong><span style="font-weight:normal;"> - ${statType}</span>`;
               
               return`
                 <tr>
                   <td>
                     <div class="mobile-line-1">
-                      <span>${mobilePlayerHTML}<span style="font-weight:normal;"> - ${statType}</span></span>
+                      <span>${mobilePlayerHTML}</span>
                       <span>${txt}</span>
                     </div>
                   </td>
