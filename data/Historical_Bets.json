@@ -1127,12 +1127,12 @@
     "betting_site": "FanDuel",
     "legs": [
       {
-        "target": 0,
-        "stat": "unknown",
+        "target": 2,
+        "stat": "anytime_touchdown",
         "current": 0,
-        "player": "Unknown",
-        "away": "Unknown Team",
-        "home": "Unknown Team",
+        "player": "Drake London",
+        "away": "Buffalo Bills",
+        "home": "Atlanta Falcons",
         "game_date": "2025-10-13"
       }
     ],
@@ -4085,6 +4085,305 @@
       }
     ],
     "bet_date": "2025-10-26",
+    "sport": "NFL"
+  },
+  {
+    "type": "Same Game Parlay",
+    "name": "8 Pick Parlay",
+    "odds": "+1080",
+    "wager": 10.0,
+    "returns": 118.0,
+    "bet_id": "DK638972043048719111",
+    "betting_site": "DraftKings",
+    "legs": [
+      {
+        "game_date": "2025-10-27",
+        "away": "Washington Commanders",
+        "home": "Kansas City Chiefs",
+        "player": "Deebo Samuel",
+        "target": 25,
+        "stat": "receiving_yards",
+        "stat_add": "over"
+      },
+      {
+        "game_date": "2025-10-27",
+        "away": "Washington Commanders",
+        "home": "Kansas City Chiefs",
+        "player": "Travis Kelce",
+        "target": 25,
+        "stat": "receiving_yards",
+        "stat_add": "over"
+      },
+      {
+        "game_date": "2025-10-27",
+        "away": "Washington Commanders",
+        "home": "Kansas City Chiefs",
+        "player": "Terry McLaurin",
+        "target": 25,
+        "stat": "receiving_yards",
+        "stat_add": "over"
+      },
+      {
+        "game_date": "2025-10-27",
+        "away": "Washington Commanders",
+        "home": "Kansas City Chiefs",
+        "player": "Rashee Rice",
+        "target": 40,
+        "stat": "receiving_yards",
+        "stat_add": "over"
+      },
+      {
+        "game_date": "2025-10-27",
+        "away": "Washington Commanders",
+        "home": "Kansas City Chiefs",
+        "player": "Xavier Worthy",
+        "target": 25,
+        "stat": "receiving_yards",
+        "stat_add": "over"
+      },
+      {
+        "game_date": "2025-10-27",
+        "away": "Washington Commanders",
+        "home": "Kansas City Chiefs",
+        "player": "Zach Ertz",
+        "target": 25,
+        "stat": "receiving_yards",
+        "stat_add": "over"
+      },
+      {
+        "game_date": "2025-10-27",
+        "away": "Washington Commanders",
+        "home": "Kansas City Chiefs",
+        "player": "Jacory Croskey-Merritt",
+        "target": 40,
+        "stat": "rushing_yards",
+        "stat_add": "over"
+      },
+      {
+        "game_date": "2025-10-27",
+        "away": "Washington Commanders",
+        "home": "Kansas City Chiefs",
+        "player": "Patrick Mahomes",
+        "target": 230,
+        "stat": "passing_yards",
+        "stat_add": "over"
+      }
+    ],
+    "bet_date": "2025-10-27",
+    "sport": "NFL"
+  },
+  {
+    "type": "Same Game Parlay",
+    "name": "6 Pick Parlay",
+    "odds": "+405",
+    "wager": 10.0,
+    "returns": 50.5,
+    "bet_id": "DK638972057169683994",
+    "betting_site": "DraftKings",
+    "legs": [
+      {
+        "game_date": "2025-10-27",
+        "away": "Washington Commanders",
+        "home": "Kansas City Chiefs",
+        "player": "Marcus Mariota",
+        "target": 150,
+        "stat": "passing_yards",
+        "stat_add": "over"
+      },
+      {
+        "game_date": "2025-10-27",
+        "away": "Washington Commanders",
+        "home": "Kansas City Chiefs",
+        "player": "Patrick Mahomes",
+        "target": 200,
+        "stat": "passing_yards",
+        "stat_add": "over"
+      },
+      {
+        "game_date": "2025-10-27",
+        "away": "Washington Commanders",
+        "home": "Kansas City Chiefs",
+        "player": "Travis Kelce",
+        "target": 25,
+        "stat": "receiving_yards",
+        "stat_add": "over"
+      },
+      {
+        "game_date": "2025-10-27",
+        "away": "Washington Commanders",
+        "home": "Kansas City Chiefs",
+        "player": "Terry McLaurin",
+        "target": 25,
+        "stat": "receiving_yards",
+        "stat_add": "over"
+      },
+      {
+        "game_date": "2025-10-27",
+        "away": "Washington Commanders",
+        "home": "Kansas City Chiefs",
+        "player": "Rashee Rice",
+        "target": 0.5,
+        "stat": "anytime_td_scorer",
+        "stat_add": null
+      },
+      {
+        "game_date": "2025-10-27",
+        "away": "Washington Commanders",
+        "home": "Kansas City Chiefs",
+        "player": "Deebo Samuel",
+        "target": 25,
+        "stat": "receiving_yards",
+        "stat_add": "over"
+      }
+    ],
+    "bet_date": "2025-10-27",
+    "sport": "NFL"
+  },
+  {
+    "type": "Same Game Parlay",
+    "name": "6 Pick Parlay",
+    "odds": "+150",
+    "wager": 10.0,
+    "returns": 25.0,
+    "bet_id": "DK638972058194087245",
+    "betting_site": "DraftKings",
+    "legs": [
+      {
+        "game_date": "2025-10-27",
+        "away": "Washington Commanders",
+        "home": "Kansas City Chiefs",
+        "player": "Patrick Mahomes",
+        "target": 200,
+        "stat": "passing_yards",
+        "stat_add": "over"
+      },
+      {
+        "game_date": "2025-10-27",
+        "away": "Washington Commanders",
+        "home": "Kansas City Chiefs",
+        "player": "Marcus Mariota",
+        "target": 150,
+        "stat": "passing_yards",
+        "stat_add": "over"
+      },
+      {
+        "game_date": "2025-10-27",
+        "away": "Washington Commanders",
+        "home": "Kansas City Chiefs",
+        "player": "Terry McLaurin",
+        "target": 15,
+        "stat": "receiving_yards",
+        "stat_add": "over"
+      },
+      {
+        "game_date": "2025-10-27",
+        "away": "Washington Commanders",
+        "home": "Kansas City Chiefs",
+        "player": "Rashee Rice",
+        "target": 4,
+        "stat": "receptions",
+        "stat_add": "over"
+      },
+      {
+        "game_date": "2025-10-27",
+        "away": "Washington Commanders",
+        "home": "Kansas City Chiefs",
+        "player": "Deebo Samuel",
+        "target": 3,
+        "stat": "receptions",
+        "stat_add": "over"
+      },
+      {
+        "game_date": "2025-10-27",
+        "away": "Washington Commanders",
+        "home": "Kansas City Chiefs",
+        "player": "Travis Kelce",
+        "target": 25,
+        "stat": "receiving_yards",
+        "stat_add": "over"
+      }
+    ],
+    "bet_date": "2025-10-27",
+    "sport": "NFL"
+  },
+  {
+    "type": "Parlay",
+    "name": "3 Picks (All-In)",
+    "odds": "6x",
+    "wager": 5.0,
+    "returns": 30.0,
+    "bet_id": "dabble-2025-10-27-001",
+    "betting_site": "Dabble",
+    "legs": [
+      {
+        "game_date": "2025-10-27",
+        "away": "Washington Commanders",
+        "home": "Kansas City Chiefs",
+        "player": "Patrick Mahomes",
+        "target": 22.5,
+        "stat": "rushing_yards",
+        "stat_add": "over"
+      },
+      {
+        "game_date": "2025-10-27",
+        "away": "Washington Commanders",
+        "home": "Kansas City Chiefs",
+        "player": "Zach Ertz",
+        "target": 30.5,
+        "stat": "receiving_yards",
+        "stat_add": "over"
+      },
+      {
+        "game_date": "2025-10-27",
+        "away": "Washington Commanders",
+        "home": "Kansas City Chiefs",
+        "player": "Isiah Pacheco",
+        "target": 48.5,
+        "stat": "rushing_yards",
+        "stat_add": "over"
+      }
+    ],
+    "bet_date": "2025-10-27",
+    "sport": "NFL"
+  },
+  {
+    "type": "Parlay",
+    "name": "3 Picks (All-In)",
+    "odds": "7.2x",
+    "wager": 5.0,
+    "returns": 36.0,
+    "bet_id": "dabble-2025-10-27-002",
+    "betting_site": "Dabble",
+    "legs": [
+      {
+        "game_date": "2025-10-27",
+        "away": "Washington Commanders",
+        "home": "Kansas City Chiefs",
+        "player": "Brashard Smith",
+        "target": 16.5,
+        "stat": "receiving_yards",
+        "stat_add": "over"
+      },
+      {
+        "game_date": "2025-10-27",
+        "away": "Washington Commanders",
+        "home": "Kansas City Chiefs",
+        "player": "Terry McLaurin",
+        "target": 44.5,
+        "stat": "receiving_yards",
+        "stat_add": "over"
+      },
+      {
+        "game_date": "2025-10-27",
+        "away": "Washington Commanders",
+        "home": "Kansas City Chiefs",
+        "player": "Isiah Pacheco",
+        "target": 0.5,
+        "stat": "anytime_td_scorer",
+        "stat_add": null
+      }
+    ],
+    "bet_date": "2025-10-27",
     "sport": "NFL"
   }
 ]

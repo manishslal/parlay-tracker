@@ -1889,9 +1889,10 @@ function logoutToken() {
       "Mac Jones": "QB", "Caleb Williams": "QB", "Drake Maye": "QB", "Aaron Rodgers": "QB",
       "Trevor Lawrence": "QB", "Russell Wilson": "QB", "Daniel Jones": "QB", "Joe Flacco": "QB",
       "Spencer Rattler": "QB", "Michael Penix Jr.": "QB", "Marcus Mariota": "QB", "Carson Wentz": "QB",
-      "J.J. McCarthy": "QB", "Dillon Gabriel": "QB",
+      "J.J. McCarthy": "QB", "Dillon Gabriel": "QB", "Tua Tagovailoa": "QB",
       // Running Backs
       "Isiah Pacheco": "RB", "Saquon Barkley": "RB", "Christian McCaffrey": "RB", "Derrick Henry": "RB",
+      "De'Von Achane": "RB",
       "Jordan Mason": "RB", "Kenneth Walker III": "RB", "Bucky Irving": "RB", "Bijan Robinson": "RB",
       "Aaron Jones": "RB", "D'Andre Swift": "RB", "Kyren Williams": "RB", "Javonte Williams": "RB",
       "Jonathan Taylor": "RB", "David Montgomery": "RB", "Jahmyr Gibbs": "RB", "James Cook": "RB",
@@ -1908,7 +1909,7 @@ function logoutToken() {
       "Davante Adams": "WR", "Michael Pittman Jr.": "WR", "Stefon Diggs": "WR", "Dyami Brown": "WR",
       "Drake London": "WR", "Ja'Marr Chase": "WR", "DK Metcalf": "WR", "Rome Odunze": "WR",
       "Jordan Addison": "WR", "Ladd McConkey": "WR", "Matthew Golden": "WR", "Quentin Johnston": "WR",
-      "Emeka Egbuka": "WR", "Travis Hunter": "WR",
+      "Emeka Egbuka": "WR", "Travis Hunter": "WR", "Malik Washington": "WR",
       // Tight Ends
       "Travis Kelce": "TE", "Dalton Kincaid": "TE", "Mark Andrews": "TE", "T.J. Hockenson": "TE",
       "Tucker Kraft": "TE", "Sam LaPorta": "TE", "Trey McBride": "TE", "Dallas Goedert": "TE",
@@ -1987,7 +1988,8 @@ function logoutToken() {
       "J.J. McCarthy": "Minnesota Vikings", "Jacory Croskey-Merritt": "Washington Commanders",
       "Brashard Smith": "Miami Dolphins", "Jordan Addison": "Minnesota Vikings",
       "Ladd McConkey": "Los Angeles Chargers", "Matthew Golden": "Houston Texans",
-      "Quentin Johnston": "Los Angeles Chargers",
+      "Quentin Johnston": "Los Angeles Chargers", "Tua Tagovailoa": "Miami Dolphins",
+      "Malik Washington": "Miami Dolphins", "De'Von Achane": "Miami Dolphins",
       // College players
       "Dillon Gabriel": "Oregon Ducks", "Emeka Egbuka": "Ohio State Buckeyes",
       "Travis Hunter": "Colorado Buffaloes"
@@ -2801,24 +2803,24 @@ function logoutToken() {
                 `<div>${playerCellContent}</div><div style="font-size:0.65rem;color:#999;margin-top:0.15rem;">${teamPosition}</div>` : 
                 playerCellContent;
               
+              // Mobile player name with team/position below (bold)
+              const mobilePlayerHTML = teamPosition ? 
+                `<strong>${playerOrTeam}</strong><div style="font-size:0.65rem;font-weight:bold;color:#999;margin-top:0.15rem;">${teamPosition}</div>` : 
+                `<strong>${playerOrTeam}</strong>`;
+              
               return`
                 <tr>
                   <td>
                     <div class="mobile-line-1">
-                      <span><strong>${playerOrTeam}</strong><span style="font-weight:normal;"> - ${statType}</span></span>
+                      <span>${mobilePlayerHTML}<span style="font-weight:normal;"> - ${statType}</span></span>
                       <span>${txt}</span>
                     </div>
                   </td>
                   <td>
-                    <div class="mobile-line-2-header">
-                      <span>Current</span>
-                      <span></span>
-                      <span>Target</span>
-                    </div>
                     <div class="mobile-line-2">
-                      <span>${mobileCurrentDisplay}</span>
+                      <span>${mobileCurrentDisplay}<div style="font-size:0.65rem;color:#999;margin-top:0.15rem;">Current</div></span>
                       <span>${progressCol}</span>
-                      <span>${mobileTargetDisplay}</span>
+                      <span>${mobileTargetDisplay}<div style="font-size:0.65rem;color:#999;margin-top:0.15rem;">Target</div></span>
                     </div>
                   </td>
                   <td>${playerCellHTML}</td>
