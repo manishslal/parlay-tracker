@@ -807,7 +807,7 @@
     
     .mobile-line-1 {
       justify-content: space-between;
-      align-items: center;
+      align-items: flex-start; /* Changed from center to flex-start for consistent top alignment */
       font-weight: 500;
     }
     
@@ -2818,9 +2818,9 @@ function logoutToken() {
                   </td>
                   <td>
                     <div class="mobile-line-2">
-                      <span>${mobileCurrentDisplay}<div style="font-size:0.65rem;color:#999;margin-top:0.15rem;">Current</div></span>
+                      <span>${mobileCurrentDisplay}<div style="font-size:0.65rem;color:#999;margin-top:0.075rem;">Current</div></span>
                       <span>${progressCol}</span>
-                      <span>${mobileTargetDisplay}<div style="font-size:0.65rem;color:#999;margin-top:0.15rem;">Target</div></span>
+                      <span>${mobileTargetDisplay}<div style="font-size:0.65rem;color:#999;margin-top:0.075rem;">Target</div></span>
                     </div>
                   </td>
                   <td>${playerCellHTML}</td>
