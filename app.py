@@ -1113,6 +1113,32 @@ def admin_export_files():
 def index():
     return send_from_directory('.', 'index.html')
 
+# PWA Support - These routes must be public for PWA to work
+@app.route('/manifest.json')
+def manifest():
+    """Serve PWA manifest file"""
+    return send_from_directory('.', 'manifest.json', mimetype='application/manifest+json')
+
+@app.route('/service-worker.js')
+def service_worker():
+    """Serve service worker file"""
+    return send_from_directory('.', 'service-worker.js', mimetype='application/javascript')
+
+@app.route('/media/icons/<path:filename>')
+def serve_icon(filename):
+    """Serve app icons for PWA"""
+    return send_from_directory('media/icons', filename, mimetype='image/png')
+
+@app.route('/media/logos/<path:filename>')
+def serve_logo(filename):
+    """Serve logo files"""
+    return send_from_directory('media/logos', filename)
+
+@app.route('/media/<path:filename>')
+def serve_media(filename):
+    """Serve other media files"""
+    return send_from_directory('media', filename)
+
 if __name__ == "__main__":
     # Initialize and organize parlays before starting server
     initialize_parlay_files()
