@@ -63,6 +63,7 @@ class Bet(db.Model):
     # Bet state flags
     is_active = db.Column(db.Boolean, default=True, nullable=False)  # 1=active/live, 0=completed/historical
     is_archived = db.Column(db.Boolean, default=False, nullable=False)  # 1=archived, 0=not archived
+    api_fetched = db.Column(db.String(3), default='No', nullable=False)  # 'Yes' if ESPN data fetched, 'No' otherwise
     
     # Bet data stored as JSON
     bet_data = db.Column(db.Text, nullable=False)  # Full bet JSON

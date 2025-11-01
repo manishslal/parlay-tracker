@@ -268,6 +268,8 @@ def auto_move_completed_bets(user_id):
                 save_final_results_to_bet(bet, processed_data)
                 
                 bet.status = 'completed'
+                bet.is_active = False  # Move to historical
+                bet.api_fetched = 'Yes'  # Mark as fetched (we just processed it)
                 updated_count += 1
         
         # Commit all changes at once
@@ -1188,18 +1190,59 @@ def historical():
             app.logger.warning("No historical parlays found")
             return jsonify([])
         
-        # For historical bets (is_active=0), we don't need to fetch from ESPN
-        # They are completed bets with their final results already determined
-        # No need to waste API calls on old games that ESPN no longer provides
-        app.logger.info(f"Historical bets: {len(historical_parlays)} total (no ESPN fetch needed - already completed)")
+        # Separate bets by api_fetched status
+        # Only call ESPN API for bets that haven't been fetched yet (api_fetched='No')
+        bets_already_fetched = []  # api_fetched='Yes'
+        bets_needing_fetch = []     # api_fetched='No'
         
-        # Historical bets already have their final stats and outcomes
-        # Add empty games array for frontend compatibility (no live game data needed)
+        # Get the actual Bet objects to check api_fetched column
+        bet_objects = {bet.id: bet for bet in bets}
+        
         for parlay in historical_parlays:
+            bet_obj = bet_objects.get(parlay.get('db_id'))
+            if bet_obj and bet_obj.api_fetched == 'Yes':
+                bets_already_fetched.append(parlay)
+            else:
+                bets_needing_fetch.append(parlay)
+        
+        app.logger.info(f"Historical bets: {len(bets_already_fetched)} already fetched, "
+                       f"{len(bets_needing_fetch)} need ESPN fetch")
+        
+        # Try to fetch ESPN data for bets that haven't been fetched yet
+        # This handles cases like:
+        # - User added old bet retroactively (give ESPN a chance)
+        # - Bet was marked complete before ESPN fetch happened
+        processed = []
+        if bets_needing_fetch:
+            app.logger.info(f"Attempting ESPN fetch for {len(bets_needing_fetch)} historical bets (api_fetched='No')")
+            try:
+                processed = process_parlay_data(bets_needing_fetch)
+                
+                # Mark these bets as fetched in database
+                for parlay in processed:
+                    bet_obj = bet_objects.get(parlay.get('db_id'))
+                    if bet_obj:
+                        bet_obj.api_fetched = 'Yes'
+                
+                db.session.commit()
+                app.logger.info(f"✅ Marked {len(processed)} bets as api_fetched='Yes'")
+                
+            except Exception as e:
+                app.logger.error(f"Error processing historical bets: {str(e)}")
+                # If processing fails, use unprocessed data
+                processed = bets_needing_fetch
+                # Add empty games array for frontend compatibility
+                for parlay in processed:
+                    if 'games' not in parlay:
+                        parlay['games'] = []
+        
+        # For bets already fetched, add empty games array (no live data needed)
+        for parlay in bets_already_fetched:
             if 'games' not in parlay:
                 parlay['games'] = []
         
-        all_historical = historical_parlays
+        # Combine all historical bets
+        all_historical = bets_already_fetched + processed
         app.logger.info(f"Total historical bets to return: {len(all_historical)}")
         
         # Sort and return
@@ -1440,6 +1483,10 @@ def update_bet(bet_id):
         # Update other fields if provided
         if 'status' in data:
             bet.status = data['status']
+            # If marking as completed/won/lost, update is_active and api_fetched
+            if data['status'] in ['completed', 'won', 'lost']:
+                bet.is_active = False
+                bet.api_fetched = 'Yes'  # Assume stats already captured or manually entered
         if 'bet_type' in data:
             bet.bet_type = data['bet_type']
         if 'betting_site' in data:
