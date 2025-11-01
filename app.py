@@ -1123,24 +1123,40 @@ def pwa_debug():
 @app.route('/manifest.json')
 def manifest():
     """Serve PWA manifest file"""
-    response = send_from_directory('.', 'manifest.json')
-    response.headers['Content-Type'] = 'application/manifest+json'
-    response.headers['Cache-Control'] = 'public, max-age=0, must-revalidate'
-    return response
+    try:
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        response = send_from_directory(base_dir, 'manifest.json')
+        response.headers['Content-Type'] = 'application/manifest+json'
+        response.headers['Cache-Control'] = 'public, max-age=0, must-revalidate'
+        return response
+    except Exception as e:
+        app.logger.error(f"Error serving manifest: {e}")
+        return jsonify({"error": "Manifest not found"}), 404
 
 @app.route('/service-worker.js')
 def service_worker():
     """Serve service worker file"""
-    response = send_from_directory('.', 'service-worker.js')
-    response.headers['Content-Type'] = 'application/javascript; charset=utf-8'
-    response.headers['Cache-Control'] = 'public, max-age=0, must-revalidate'
-    response.headers['Service-Worker-Allowed'] = '/'
-    return response
+    try:
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        response = send_from_directory(base_dir, 'service-worker.js')
+        response.headers['Content-Type'] = 'application/javascript; charset=utf-8'
+        response.headers['Cache-Control'] = 'public, max-age=0, must-revalidate'
+        response.headers['Service-Worker-Allowed'] = '/'
+        return response
+    except Exception as e:
+        app.logger.error(f"Error serving service worker: {e}")
+        return jsonify({"error": "Service worker not found"}), 404
 
 @app.route('/media/icons/<path:filename>')
 def serve_icon(filename):
     """Serve app icons for PWA"""
-    return send_from_directory('media/icons', filename, mimetype='image/png')
+    try:
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        icons_path = os.path.join(base_dir, 'media', 'icons')
+        return send_from_directory(icons_path, filename, mimetype='image/png')
+    except Exception as e:
+        app.logger.error(f"Error serving icon {filename}: {e}")
+        return jsonify({"error": "Icon not found"}), 404
 
 @app.route('/media/logos/<path:filename>')
 def serve_logo(filename):
