@@ -105,7 +105,8 @@ def _compute_parlay_returns_from_odds(wager, parlay_odds=None, leg_odds_list=Non
 from functools import wraps
 from flask import request
 
-app = Flask(__name__)
+# Configure Flask to serve static files from root directory
+app = Flask(__name__, static_folder='.', static_url_path='')
 CORS(app)
 
 # Decorator to require admin token for all endpoints
@@ -1117,12 +1118,19 @@ def index():
 @app.route('/manifest.json')
 def manifest():
     """Serve PWA manifest file"""
-    return send_from_directory('.', 'manifest.json', mimetype='application/manifest+json')
+    response = send_from_directory('.', 'manifest.json')
+    response.headers['Content-Type'] = 'application/manifest+json'
+    response.headers['Cache-Control'] = 'public, max-age=0, must-revalidate'
+    return response
 
 @app.route('/service-worker.js')
 def service_worker():
     """Serve service worker file"""
-    return send_from_directory('.', 'service-worker.js', mimetype='application/javascript')
+    response = send_from_directory('.', 'service-worker.js')
+    response.headers['Content-Type'] = 'application/javascript; charset=utf-8'
+    response.headers['Cache-Control'] = 'public, max-age=0, must-revalidate'
+    response.headers['Service-Worker-Allowed'] = '/'
+    return response
 
 @app.route('/media/icons/<path:filename>')
 def serve_icon(filename):
