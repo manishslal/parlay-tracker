@@ -860,7 +860,8 @@ def fetch_game_details_from_espn(game_date, away_team, home_team):
                 continue
                 
         if not ev:
-            app.logger.warning(f"No matching event found for {away_team} @ {home_team}")
+            # Reduce log level for old games - they won't be in ESPN's current events
+            app.logger.debug(f"No matching event found for {away_team} @ {home_team}")
             return None
 
         comp = ev["competitions"][0]
@@ -936,7 +937,8 @@ def process_parlay_data(parlays):
                 app.logger.info(f"Adding game data to parlay_games: {game_key}")
                 parlay_games[game_key] = game_data_cache[game_key]
             else:
-                app.logger.warning(f"No game data available for {game_key}")
+                # Reduce log level for historical games without live data
+                app.logger.debug(f"No game data available for {game_key}")
 
         for leg in parlay.get("legs", []):
             app.logger.info(f"Processing leg in final stage: {leg}")
@@ -981,7 +983,8 @@ def process_parlay_data(parlays):
                     app.logger.error(f"Error calculating bet value: {str(e)}")
                     leg["current"] = 0
             else:
-                app.logger.warning(f"No game data found for {game_key}")
+                # Reduce log level for historical games - expected for old completed bets
+                app.logger.debug(f"No game data found for {game_key}")
                 leg["current"] = 0
 
         # Copy all original parlay fields and add games
@@ -1129,10 +1132,14 @@ def check_auth():
 @app.route("/live")
 @login_required
 def live():
-    # Get live bets from database for current user
-    bets = get_user_bets_from_db(current_user.id, status_filter='live')
-    # Convert Bet objects to dict format compatible with existing frontend
-    live_parlays = [bet.get_bet_data() for bet in bets]
+    # Get live bets from database for current user (is_active=1, is_archived=0)
+    bets = Bet.query.filter_by(
+        user_id=current_user.id,
+        is_active=True,
+        is_archived=False
+    ).filter(Bet.status.in_(['live', 'pending'])).all()
+    # Convert Bet objects to dict format with db_id included
+    live_parlays = [bet.to_dict() for bet in bets]
     processed = process_parlay_data(live_parlays)
     return jsonify(sort_parlays_by_date(processed))
 
@@ -1144,9 +1151,14 @@ def todays():
     # Auto-move completed bets (games that have ended)
     auto_move_completed_bets(current_user.id)
     
-    # Get today's bets from database for current user
-    bets = get_user_bets_from_db(current_user.id, status_filter='pending')
-    todays_parlays = [bet.get_bet_data() for bet in bets]
+    # Get today's bets from database for current user (is_active=1, is_archived=0)
+    bets = Bet.query.filter_by(
+        user_id=current_user.id,
+        is_active=True,
+        is_archived=False,
+        status='pending'
+    ).all()
+    todays_parlays = [bet.to_dict() for bet in bets]  # Use to_dict() to include db_id
     # Return the raw today's bets
     processed = process_parlay_data(todays_parlays)
     return jsonify(sort_parlays_by_date(processed))
@@ -1157,10 +1169,14 @@ def historical():
     try:
         app.logger.info("Starting historical endpoint processing")
         
-        # Load historical parlays from database for current user
+        # Load historical parlays from database for current user (is_active=0, is_archived=0)
         try:
-            bets = get_user_bets_from_db(current_user.id, status_filter='completed')
-            historical_parlays = [bet.get_bet_data() for bet in bets]
+            bets = Bet.query.filter_by(
+                user_id=current_user.id,
+                is_active=False,
+                is_archived=False
+            ).all()
+            historical_parlays = [bet.to_dict() for bet in bets]  # Use to_dict() to include db_id
             app.logger.info(f"Loaded {len(historical_parlays)} historical parlays")
             for parlay in historical_parlays:
                 app.logger.info(f"Parlay: {parlay.get('name')}, type: {parlay.get('type')}, legs: {len(parlay.get('legs', []))}")
@@ -1172,37 +1188,18 @@ def historical():
             app.logger.warning("No historical parlays found")
             return jsonify([])
         
-        # Separate bets with saved final results from those needing ESPN fetch
-        bets_with_finals = []
-        bets_needing_fetch = []
+        # For historical bets (is_active=0), we don't need to fetch from ESPN
+        # They are completed bets with their final results already determined
+        # No need to waste API calls on old games that ESPN no longer provides
+        app.logger.info(f"Historical bets: {len(historical_parlays)} total (no ESPN fetch needed - already completed)")
         
+        # Historical bets already have their final stats and outcomes
+        # Add empty games array for frontend compatibility (no live game data needed)
         for parlay in historical_parlays:
-            has_final_results = all(
-                leg.get('final_value') is not None or leg.get('result') is not None
-                for leg in parlay.get('legs', [])
-            )
-            
-            if has_final_results:
-                bets_with_finals.append(parlay)
-            else:
-                bets_needing_fetch.append(parlay)
+            if 'games' not in parlay:
+                parlay['games'] = []
         
-        app.logger.info(f"Historical bets: {len(bets_with_finals)} with saved finals, {len(bets_needing_fetch)} need ESPN fetch")
-            
-        # Process only bets that need ESPN data
-        processed = []
-        if bets_needing_fetch:
-            try:
-                processed = process_parlay_data(bets_needing_fetch)
-                app.logger.info(f"Processed {len(processed)} historical parlays from ESPN")
-                for p in processed:
-                    app.logger.info(f"Processed parlay: {p.get('name')}")
-            except Exception as e:
-                app.logger.error(f"Error processing parlays from ESPN: {str(e)}")
-                # Continue with just the bets that have saved finals
-        
-        # Add bets with saved final results (no ESPN fetch needed)
-        all_historical = bets_with_finals + processed
+        all_historical = historical_parlays
         app.logger.info(f"Total historical bets to return: {len(all_historical)}")
         
         # Sort and return
@@ -1479,6 +1476,136 @@ def delete_bet(bet_id):
         db.session.rollback()
         app.logger.error(f"Error deleting bet: {str(e)}")
         return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/bets/<int:bet_id>/archive', methods=['PUT'])
+@login_required
+def archive_bet(bet_id):
+    """Archive a bet - changes status to 'archived'"""
+    try:
+        bet = Bet.query.filter_by(id=bet_id, user_id=current_user.id).first()
+        if not bet:
+            return jsonify({'error': 'Bet not found'}), 404
+        
+        # Update status to archived
+        bet.status = 'archived'
+        bet.updated_at = datetime.utcnow()
+        
+        # Also update the status in the bet_data JSON
+        bet_data = bet.get_bet_data()
+        bet_data['status'] = 'archived'
+        bet.set_bet_data(bet_data, preserve_status=True)
+        
+        db.session.commit()
+        backup_to_json(current_user.id)
+        
+        return jsonify({
+            'message': 'Bet archived successfully',
+            'bet': bet.to_dict()
+        }), 200
+    except Exception as e:
+        db.session.rollback()
+        app.logger.error(f"Error archiving bet: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/archived', methods=['GET'])
+@login_required
+def get_archived_bets():
+    """Get all archived bets for the current user (is_archived=1)"""
+    try:
+        archived_bets = Bet.query.filter_by(
+            user_id=current_user.id,
+            is_archived=True
+        ).order_by(Bet.bet_date.desc()).all()
+        
+        bets_data = [bet.to_dict() for bet in archived_bets]
+        
+        return jsonify({
+            'archived': bets_data,
+            'count': len(bets_data)
+        }), 200
+    except Exception as e:
+        app.logger.error(f"Error fetching archived bets: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/bets/bulk-archive', methods=['POST'])
+@login_required
+def bulk_archive_bets():
+    """Archive multiple bets at once"""
+    try:
+        data = request.get_json()
+        bet_ids = data.get('bet_ids', [])
+        
+        if not bet_ids or not isinstance(bet_ids, list):
+            return jsonify({'error': 'bet_ids must be a non-empty array'}), 400
+        
+        # Update all specified bets to archived
+        updated_count = Bet.query.filter(
+            Bet.id.in_(bet_ids),
+            Bet.user_id == current_user.id  # Security: only user's own bets
+        ).update(
+            {
+                'is_archived': True,
+                'updated_at': datetime.utcnow()
+            },
+            synchronize_session=False
+        )
+        
+        db.session.commit()
+        backup_to_json(current_user.id)
+        
+        return jsonify({
+            'success': True,
+            'archived_count': updated_count,
+            'message': f'Successfully archived {updated_count} bet(s)'
+        }), 200
+        
+    except Exception as e:
+        db.session.rollback()
+        app.logger.error(f"Error bulk archiving bets: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/bets/bulk-unarchive', methods=['POST'])
+@login_required
+def bulk_unarchive_bets():
+    """Unarchive multiple bets at once - returns them to Historical"""
+    try:
+        data = request.get_json()
+        bet_ids = data.get('bet_ids', [])
+        
+        if not bet_ids or not isinstance(bet_ids, list):
+            return jsonify({'error': 'bet_ids must be a non-empty array'}), 400
+        
+        # Update all specified bets to unarchived (back to historical)
+        updated_count = Bet.query.filter(
+            Bet.id.in_(bet_ids),
+            Bet.user_id == current_user.id  # Security: only user's own bets
+        ).update(
+            {
+                'is_archived': False,
+                'is_active': False,  # Return to historical (not live)
+                'updated_at': datetime.utcnow()
+            },
+            synchronize_session=False
+        )
+        
+        db.session.commit()
+        backup_to_json(current_user.id)
+        
+        return jsonify({
+            'success': True,
+            'unarchived_count': updated_count,
+            'message': f'Successfully unarchived {updated_count} bet(s)'
+        }), 200
+        
+    except Exception as e:
+        db.session.rollback()
+        app.logger.error(f"Error bulk unarchiving bets: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
 
 @app.route('/')
 def index():

@@ -60,6 +60,10 @@ class Bet(db.Model):
     # Bet status
     status = db.Column(db.String(20), default='pending')  # 'pending', 'won', 'lost', 'live'
     
+    # Bet state flags
+    is_active = db.Column(db.Boolean, default=True, nullable=False)  # 1=active/live, 0=completed/historical
+    is_archived = db.Column(db.Boolean, default=False, nullable=False)  # 1=archived, 0=not archived
+    
     # Bet data stored as JSON
     bet_data = db.Column(db.Text, nullable=False)  # Full bet JSON
     

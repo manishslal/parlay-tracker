@@ -6,210 +6,260 @@
   <title>Add New Bet - Parlay Tracker</title>
   <link rel="stylesheet" href="media/style.css">
   <style>
+    :root {
+      --bg: #121212;
+      --surface: #252525;
+      --primary: #140d52;
+      --text: #e0e0e0;
+      --text-secondary: #aaa;
+      --border: #ffcc00a4;
+      --green: #4caf50;
+      --error: #f44336;
+      --section-bg: #1a1a1a;
+      --title-color: #e657ff;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
     body {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 100%);
       min-height: 100vh;
-      padding: 20px;
+      padding: 15px;
+      color: var(--text);
     }
 
     .form-container {
-      max-width: 800px;
+      max-width: 700px;
       margin: 0 auto;
-      background: white;
-      border-radius: 20px;
-      padding: 30px;
-      box-shadow: 0 10px 50px rgba(0,0,0,0.2);
+      background: var(--surface);
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.4);
     }
 
     .form-header {
       text-align: center;
-      margin-bottom: 30px;
+      margin-bottom: 20px;
+      padding-bottom: 15px;
+      border-bottom: 2px solid var(--primary);
     }
 
     .form-header h1 {
-      color: #667eea;
-      font-size: 2em;
-      margin-bottom: 10px;
+      color: var(--title-color);
+      font-size: 1.5em;
+      margin-bottom: 5px;
     }
 
     .form-header p {
-      color: #666;
-      font-size: 0.95em;
+      color: var(--text-secondary);
+      font-size: 0.85em;
     }
 
     .form-section {
-      margin-bottom: 30px;
-      padding: 20px;
-      background: #f8f9fa;
-      border-radius: 12px;
+      margin-bottom: 20px;
+      padding: 15px;
+      background: var(--section-bg);
+      border-radius: 8px;
+      border: 1px solid rgba(255, 204, 0, 0.2);
     }
 
     .form-section h2 {
-      color: #667eea;
-      font-size: 1.3em;
-      margin-bottom: 15px;
+      color: var(--title-color);
+      font-size: 1.1em;
+      margin-bottom: 12px;
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 8px;
+      font-weight: 600;
     }
 
     .form-group {
-      margin-bottom: 20px;
+      margin-bottom: 15px;
     }
 
     .form-group label {
       display: block;
-      font-weight: 600;
-      color: #333;
-      margin-bottom: 8px;
-      font-size: 0.95em;
+      font-weight: 500;
+      color: var(--text);
+      margin-bottom: 6px;
+      font-size: 0.9em;
     }
 
     .form-group label .required {
-      color: #e74c3c;
+      color: var(--error);
     }
 
     .form-group input,
     .form-group select,
     .form-group textarea {
       width: 100%;
-      padding: 12px;
-      border: 2px solid #e0e0e0;
-      border-radius: 8px;
-      font-size: 1em;
-      transition: border-color 0.3s;
+      padding: 10px 12px;
+      border: 1px solid rgba(255, 204, 0, 0.3);
+      border-radius: 6px;
+      font-size: 0.95em;
+      transition: border-color 0.3s, background-color 0.3s;
       box-sizing: border-box;
+      background: var(--bg);
+      color: var(--text);
     }
 
     .form-group input:focus,
     .form-group select:focus,
     .form-group textarea:focus {
       outline: none;
-      border-color: #667eea;
+      border-color: var(--title-color);
+      background: var(--surface);
     }
 
     .form-row {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 15px;
+      gap: 12px;
     }
 
     .leg-card {
-      background: white;
-      padding: 20px;
-      border-radius: 12px;
-      margin-bottom: 15px;
-      border: 2px solid #e0e0e0;
+      background: var(--surface);
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 12px;
+      border: 1px solid rgba(255, 204, 0, 0.3);
       position: relative;
     }
 
     .leg-card h3 {
-      color: #667eea;
-      font-size: 1.1em;
-      margin-bottom: 15px;
+      color: var(--title-color);
+      font-size: 1em;
+      margin-bottom: 12px;
       display: flex;
       align-items: center;
       justify-content: space-between;
+      font-weight: 600;
     }
 
     .remove-leg-btn {
-      background: #e74c3c;
+      background: var(--error);
       color: white;
       border: none;
       border-radius: 6px;
-      padding: 6px 12px;
+      padding: 6px 10px;
       cursor: pointer;
-      font-size: 0.85em;
-      transition: background 0.3s;
+      font-size: 0.8em;
+      transition: opacity 0.3s, transform 0.1s;
     }
 
     .remove-leg-btn:hover {
-      background: #c0392b;
+      opacity: 0.9;
+      transform: scale(1.05);
+    }
+
+    .remove-leg-btn:active {
+      transform: scale(0.95);
     }
 
     .add-leg-btn,
     .submit-btn,
     .cancel-btn {
-      padding: 12px 24px;
+      padding: 10px 20px;
       border: none;
       border-radius: 8px;
-      font-size: 1em;
+      font-size: 0.95em;
       font-weight: 600;
       cursor: pointer;
-      transition: all 0.3s;
+      transition: opacity 0.3s, transform 0.1s, box-shadow 0.3s;
       display: inline-flex;
       align-items: center;
       gap: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
     }
 
     .add-leg-btn {
-      background: #3498db;
+      background: var(--primary);
       color: white;
       width: 100%;
       justify-content: center;
     }
 
     .add-leg-btn:hover {
-      background: #2980b9;
-      transform: translateY(-2px);
+      opacity: 0.9;
+      box-shadow: 0 4px 12px rgba(20, 13, 82, 0.4);
+    }
+
+    .add-leg-btn:active {
+      transform: scale(0.98);
     }
 
     .submit-btn {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
       color: white;
       width: 100%;
       justify-content: center;
-      margin-top: 20px;
+      margin-top: 15px;
     }
 
     .submit-btn:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+      opacity: 0.9;
+      box-shadow: 0 4px 12px rgba(240, 147, 251, 0.4);
+    }
+
+    .submit-btn:active {
+      transform: scale(0.98);
     }
 
     .cancel-btn {
-      background: #95a5a6;
-      color: white;
+      background: rgba(255, 255, 255, 0.1);
+      color: var(--text);
       width: 100%;
       justify-content: center;
-      margin-top: 10px;
+      margin-top: 8px;
+      border: 1px solid rgba(255, 204, 0, 0.3);
     }
 
     .cancel-btn:hover {
-      background: #7f8c8d;
+      background: rgba(255, 255, 255, 0.15);
+    }
+
+    .cancel-btn:active {
+      transform: scale(0.98);
     }
 
     .help-text {
-      font-size: 0.85em;
-      color: #666;
-      margin-top: 5px;
+      font-size: 0.8em;
+      color: var(--text-secondary);
+      margin-top: 4px;
     }
 
     .stat-type-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-      gap: 10px;
-      margin-top: 10px;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 8px;
+      margin-top: 8px;
     }
 
     .stat-type-option {
-      padding: 10px;
-      background: white;
-      border: 2px solid #e0e0e0;
-      border-radius: 8px;
+      padding: 8px;
+      background: var(--bg);
+      border: 1px solid rgba(255, 204, 0, 0.3);
+      border-radius: 6px;
       cursor: pointer;
       text-align: center;
       transition: all 0.3s;
+      font-size: 0.9em;
+      color: var(--text);
     }
 
     .stat-type-option:hover {
-      border-color: #667eea;
-      background: #f0f4ff;
+      border-color: var(--title-color);
+      background: var(--surface);
     }
 
     .stat-type-option.selected {
-      border-color: #667eea;
-      background: #667eea;
+      border-color: var(--title-color);
+      background: var(--title-color);
       color: white;
     }
 
@@ -217,20 +267,22 @@
       position: fixed;
       top: 20px;
       right: 20px;
-      padding: 15px 25px;
+      padding: 12px 20px;
       border-radius: 8px;
       color: white;
       font-weight: 600;
       z-index: 1000;
       animation: slideIn 0.3s ease-out;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      font-size: 0.9em;
     }
 
     .notification.success {
-      background: #27ae60;
+      background: var(--green);
     }
 
     .notification.error {
-      background: #e74c3c;
+      background: var(--error);
     }
 
     @keyframes slideIn {
@@ -250,7 +302,11 @@
       }
 
       .form-container {
-        padding: 20px;
+        padding: 15px;
+      }
+
+      .form-header h1 {
+        font-size: 1.3em;
       }
     }
   </style>
@@ -258,14 +314,14 @@
 <body>
   <div class="form-container">
     <div class="form-header">
-      <h1>➕ Add New Bet</h1>
+      <h1>Add New Bet</h1>
       <p>Create a new parlay or single bet to track</p>
     </div>
 
     <form id="add-bet-form">
       <!-- Bet Information Section -->
       <div class="form-section">
-        <h2>📋 Bet Information</h2>
+        <h2>Bet Information</h2>
         
         <div class="form-group">
           <label for="bet-name">Bet Name <span class="required">*</span></label>
@@ -322,19 +378,19 @@
 
       <!-- Legs Section -->
       <div class="form-section">
-        <h2>🎯 Bet Legs</h2>
+        <h2>Bet Legs</h2>
         <div id="legs-container"></div>
         <button type="button" class="add-leg-btn" id="add-leg-btn">
-          ➕ Add Leg
+          + Add Leg
         </button>
       </div>
 
       <!-- Submit Section -->
       <button type="submit" class="submit-btn">
-        ✅ Create Bet
+        Create Bet
       </button>
       <button type="button" class="cancel-btn" onclick="window.location.href='/'">
-        ❌ Cancel
+        Cancel
       </button>
     </form>
   </div>
