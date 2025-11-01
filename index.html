@@ -1310,6 +1310,13 @@
   
   <!-- Side Menu -->
   <div class="side-menu" id="side-menu">
+    <div class="menu-item" id="add-bet-item">
+      <span class="menu-item-icon">➕</span>
+      <span class="menu-item-text">Add New Bet</span>
+    </div>
+    
+    <div class="menu-divider"></div>
+    
     <div class="menu-item" id="theme-toggle">
       <span class="menu-item-icon">🌙</span>
       <span class="menu-item-text" id="theme-text">Light Mode</span>
@@ -1383,6 +1390,56 @@
     </div>
   </div>
   <script>
+    // === AUTHENTICATION CHECK ===
+    // Check if user is authenticated before loading the app
+    let authCheckComplete = false;
+    let isAuthenticated = false;
+    let authCheckPromise = null;
+    
+    authCheckPromise = (async function checkAuth() {
+      try {
+        const response = await fetch('/auth/check', {
+          credentials: 'include'
+        });
+        const data = await response.json();
+        
+        if (!data.authenticated) {
+          // Not logged in, redirect to login page
+          window.location.href = '/login.html';
+          throw new Error('Not authenticated');
+        }
+        
+        // User is authenticated, store user info
+        window.currentUser = data.user;
+        isAuthenticated = true;
+        authCheckComplete = true;
+        console.log('✅ Authenticated as:', data.user.username);
+        
+        // Update hamburger menu with username
+        const logoutButton = document.querySelector('.menu-button:last-child');
+        if (logoutButton && logoutButton.textContent.includes('Logout')) {
+          logoutButton.textContent = `Logout (${data.user.username})`;
+        }
+        
+        // Clear historical cache on first login to ensure fresh data from database
+        // (in case user switched from JSON to database system)
+        const cacheVersion = localStorage.getItem('parlay_tracker_cache_version');
+        const CURRENT_CACHE_VERSION = '2.0'; // Increment when data structure changes
+        if (cacheVersion !== CURRENT_CACHE_VERSION) {
+          console.log('🔄 Cache version mismatch, clearing historical cache...');
+          clearHistoricalCache();
+          localStorage.setItem('parlay_tracker_cache_version', CURRENT_CACHE_VERSION);
+        }
+        
+        return true;
+      } catch (error) {
+        console.error('Auth check failed:', error);
+        // On error, redirect to login to be safe
+        window.location.href = '/login.html';
+        throw error;
+      }
+    })();
+    
     // Scroll detection for button opacity
     let scrollTimer;
     window.addEventListener('scroll', () => {
@@ -1399,9 +1456,11 @@
       return params.get(name);
     }
 
-    // API base precedence: ?api=... (query param) -> window.API_BASE -> default Render backend
+    // API base precedence: ?api=... (query param) -> window.API_BASE -> auto-detect (localhost = same origin, otherwise Render)
     const urlApi = getQueryParam('api');
-    const API_BASE = (urlApi ? urlApi.replace(/\/$/, '') : (window.API_BASE && window.API_BASE.replace(/\/$/, ''))) || 'https://parlay-tracker-backend.onrender.com';
+    const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    const defaultApi = isLocalhost ? '' : 'https://parlay-tracker-backend.onrender.com';
+    const API_BASE = (urlApi ? urlApi.replace(/\/$/, '') : (window.API_BASE && window.API_BASE.replace(/\/$/, ''))) || defaultApi;
     const btn=document.getElementById('refresh-button'),
       sec=document.getElementById('parlay-sections'),
       histSec=document.getElementById('historical-sections'),
@@ -1891,71 +1950,52 @@
       }
     });
 
-    // --- Admin Token Modal/Login UI ---
-function showTokenModal() {
-  let modal = document.getElementById('token-modal');
-  if (!modal) {
-    modal = document.createElement('div');
-    modal.id = 'token-modal';
-    modal.style = 'position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;z-index:9999;';
-    modal.innerHTML = `
-      <div style="background:#222;padding:2rem 2.5rem;border-radius:12px;box-shadow:0 2px 16px #000;display:flex;flex-direction:column;align-items:center;min-width:300px;">
-        <h2 style='color:#e657ff;margin-bottom:1rem;'>Enter Admin Token</h2>
-        <input id='token-input' type='password' placeholder='Admin Token' style='padding:0.5rem 1rem;font-size:1.1rem;border-radius:6px;border:1px solid #888;width:100%;margin-bottom:1rem;'>
-        <button id='token-submit' style='padding:0.5rem 1.5rem;background:#140d52;color:#fff;border:none;border-radius:6px;font-weight:bold;cursor:pointer;'>Login</button>
-      </div>
-    `;
-    document.body.appendChild(modal);
-    document.getElementById('token-submit').onclick = function() {
-      const val = document.getElementById('token-input').value.trim();
-      if (val) {
-        localStorage.setItem('admin_token', val);
-        modal.remove();
-        location.reload();
-      }
-    };
-    document.getElementById('token-input').addEventListener('keydown', function(e) {
-      if (e.key === 'Enter') document.getElementById('token-submit').click();
+    // --- Session Authentication (old token system removed) ---
+    // Authentication is now handled via session cookies
+    // See auth check at the top of the script
+
+async function logoutToken() {
+  try {
+    await fetch('/auth/logout', {
+      method: 'POST',
+      credentials: 'include'
     });
+    // Redirect to login page
+    window.location.href = '/login.html';
+  } catch (error) {
+    console.error('Logout error:', error);
+    // Still redirect on error
+    window.location.href = '/login.html';
   }
 }
 
-function getAdminToken() {
-  let token = localStorage.getItem('admin_token');
-  if (!token) {
-    showTokenModal();
-    throw new Error('No admin token set');
-  }
-  return token;
-}
-
-function logoutToken() {
-  localStorage.removeItem('admin_token');
-  location.reload();
-}
-
-// Show logout in menu if admin token exists
+// Always show logout item since user must be authenticated to be on this page
 (function setupLogout(){
-  const token = localStorage.getItem('admin_token');
-  if (token) {
-    const logoutItem = document.getElementById('logout-item');
-    logoutItem.style.display = 'flex';
-    logoutItem.addEventListener('click', logoutToken);
-  }
+  const logoutItem = document.getElementById('logout-item');
+  logoutItem.style.display = 'flex';
+  logoutItem.addEventListener('click', logoutToken);
+})();
+
+// Setup add bet button
+(function setupAddBet(){
+  const addBetItem = document.getElementById('add-bet-item');
+  addBetItem.addEventListener('click', function() {
+    window.location.href = '/add-bet.html';
+  });
 })();
 
     function fetchWithAdminToken(url, options = {}) {
-      let token;
-      try {
-        token = getAdminToken();
-      } catch (e) {
-        // If no token, the modal will be shown and error thrown
-        // Return a rejected promise so the caller can handle it
-        return Promise.reject(e);
-      }
-      options.headers = options.headers || {};
-      options.headers['X-Admin-Token'] = token;
-      return fetch(url, options);
+      // Use session authentication instead of token headers
+      options.credentials = 'include';
+      return fetch(url, options)
+        .then(response => {
+          // If we get a 401, redirect to login
+          if (response.status === 401) {
+            window.location.href = '/login.html';
+            return Promise.reject(new Error('Authentication required'));
+          }
+          return response;
+        });
     }
 
     // Prefetch historical data in the background so it appears instantly on switch
@@ -3239,7 +3279,16 @@ function logoutToken() {
       }
     });
     
-    update();
+    // Wait for auth check to complete before calling update
+    (async function() {
+      try {
+        await authCheckPromise;
+        console.log('Auth check complete, calling update()');
+        update();
+      } catch (error) {
+        console.error('Skipping update due to auth error:', error);
+      }
+    })();
     
     // Register Service Worker for PWA
     if ('serviceWorker' in navigator) {

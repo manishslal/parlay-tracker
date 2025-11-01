@@ -1,11 +1,15 @@
-# app.py - Parlay Tracker Backend
-# Force redeploy: 2025-10-20 19:30
-from flask import Flask, jsonify, send_from_directory
+# app.py - Parlay Tracker Backend - Multi-User Edition
+# Force redeploy: 2025-11-01 00:00
+from flask import Flask, jsonify, send_from_directory, request, session, redirect, url_for
 from flask_cors import CORS
+from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 import requests
 import os
 from datetime import datetime
 import json
+
+# Import database models
+from models import db, User, Bet
 
 # Data directory for JSON fixtures
 DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
@@ -103,31 +107,196 @@ def _compute_parlay_returns_from_odds(wager, parlay_odds=None, leg_odds_list=Non
 
 
 from functools import wraps
-from flask import request
 
 # Configure Flask to serve static files from root directory
 app = Flask(__name__, static_folder='.', static_url_path='')
-CORS(app)
 
-# Decorator to require admin token for all endpoints
-def require_admin_token(f):
-    @wraps(f)
-    def decorated(*args, **kwargs):
-        admin_token = os.environ.get('ADMIN_TOKEN')
-        if not admin_token:
-            return jsonify({"error": "ADMIN_TOKEN not configured on server"}), 500
-        # Accept token in header X-Admin-Token or in JSON body as `token` (for POST)
-        token = request.headers.get('X-Admin-Token')
-        if not token and request.method == 'POST':
-            try:
-                body = request.get_json(force=True, silent=True) or {}
-                token = body.get('token')
-            except Exception:
-                token = None
-        if token != admin_token:
-            return jsonify({"error": "Unauthorized"}), 401
-        return f(*args, **kwargs)
-    return decorated
+# Database configuration
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'sqlite:///parlays.db')
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-secret-key-change-in-production')
+app.config['SESSION_COOKIE_HTTPONLY'] = True
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+
+# Initialize extensions
+CORS(app, supports_credentials=True)
+db.init_app(app)
+
+# Setup Flask-Login
+login_manager = LoginManager()
+login_manager.init_app(app)
+login_manager.login_view = 'login_page'
+
+@login_manager.user_loader
+def load_user(user_id):
+    return User.query.get(int(user_id))
+
+# Helper function to use database with JSON backup
+def get_user_bets_from_db(user_id, status_filter=None):
+    """Get bets from database for a specific user, returns Bet objects"""
+    try:
+        query = Bet.query.filter_by(user_id=user_id)
+        if status_filter:
+            if isinstance(status_filter, list):
+                query = query.filter(Bet.status.in_(status_filter))
+            else:
+                query = query.filter_by(status=status_filter)
+        bets = query.order_by(Bet.created_at.desc()).all()
+        return bets  # Return Bet objects, not dicts
+    except Exception as e:
+        app.logger.error(f"Database error: {e}, falling back to JSON")
+        return []
+
+def save_bet_to_db(user_id, bet_data):
+    """Save a bet to database with JSON backup"""
+    try:
+        bet = Bet(user_id=user_id)
+        bet.set_bet_data(bet_data)
+        db.session.add(bet)
+        db.session.commit()
+        
+        # Also backup to JSON
+        backup_to_json(user_id)
+        
+        return bet.to_dict()
+    except Exception as e:
+        app.logger.error(f"Error saving bet to database: {e}")
+        db.session.rollback()
+        raise
+
+def save_final_results_to_bet(bet, processed_data):
+    """Save final game results to bet data when games are completed
+    
+    This preserves final scores and outcomes so we don't lose data when ESPN
+    removes old games from their API.
+    """
+    try:
+        bet_data = bet.get_bet_data()
+        
+        # Find the matching processed parlay data
+        matching_parlay = None
+        for p in processed_data:
+            if p.get('bet_id') == bet_data.get('bet_id') or p.get('name') == bet_data.get('name'):
+                matching_parlay = p
+                break
+        
+        if not matching_parlay:
+            return False
+        
+        # Update each leg with final results
+        updated = False
+        for i, leg in enumerate(bet_data.get('legs', [])):
+            # Find matching leg in processed data
+            if i < len(matching_parlay.get('legs', [])):
+                processed_leg = matching_parlay['legs'][i]
+                
+                # Save final stats if game is complete
+                if processed_leg.get('game_status') == 'STATUS_FINAL':
+                    # Store final score
+                    if 'score' not in leg:
+                        leg['score'] = processed_leg.get('score', {})
+                        updated = True
+                    
+                    # Store final player/team stats
+                    if 'final_value' not in leg and 'current' in processed_leg:
+                        leg['final_value'] = processed_leg['current']
+                        updated = True
+                    
+                    # Store game result (won/lost)
+                    if 'result' not in leg and 'status' in processed_leg:
+                        leg['result'] = processed_leg['status']
+                        updated = True
+        
+        # Save back to database if updated
+        if updated:
+            bet.set_bet_data(bet_data, preserve_status=True)
+            db.session.commit()
+            app.logger.info(f"Saved final results for bet {bet.id}")
+            return True
+            
+    except Exception as e:
+        app.logger.error(f"Error saving final results: {e}")
+        db.session.rollback()
+    
+    return False
+
+def auto_move_completed_bets(user_id):
+    """Automatically move bets to 'completed' status when all their games have ended
+    
+    Also saves final game results before moving to completed status.
+    """
+    try:
+        from datetime import date
+        today = date.today()
+        
+        # Get all pending and live bets for user
+        bets = get_user_bets_from_db(user_id, status_filter=['pending', 'live'])
+        
+        # First, process all bets to get current data from ESPN
+        bet_data_list = [bet.get_bet_data() for bet in bets]
+        processed_data = process_parlay_data(bet_data_list)
+        
+        updated_count = 0
+        for bet in bets:
+            bet_data = bet.get_bet_data()
+            legs = bet_data.get('legs', [])
+            
+            if not legs:
+                continue
+            
+            # Check if all games have ended (all game_dates are in the past)
+            all_games_ended = True
+            for leg in legs:
+                game_date_str = leg.get('game_date', '')
+                if game_date_str:
+                    try:
+                        # Parse game date (format: YYYY-MM-DD)
+                        game_date = datetime.strptime(game_date_str, '%Y-%m-%d').date()
+                        # If game date is today or future, games haven't ended
+                        if game_date >= today:
+                            all_games_ended = False
+                            break
+                    except ValueError:
+                        # If date parsing fails, skip this leg
+                        continue
+            
+            # If all games have ended, save final results and move to completed
+            if all_games_ended and legs:  # Make sure there are legs to check
+                app.logger.info(f"Auto-moving bet {bet.id} to completed (all games ended)")
+                
+                # Save final results before marking as completed
+                save_final_results_to_bet(bet, processed_data)
+                
+                bet.status = 'completed'
+                updated_count += 1
+        
+        # Commit all changes at once
+        if updated_count > 0:
+            db.session.commit()
+            app.logger.info(f"Auto-moved {updated_count} bets to completed status with final results")
+            
+    except Exception as e:
+        app.logger.error(f"Error auto-moving completed bets: {e}")
+        db.session.rollback()
+
+def backup_to_json(user_id=None):
+    """Backup database bets to JSON files (for specific user or all)"""
+    try:
+        if user_id:
+            user = User.query.get(user_id)
+            if user:
+                filename = f"user_{user.id}_{user.username}_bets.json"
+                bets = get_user_bets_from_db(user_id)
+                bets_data = [bet.get_bet_data() for bet in bets]
+                with open(data_path(filename), 'w') as f:
+                    json.dump(bets_data, f, indent=2)
+        else:
+            # Backup all users
+            users = User.query.all()
+            for user in users:
+                backup_to_json(user.id)
+    except Exception as e:
+        app.logger.error(f"Error backing up to JSON: {e}")
 
 def load_parlays():
     try:
@@ -862,32 +1031,136 @@ def compute_and_persist_returns(force=False):
     return results
 
 
+# ============================================================================
+# Authentication Endpoints
+# ============================================================================
+
+@app.route('/auth/register', methods=['POST'])
+@login_required
+def register():
+    """Register a new user (admin only)"""
+    if not current_user.is_authenticated:
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    # For invite-only: you can add admin check here
+    # if current_user.email != 'admin@example.com':
+    #     return jsonify({'error': 'Admin only'}), 403
+    
+    data = request.json
+    username = data.get('username')
+    email = data.get('email')
+    password = data.get('password')
+    
+    if not username or not email or not password:
+        return jsonify({'error': 'Missing required fields'}), 400
+    
+    # Check if user already exists
+    if User.query.filter_by(username=username).first():
+        return jsonify({'error': 'Username already exists'}), 400
+    if User.query.filter_by(email=email).first():
+        return jsonify({'error': 'Email already exists'}), 400
+    
+    try:
+        user = User(username=username, email=email)
+        user.set_password(password)
+        db.session.add(user)
+        db.session.commit()
+        return jsonify({
+            'message': 'User created successfully',
+            'user': user.to_dict()
+        }), 201
+    except Exception as e:
+        db.session.rollback()
+        app.logger.error(f"Registration error: {e}")
+        return jsonify({'error': 'Failed to create user'}), 500
+
+
+@app.route('/auth/login', methods=['POST'])
+def login():
+    """Login with username/email and password"""
+    data = request.json
+    identifier = data.get('username') or data.get('email')
+    password = data.get('password')
+    
+    if not identifier or not password:
+        return jsonify({'error': 'Missing credentials'}), 400
+    
+    # Try to find user by username or email
+    user = User.query.filter(
+        (User.username == identifier) | (User.email == identifier)
+    ).first()
+    
+    if not user or not user.check_password(password):
+        return jsonify({'error': 'Invalid credentials'}), 401
+    
+    if not user.is_active:
+        return jsonify({'error': 'Account is disabled'}), 403
+    
+    login_user(user)
+    return jsonify({
+        'message': 'Login successful',
+        'user': user.to_dict()
+    }), 200
+
+
+@app.route('/auth/logout', methods=['POST'])
+@login_required
+def logout():
+    """Logout current user"""
+    logout_user()
+    return jsonify({'message': 'Logout successful'}), 200
+
+
+@app.route('/auth/check', methods=['GET'])
+def check_auth():
+    """Check if user is authenticated"""
+    if current_user.is_authenticated:
+        return jsonify({
+            'authenticated': True,
+            'user': current_user.to_dict()
+        }), 200
+    return jsonify({'authenticated': False}), 200
+
+
+# ============================================================================
+# Page Routes
+# ============================================================================
+
 @app.route("/live")
-@require_admin_token
+@login_required
 def live():
-    live_parlays = load_live_parlays()
+    # Get live bets from database for current user
+    bets = get_user_bets_from_db(current_user.id, status_filter='live')
+    # Convert Bet objects to dict format compatible with existing frontend
+    live_parlays = [bet.get_bet_data() for bet in bets]
     processed = process_parlay_data(live_parlays)
     return jsonify(sort_parlays_by_date(processed))
 
 
 
 @app.route("/todays")
-@require_admin_token
+@login_required
 def todays():
-    todays_parlays = load_parlays()
-    # Return the raw today's bets (we want to show what's still in Todays_Bets.json)
+    # Auto-move completed bets (games that have ended)
+    auto_move_completed_bets(current_user.id)
+    
+    # Get today's bets from database for current user
+    bets = get_user_bets_from_db(current_user.id, status_filter='pending')
+    todays_parlays = [bet.get_bet_data() for bet in bets]
+    # Return the raw today's bets
     processed = process_parlay_data(todays_parlays)
     return jsonify(sort_parlays_by_date(processed))
 
 @app.route("/historical")
-@require_admin_token
+@login_required
 def historical():
     try:
         app.logger.info("Starting historical endpoint processing")
         
-        # Load historical parlays
+        # Load historical parlays from database for current user
         try:
-            historical_parlays = load_historical_bets()
+            bets = get_user_bets_from_db(current_user.id, status_filter='completed')
+            historical_parlays = [bet.get_bet_data() for bet in bets]
             app.logger.info(f"Loaded {len(historical_parlays)} historical parlays")
             for parlay in historical_parlays:
                 app.logger.info(f"Parlay: {parlay.get('name')}, type: {parlay.get('type')}, legs: {len(parlay.get('legs', []))}")
@@ -898,20 +1171,43 @@ def historical():
         if not historical_parlays:
             app.logger.warning("No historical parlays found")
             return jsonify([])
+        
+        # Separate bets with saved final results from those needing ESPN fetch
+        bets_with_finals = []
+        bets_needing_fetch = []
+        
+        for parlay in historical_parlays:
+            has_final_results = all(
+                leg.get('final_value') is not None or leg.get('result') is not None
+                for leg in parlay.get('legs', [])
+            )
             
-        # Process parlays
-        try:
-            processed = process_parlay_data(historical_parlays)
-            app.logger.info(f"Processed {len(processed)} historical parlays")
-            for p in processed:
-                app.logger.info(f"Processed parlay: {p.get('name')}")
-        except Exception as e:
-            app.logger.error(f"Error processing parlays: {str(e)}")
-            raise
+            if has_final_results:
+                bets_with_finals.append(parlay)
+            else:
+                bets_needing_fetch.append(parlay)
+        
+        app.logger.info(f"Historical bets: {len(bets_with_finals)} with saved finals, {len(bets_needing_fetch)} need ESPN fetch")
+            
+        # Process only bets that need ESPN data
+        processed = []
+        if bets_needing_fetch:
+            try:
+                processed = process_parlay_data(bets_needing_fetch)
+                app.logger.info(f"Processed {len(processed)} historical parlays from ESPN")
+                for p in processed:
+                    app.logger.info(f"Processed parlay: {p.get('name')}")
+            except Exception as e:
+                app.logger.error(f"Error processing parlays from ESPN: {str(e)}")
+                # Continue with just the bets that have saved finals
+        
+        # Add bets with saved final results (no ESPN fetch needed)
+        all_historical = bets_with_finals + processed
+        app.logger.info(f"Total historical bets to return: {len(all_historical)}")
         
         # Sort and return
         try:
-            sorted_parlays = sort_parlays_by_date(processed)
+            sorted_parlays = sort_parlays_by_date(all_historical)
             app.logger.info(f"Returning {len(sorted_parlays)} sorted historical parlays")
             return jsonify(sorted_parlays)
         except Exception as e:
@@ -925,25 +1221,31 @@ def historical():
         return jsonify({"error": str(e)}), 500
 
 @app.route("/stats")
-@require_admin_token
+@login_required
 def stats():
+    # Auto-move completed bets (games that have ended)
+    auto_move_completed_bets(current_user.id)
+    
     # Clear game data cache to force fresh ESPN API calls
     global game_data_cache
     game_data_cache = {}
     
-    parlays = load_parlays()
+    # Get pending bets to process
+    pending_bets = get_user_bets_from_db(current_user.id, status_filter='pending')
+    parlays = [bet.get_bet_data() for bet in pending_bets]
     processed_parlays = process_parlay_data(parlays)
     
     # DON'T process/move parlays on every stats request - that clears Live_Bets.json!
     # process_parlays(processed_parlays)
     
     # Return processed live parlays for display
-    live_parlays = load_live_parlays()
+    live_bets = get_user_bets_from_db(current_user.id, status_filter='live')
+    live_parlays = [bet.get_bet_data() for bet in live_bets]
     processed_live = process_parlay_data(live_parlays)
     return jsonify(sort_parlays_by_date(processed_live))
 
 @app.route('/admin/compute_returns', methods=['POST'])
-@require_admin_token
+@login_required
 def admin_compute_returns():
     """Admin endpoint to compute (and optionally force) returns.
     POST JSON body: {"force": true|false}
@@ -958,30 +1260,26 @@ def admin_compute_returns():
         return jsonify({"error": str(e)}), 500
 
 @app.route('/admin/move_completed', methods=['POST'])
-@require_admin_token
+@login_required
 def admin_move_completed():
-    """Admin endpoint to move completed games from Todays_Bets and Live_Bets to Historical_Bets.
-    Checks ESPN API to see which games are STATUS_FINAL and moves them.
+    """Admin endpoint to move completed games from pending/live to completed status.
+    Checks ESPN API to see which games are STATUS_FINAL and updates their status.
     Returns a JSON summary of what was moved.
     """
     try:
-        # Load from BOTH Todays_Bets.json and Live_Bets.json
-        today_parlays = load_parlays()  # Loads Todays_Bets.json
-        live_parlays = load_live_parlays()  # Loads Live_Bets.json
-        historical_parlays = load_historical_bets()
+        # Get pending and live bets for current user
+        pending_bets = get_user_bets_from_db(current_user.id, status_filter='pending')
+        live_bets = get_user_bets_from_db(current_user.id, status_filter='live')
         
         moved_parlays = []
-        remaining_today = []
-        remaining_live = []
+        remaining_pending = 0
+        remaining_live = 0
         
-        # Create set of existing historical parlay IDs to prevent duplicates
-        existing_historical = {f"{p['name']}_{p.get('bet_id', '')}_{p['legs'][0]['game_date']}" 
-                             for p in historical_parlays if p.get('legs')}
-        
-        # Check each parlay from Todays_Bets.json
-        for parlay in today_parlays:
+        # Check each pending bet
+        for bet in pending_bets:
+            parlay = bet.get_bet_data()
             if not parlay.get('legs'):
-                remaining_today.append(parlay)
+                remaining_pending += 1
                 continue
             
             # Check if all games are complete
@@ -1002,34 +1300,30 @@ def admin_move_completed():
                         if status != 'STATUS_FINAL':
                             all_games_complete = False
                             break
-                        # If we get here, game is FINAL - keep checking other legs
-                        break  # Break out of events loop, continue to next leg
+                        break
                 
-                # If we never found this game in the events, it's not complete
                 if not found_game:
-                    app.logger.warning(f"[Todays_Bets] Game not found in events: {leg['away']} @ {leg['home']} on {game_date}")
+                    app.logger.warning(f"[Pending] Game not found: {leg['away']} @ {leg['home']} on {game_date}")
                     all_games_complete = False
                     break
                 
                 if not all_games_complete:
                     break
             
-            # Move to historical if complete
-            parlay_id = f"{parlay['name']}_{parlay.get('bet_id', '')}_{parlay['legs'][0]['game_date']}"
-            if all_games_complete and parlay_id not in existing_historical:
-                historical_parlays.append(parlay)
+            # Update status to completed if all games are final
+            if all_games_complete:
+                bet.status = 'completed'
+                db.session.commit()
                 moved_parlays.append(parlay['name'])
-                existing_historical.add(parlay_id)  # Prevent duplicates in same operation
-                app.logger.info(f"Moving completed parlay from Todays_Bets to historical: {parlay['name']}")
+                app.logger.info(f"Moving pending bet to completed: {parlay['name']}")
             else:
-                if not all_games_complete:
-                    app.logger.debug(f"[Todays_Bets] Parlay not complete: {parlay['name']}")
-                remaining_today.append(parlay)
+                remaining_pending += 1
         
-        # Check each parlay from Live_Bets.json
-        for parlay in live_parlays:
+        # Check each live bet
+        for bet in live_bets:
+            parlay = bet.get_bet_data()
             if not parlay.get('legs'):
-                remaining_live.append(parlay)
+                remaining_live += 1
                 continue
             
             # Check if all games are complete
@@ -1050,69 +1344,156 @@ def admin_move_completed():
                         if status != 'STATUS_FINAL':
                             all_games_complete = False
                             break
-                        # If we get here, game is FINAL - keep checking other legs
-                        break  # Break out of events loop, continue to next leg
+                        break
                 
-                # If we never found this game in the events, it's not complete
                 if not found_game:
-                    app.logger.warning(f"[Live_Bets] Game not found in events: {leg['away']} @ {leg['home']} on {game_date}")
+                    app.logger.warning(f"[Live] Game not found: {leg['away']} @ {leg['home']} on {game_date}")
                     all_games_complete = False
                     break
                 
                 if not all_games_complete:
                     break
             
-            # Move to historical if complete
-            parlay_id = f"{parlay['name']}_{parlay.get('bet_id', '')}_{parlay['legs'][0]['game_date']}"
-            if all_games_complete and parlay_id not in existing_historical:
-                historical_parlays.append(parlay)
+            # Update status to completed if all games are final
+            if all_games_complete:
+                bet.status = 'completed'
+                db.session.commit()
                 moved_parlays.append(parlay['name'])
-                existing_historical.add(parlay_id)  # Prevent duplicates in same operation
-                app.logger.info(f"Moving completed parlay from Live_Bets to historical: {parlay['name']}")
+                app.logger.info(f"Moving live bet to completed: {parlay['name']}")
             else:
-                if not all_games_complete:
-                    app.logger.debug(f"[Live_Bets] Parlay not complete: {parlay['name']}")
-                remaining_live.append(parlay)
+                remaining_live += 1
         
-        # Save updated files (ALL THREE)
-        save_parlays(sort_parlays_by_date(historical_parlays), data_path("Historical_Bets.json"))
-        save_parlays(sort_parlays_by_date(remaining_today), data_path("Todays_Bets.json"))
-        save_parlays(sort_parlays_by_date(remaining_live), data_path("Live_Bets.json"))
+        # Backup to JSON after changes
+        backup_to_json(current_user.id)
         
-        total_remaining = len(remaining_today) + len(remaining_live)
+        total_remaining = remaining_pending + remaining_live
         
         return jsonify({
             "moved": moved_parlays,
             "moved_count": len(moved_parlays),
             "remaining_live": total_remaining,
-            "remaining_today": len(remaining_today),
-            "remaining_live_only": len(remaining_live)
+            "remaining_pending": remaining_pending,
+            "remaining_live_only": remaining_live
         })
     except Exception as e:
+        db.session.rollback()
         app.logger.error(f"Error in admin_move_completed: {str(e)}")
         return jsonify({"error": str(e)}), 500
 
 @app.route('/admin/export_files', methods=['GET'])
-@require_admin_token
+@login_required
 def admin_export_files():
-    """Admin endpoint to export all data files as JSON.
-    Returns all three files (Live, Todays, Historical) in one response.
+    """Admin endpoint to export all user bets as JSON.
+    Returns all three categories (Live, Pending, Historical) in one response.
     Use this to sync remote state back to local.
     """
     try:
+        pending_bets = get_user_bets_from_db(current_user.id, status_filter='pending')
+        live_bets = get_user_bets_from_db(current_user.id, status_filter='live')
+        historical_bets = get_user_bets_from_db(current_user.id, status_filter='completed')
+        
         return jsonify({
-            "live_bets": load_live_parlays(),
-            "todays_bets": load_parlays(),
-            "historical_bets": load_historical_bets()
+            "live_bets": [bet.get_bet_data() for bet in live_bets],
+            "todays_bets": [bet.get_bet_data() for bet in pending_bets],
+            "historical_bets": [bet.get_bet_data() for bet in historical_bets]
         })
     except Exception as e:
         app.logger.error(f"Error in admin_export_files: {str(e)}")
         return jsonify({"error": str(e)}), 500
 
+
+@app.route('/api/bets', methods=['POST'])
+@login_required
+def create_bet():
+    """Create a new bet for the current user"""
+    try:
+        data = request.json
+        if not data:
+            return jsonify({'error': 'No data provided'}), 400
+        
+        # Save bet to database with backup
+        bet_id = save_bet_to_db(current_user.id, data)
+        
+        return jsonify({
+            'message': 'Bet created successfully',
+            'bet_id': bet_id
+        }), 201
+    except Exception as e:
+        db.session.rollback()
+        app.logger.error(f"Error creating bet: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/bets/<int:bet_id>', methods=['PUT'])
+@login_required
+def update_bet(bet_id):
+    """Update an existing bet"""
+    try:
+        bet = Bet.query.filter_by(id=bet_id, user_id=current_user.id).first()
+        if not bet:
+            return jsonify({'error': 'Bet not found'}), 404
+        
+        data = request.json
+        if not data:
+            return jsonify({'error': 'No data provided'}), 400
+        
+        # Update bet data
+        bet.set_bet_data(data)
+        
+        # Update other fields if provided
+        if 'status' in data:
+            bet.status = data['status']
+        if 'bet_type' in data:
+            bet.bet_type = data['bet_type']
+        if 'betting_site' in data:
+            bet.betting_site = data['betting_site']
+        
+        db.session.commit()
+        backup_to_json(current_user.id)
+        
+        return jsonify({
+            'message': 'Bet updated successfully',
+            'bet': bet.to_dict()
+        }), 200
+    except Exception as e:
+        db.session.rollback()
+        app.logger.error(f"Error updating bet: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/bets/<int:bet_id>', methods=['DELETE'])
+@login_required
+def delete_bet(bet_id):
+    """Delete a bet"""
+    try:
+        bet = Bet.query.filter_by(id=bet_id, user_id=current_user.id).first()
+        if not bet:
+            return jsonify({'error': 'Bet not found'}), 404
+        
+        db.session.delete(bet)
+        db.session.commit()
+        backup_to_json(current_user.id)
+        
+        return jsonify({'message': 'Bet deleted successfully'}), 200
+    except Exception as e:
+        db.session.rollback()
+        app.logger.error(f"Error deleting bet: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
 @app.route('/')
 def index():
     """Serve the main app page - must be public for PWA to work"""
     return send_from_directory('.', 'index.html')
+
+@app.route('/login.html')
+def login_page():
+    """Serve the login page"""
+    return send_from_directory('.', 'login.html')
+
+@app.route('/register.html')
+def register_page():
+    """Serve the register page (admin only)"""
+    return send_from_directory('.', 'register.html')
 
 @app.route('/pwa-debug.html')
 def pwa_debug():
@@ -1169,7 +1550,17 @@ def serve_media(filename):
     return send_from_directory('media', filename)
 
 if __name__ == "__main__":
+    # Initialize database tables
+    with app.app_context():
+        db.create_all()
+        app.logger.info("Database tables created/verified")
+    
     # Initialize and organize parlays before starting server
-    initialize_parlay_files()
+    # Note: This is legacy code for JSON files, will be phased out
+    try:
+        initialize_parlay_files()
+    except Exception as e:
+        app.logger.warning(f"Legacy parlay initialization failed (expected after migration): {e}")
+    
     # Run without the debug reloader during automated tests to avoid restarts
     app.run(debug=False, port=5001)

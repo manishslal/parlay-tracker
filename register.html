@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register - Parlay Tracker</title>
+    <style>
+        :root {
+            --bg-primary: #1a1a2e;
+            --bg-secondary: #16213e;
+            --text-primary: #eee;
+            --text-secondary: #aaa;
+            --accent: #0f3460;
+            --highlight: #e94560;
+            --success: #4caf50;
+            --error: #f44336;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 1rem;
+        }
+
+        .register-container {
+            width: 100%;
+            max-width: 450px;
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+
+        .register-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .register-header h1 {
+            font-size: 1.8rem;
+            margin-bottom: 0.5rem;
+            color: var(--highlight);
+        }
+
+        .register-header p {
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.25rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 0.75rem;
+            background: var(--bg-primary);
+            border: 1px solid var(--accent);
+            border-radius: 6px;
+            color: var(--text-primary);
+            font-size: 0.95rem;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: var(--highlight);
+        }
+
+        .form-group small {
+            display: block;
+            margin-top: 0.25rem;
+            color: var(--text-secondary);
+            font-size: 0.75rem;
+        }
+
+        .error-message, .success-message {
+            padding: 0.75rem;
+            border-radius: 6px;
+            margin-bottom: 1rem;
+            font-size: 0.9rem;
+            display: none;
+        }
+
+        .error-message {
+            background: rgba(244, 67, 54, 0.1);
+            border: 1px solid var(--error);
+            color: var(--error);
+        }
+
+        .success-message {
+            background: rgba(76, 175, 80, 0.1);
+            border: 1px solid var(--success);
+            color: var(--success);
+        }
+
+        .error-message.show, .success-message.show {
+            display: block;
+        }
+
+        .register-button {
+            width: 100%;
+            padding: 0.75rem;
+            background: var(--highlight);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.3s, transform 0.1s;
+        }
+
+        .register-button:hover {
+            background: #d63850;
+        }
+
+        .register-button:active {
+            transform: scale(0.98);
+        }
+
+        .register-button:disabled {
+            background: #666;
+            cursor: not-allowed;
+        }
+
+        .login-link {
+            text-align: center;
+            margin-top: 1.5rem;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+
+        .login-link a {
+            color: var(--highlight);
+            text-decoration: none;
+        }
+
+        .login-link a:hover {
+            text-decoration: underline;
+        }
+
+        .spinner {
+            border: 3px solid rgba(255, 255, 255, 0.1);
+            border-top: 3px solid var(--highlight);
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+            margin-left: 10px;
+            display: none;
+        }
+
+        .spinner.show {
+            display: inline-block;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .password-strength {
+            height: 4px;
+            background: var(--bg-primary);
+            border-radius: 2px;
+            margin-top: 0.5rem;
+            overflow: hidden;
+        }
+
+        .password-strength-bar {
+            height: 100%;
+            width: 0%;
+            transition: width 0.3s, background 0.3s;
+        }
+
+        .password-strength-bar.weak {
+            width: 33%;
+            background: var(--error);
+        }
+
+        .password-strength-bar.medium {
+            width: 66%;
+            background: orange;
+        }
+
+        .password-strength-bar.strong {
+            width: 100%;
+            background: var(--success);
+        }
+    </style>
+</head>
+<body>
+    <div class="register-container">
+        <div class="register-header">
+            <h1>Create New Account</h1>
+            <p>Admin only - Create accounts for beta testers</p>
+        </div>
+
+        <div class="error-message" id="errorMessage"></div>
+        <div class="success-message" id="successMessage"></div>
+
+        <form id="registerForm">
+            <div class="form-group">
+                <label for="username">Username</label>
+                <input 
+                    type="text" 
+                    id="username" 
+                    name="username" 
+                    placeholder="Choose a username"
+                    required
+                    autocomplete="username"
+                    minlength="3"
+                    maxlength="50"
+                >
+                <small>3-50 characters, letters, numbers, underscore, hyphen</small>
+            </div>
+
+            <div class="form-group">
+                <label for="email">Email</label>
+                <input 
+                    type="email" 
+                    id="email" 
+                    name="email" 
+                    placeholder="Enter email address"
+                    required
+                    autocomplete="email"
+                >
+            </div>
+
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input 
+                    type="password" 
+                    id="password" 
+                    name="password" 
+                    placeholder="Choose a strong password"
+                    required
+                    autocomplete="new-password"
+                    minlength="8"
+                >
+                <div class="password-strength">
+                    <div class="password-strength-bar" id="strengthBar"></div>
+                </div>
+                <small>Minimum 8 characters</small>
+            </div>
+
+            <div class="form-group">
+                <label for="confirmPassword">Confirm Password</label>
+                <input 
+                    type="password" 
+                    id="confirmPassword" 
+                    name="confirmPassword" 
+                    placeholder="Re-enter password"
+                    required
+                    autocomplete="new-password"
+                >
+            </div>
+
+            <button type="submit" class="register-button" id="registerButton">
+                Create Account
+                <div class="spinner" id="spinner"></div>
+            </button>
+        </form>
+
+        <div class="login-link">
+            Already have an account? <a href="/login.html">Login</a>
+        </div>
+    </div>
+
+    <script>
+        const registerForm = document.getElementById('registerForm');
+        const registerButton = document.getElementById('registerButton');
+        const spinner = document.getElementById('spinner');
+        const errorMessage = document.getElementById('errorMessage');
+        const successMessage = document.getElementById('successMessage');
+        const strengthBar = document.getElementById('strengthBar');
+        const passwordInput = document.getElementById('password');
+
+        // Check if already logged in
+        fetch('/auth/check', {
+            credentials: 'include'
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (!data.authenticated) {
+                // Not logged in, redirect to login
+                window.location.href = '/login.html';
+            }
+        })
+        .catch(err => console.error('Auth check failed:', err));
+
+        // Password strength indicator
+        passwordInput.addEventListener('input', (e) => {
+            const password = e.target.value;
+            let strength = 0;
+            
+            if (password.length >= 8) strength++;
+            if (password.length >= 12) strength++;
+            if (/[a-z]/.test(password) && /[A-Z]/.test(password)) strength++;
+            if (/\d/.test(password)) strength++;
+            if (/[^a-zA-Z0-9]/.test(password)) strength++;
+
+            strengthBar.className = 'password-strength-bar';
+            if (strength <= 2) {
+                strengthBar.classList.add('weak');
+            } else if (strength <= 4) {
+                strengthBar.classList.add('medium');
+            } else {
+                strengthBar.classList.add('strong');
+            }
+        });
+
+        registerForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const username = document.getElementById('username').value;
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+
+            // Validation
+            if (password !== confirmPassword) {
+                errorMessage.textContent = 'Passwords do not match';
+                errorMessage.classList.add('show');
+                return;
+            }
+
+            if (password.length < 8) {
+                errorMessage.textContent = 'Password must be at least 8 characters';
+                errorMessage.classList.add('show');
+                return;
+            }
+
+            // Show loading state
+            registerButton.disabled = true;
+            spinner.classList.add('show');
+            errorMessage.classList.remove('show');
+            successMessage.classList.remove('show');
+
+            try {
+                const response = await fetch('/auth/register', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    credentials: 'include',
+                    body: JSON.stringify({ username, email, password })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    // Registration successful
+                    successMessage.textContent = `Account created successfully for ${username}! Share the credentials with them.`;
+                    successMessage.classList.add('show');
+                    registerForm.reset();
+                    strengthBar.className = 'password-strength-bar';
+                    
+                    // Optionally redirect after a delay
+                    // setTimeout(() => window.location.href = '/', 3000);
+                } else {
+                    // Show error message
+                    errorMessage.textContent = data.error || 'Registration failed. Please try again.';
+                    errorMessage.classList.add('show');
+                }
+            } catch (error) {
+                console.error('Registration error:', error);
+                errorMessage.textContent = 'Network error. Please try again.';
+                errorMessage.classList.add('show');
+            } finally {
+                registerButton.disabled = false;
+                spinner.classList.remove('show');
+            }
+        });
+
+        // Clear messages on input
+        const inputs = document.querySelectorAll('input');
+        inputs.forEach(input => {
+            input.addEventListener('input', () => {
+                errorMessage.classList.remove('show');
+                successMessage.classList.remove('show');
+            });
+        });
+    </script>
+</body>
+</html>
