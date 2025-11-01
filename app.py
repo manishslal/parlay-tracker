@@ -1114,6 +1114,11 @@ def index():
     """Serve the main app page - must be public for PWA to work"""
     return send_from_directory('.', 'index.html')
 
+@app.route('/pwa-debug.html')
+def pwa_debug():
+    """Serve PWA debug page"""
+    return send_from_directory('.', 'pwa-debug.html')
+
 # PWA Support - These routes must be public for PWA to work
 @app.route('/manifest.json')
 def manifest():

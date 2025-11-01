@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PWA Debug Info</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background: #1a1a1a;
+            color: #fff;
+        }
+        .test-section {
+            background: #2a2a2a;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+        }
+        .pass { color: #4caf50; }
+        .fail { color: #f44336; }
+        .warning { color: #ff9800; }
+        h2 { color: #e657ff; }
+        pre {
+            background: #0a0a0a;
+            padding: 10px;
+            overflow-x: auto;
+            border-radius: 4px;
+        }
+        button {
+            background: #140d52;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #1f1577;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 PWA Installation Debug</h1>
+    
+    <div class="test-section">
+        <h2>1. Manifest Loading</h2>
+        <div id="manifest-status">Testing...</div>
+        <pre id="manifest-content"></pre>
+    </div>
+
+    <div class="test-section">
+        <h2>2. Service Worker</h2>
+        <div id="sw-status">Testing...</div>
+    </div>
+
+    <div class="test-section">
+        <h2>3. Icons</h2>
+        <div id="icons-status">Testing...</div>
+    </div>
+
+    <div class="test-section">
+        <h2>4. Install Criteria</h2>
+        <div id="criteria-status">Checking...</div>
+    </div>
+
+    <div class="test-section">
+        <h2>5. Install Prompt</h2>
+        <div id="install-status">Waiting for prompt...</div>
+        <button id="install-btn" style="display:none;">Install PWA</button>
+    </div>
+
+    <div class="test-section">
+        <h2>6. Browser Info</h2>
+        <div id="browser-info"></div>
+    </div>
+
+    <script>
+        let deferredPrompt = null;
+
+        // 1. Test Manifest
+        async function testManifest() {
+            const statusEl = document.getElementById('manifest-status');
+            const contentEl = document.getElementById('manifest-content');
+            
+            try {
+                const response = await fetch('/manifest.json');
+                if (!response.ok) {
+                    statusEl.innerHTML = `<span class="fail">❌ FAIL: Manifest returned ${response.status}</span>`;
+                    return false;
+                }
+                
+                const contentType = response.headers.get('content-type');
+                const manifest = await response.json();
+                
+                statusEl.innerHTML = `<span class="pass">✅ PASS: Manifest loaded</span>`;
+                contentEl.textContent = JSON.stringify(manifest, null, 2);
+                
+                // Check required fields
+                const required = ['name', 'short_name', 'start_url', 'display', 'icons'];
+                const missing = required.filter(field => !manifest[field]);
+                
+                if (missing.length > 0) {
+                    statusEl.innerHTML += `<br><span class="fail">❌ Missing fields: ${missing.join(', ')}</span>`;
+                    return false;
+                }
+                
+                // Check icons
+                const validIcons = manifest.icons.filter(icon => {
+                    const size = parseInt(icon.sizes.split('x')[0]);
+                    return size >= 192;
+                });
+                
+                if (validIcons.length === 0) {
+                    statusEl.innerHTML += `<br><span class="fail">❌ No icons >= 192x192</span>`;
+                    return false;
+                }
+                
+                statusEl.innerHTML += `<br><span class="pass">✅ Has ${validIcons.length} valid icons (>=192px)</span>`;
+                statusEl.innerHTML += `<br><span class="pass">✅ Display mode: ${manifest.display}</span>`;
+                
+                return true;
+            } catch (error) {
+                statusEl.innerHTML = `<span class="fail">❌ FAIL: ${error.message}</span>`;
+                contentEl.textContent = error.stack;
+                return false;
+            }
+        }
+
+        // 2. Test Service Worker
+        async function testServiceWorker() {
+            const statusEl = document.getElementById('sw-status');
+            
+            if (!('serviceWorker' in navigator)) {
+                statusEl.innerHTML = '<span class="fail">❌ Service Worker not supported</span>';
+                return false;
+            }
+            
+            try {
+                const registration = await navigator.serviceWorker.register('/service-worker.js');
+                statusEl.innerHTML = `<span class="pass">✅ PASS: Service Worker registered</span>`;
+                statusEl.innerHTML += `<br>Scope: ${registration.scope}`;
+                
+                if (navigator.serviceWorker.controller) {
+                    statusEl.innerHTML += '<br><span class="pass">✅ Service Worker is controlling this page</span>';
+                } else {
+                    statusEl.innerHTML += '<br><span class="warning">⚠️ Service Worker registered but not controlling (refresh needed)</span>';
+                }
+                
+                return true;
+            } catch (error) {
+                statusEl.innerHTML = `<span class="fail">❌ FAIL: ${error.message}</span>`;
+                return false;
+            }
+        }
+
+        // 3. Test Icons
+        async function testIcons() {
+            const statusEl = document.getElementById('icons-status');
+            const testIcons = [
+                '/media/icons/icon-192x192.png',
+                '/media/icons/icon-512x512.png'
+            ];
+            
+            let html = '';
+            for (const iconUrl of testIcons) {
+                try {
+                    const response = await fetch(iconUrl, { method: 'HEAD' });
+                    if (response.ok) {
+                        html += `<span class="pass">✅ ${iconUrl}</span><br>`;
+                    } else {
+                        html += `<span class="fail">❌ ${iconUrl} (${response.status})</span><br>`;
+                    }
+                } catch (error) {
+                    html += `<span class="fail">❌ ${iconUrl} (${error.message})</span><br>`;
+                }
+            }
+            statusEl.innerHTML = html;
+        }
+
+        // 4. Check Install Criteria
+        function checkCriteria() {
+            const statusEl = document.getElementById('criteria-status');
+            let html = '';
+            
+            // HTTPS
+            const isHttps = window.location.protocol === 'https:';
+            html += isHttps ? 
+                '<span class="pass">✅ HTTPS</span><br>' : 
+                '<span class="fail">❌ Not HTTPS</span><br>';
+            
+            // Service Worker support
+            const hasServiceWorker = 'serviceWorker' in navigator;
+            html += hasServiceWorker ? 
+                '<span class="pass">✅ Service Worker API available</span><br>' : 
+                '<span class="fail">❌ Service Worker not supported</span><br>';
+            
+            // Manifest link
+            const manifestLink = document.querySelector('link[rel="manifest"]');
+            html += manifestLink ? 
+                `<span class="pass">✅ Manifest link found: ${manifestLink.href}</span><br>` : 
+                '<span class="fail">❌ No manifest link in HTML</span><br>';
+            
+            statusEl.innerHTML = html;
+        }
+
+        // 5. Listen for install prompt
+        window.addEventListener('beforeinstallprompt', (e) => {
+            console.log('beforeinstallprompt fired');
+            e.preventDefault();
+            deferredPrompt = e;
+            
+            const statusEl = document.getElementById('install-status');
+            const installBtn = document.getElementById('install-btn');
+            
+            statusEl.innerHTML = '<span class="pass">✅ Install prompt available!</span>';
+            installBtn.style.display = 'inline-block';
+            
+            installBtn.addEventListener('click', async () => {
+                if (deferredPrompt) {
+                    deferredPrompt.prompt();
+                    const { outcome } = await deferredPrompt.userChoice;
+                    statusEl.innerHTML += `<br>User choice: ${outcome}`;
+                    deferredPrompt = null;
+                    installBtn.style.display = 'none';
+                }
+            });
+        });
+
+        // Check if already installed
+        window.addEventListener('appinstalled', () => {
+            document.getElementById('install-status').innerHTML = 
+                '<span class="pass">✅ PWA installed!</span>';
+        });
+
+        // 6. Browser Info
+        function showBrowserInfo() {
+            const infoEl = document.getElementById('browser-info');
+            infoEl.innerHTML = `
+                <strong>User Agent:</strong><br>
+                <pre>${navigator.userAgent}</pre>
+                <strong>Display Mode:</strong> ${window.matchMedia('(display-mode: standalone)').matches ? 'Standalone' : 'Browser'}<br>
+                <strong>Screen:</strong> ${window.screen.width}x${window.screen.height}<br>
+                <strong>Viewport:</strong> ${window.innerWidth}x${window.innerHeight}
+            `;
+        }
+
+        // Run all tests
+        async function runTests() {
+            showBrowserInfo();
+            checkCriteria();
+            await testManifest();
+            await testServiceWorker();
+            await testIcons();
+            
+            // Check for install prompt after delay
+            setTimeout(() => {
+                const statusEl = document.getElementById('install-status');
+                if (!deferredPrompt) {
+                    statusEl.innerHTML = '<span class="fail">❌ No install prompt received</span>';
+                    statusEl.innerHTML += '<br><span class="warning">This means Chrome doesn\'t recognize it as a valid PWA</span>';
+                    statusEl.innerHTML += '<br><br><strong>Possible reasons:</strong>';
+                    statusEl.innerHTML += '<br>• Manifest.json has errors or missing fields';
+                    statusEl.innerHTML += '<br>• Service Worker failed to register';
+                    statusEl.innerHTML += '<br>• Icons are not accessible';
+                    statusEl.innerHTML += '<br>• Already installed (check chrome://apps)';
+                    statusEl.innerHTML += '<br>• Need to wait longer (try refreshing in 30 seconds)';
+                }
+            }, 3000);
+        }
+
+        // Run tests when page loads
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', runTests);
+        } else {
+            runTests();
+        }
+    </script>
+</body>
+</html>
