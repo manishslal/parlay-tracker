@@ -1541,14 +1541,20 @@
     function selectBet(betId) {
       selectedBets.add(betId);
       const section = document.querySelector(`[data-bet-id="${betId}"]`);
-      if (section) section.classList.add('selected');
+      if (section) {
+        section.classList.add('selected');
+        section.classList.add('collapsed'); // Auto-collapse when selected
+      }
       updateSelectButton();
     }
     
     function deselectBet(betId) {
       selectedBets.delete(betId);
       const section = document.querySelector(`[data-bet-id="${betId}"]`);
-      if (section) section.classList.remove('selected');
+      if (section) {
+        section.classList.remove('selected');
+        section.classList.remove('collapsed'); // Auto-expand when deselected
+      }
       updateSelectButton();
     }
     
@@ -3409,6 +3415,8 @@ async function logoutToken() {
             localPressTimer = setTimeout(() => {
               pressHandled = true;
               selectBet(parlay.db_id);
+              // Auto-collapse when selected
+              section.classList.add('collapsed');
             }, 500);
           }
         };
@@ -3429,6 +3437,12 @@ async function logoutToken() {
           if (selectionMode) {
             // In selection mode: toggle selection
             toggleBetSelection(parlay.db_id);
+            // Auto-collapse when selected, auto-expand when deselected
+            if (selectedBets.has(parlay.db_id)) {
+              section.classList.add('collapsed');
+            } else {
+              section.classList.remove('collapsed');
+            }
           } else {
             // Normal mode: toggle collapse/expand
             section.classList.toggle('collapsed');
@@ -3442,6 +3456,22 @@ async function logoutToken() {
           }
           pressHandled = false;
         };
+        
+        // Remove any existing event listeners to prevent duplicates
+        // Store handlers on the header element itself for cleanup
+        if (header._pressHandlers) {
+          const old = header._pressHandlers;
+          header.removeEventListener('touchstart', old.startPress);
+          header.removeEventListener('touchend', old.endPress);
+          header.removeEventListener('touchcancel', old.cancelPress);
+          header.removeEventListener('touchmove', old.cancelPress);
+          header.removeEventListener('mousedown', old.startPress);
+          header.removeEventListener('mouseup', old.endPress);
+          header.removeEventListener('mouseleave', old.cancelPress);
+        }
+        
+        // Store handlers for future cleanup
+        header._pressHandlers = { startPress, endPress, cancelPress };
         
         // Touch events for mobile
         header.addEventListener('touchstart', startPress, { passive: true });
