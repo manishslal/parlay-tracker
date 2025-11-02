@@ -30,7 +30,7 @@ def add_live_bets():
             "odds": "+2058",
             "legs": [
                 {
-                    "game_date": "2025-11-03",
+                    "game_date": "2025-11-02",
                     "away": "Minnesota Vikings",
                     "home": "Detroit Lions",
                     "stat": "total_points",
@@ -38,7 +38,7 @@ def add_live_bets():
                     "over_under": "under"
                 },
                 {
-                    "game_date": "2025-11-03",
+                    "game_date": "2025-11-02",
                     "away": "San Francisco 49ers",
                     "home": "New York Giants",
                     "team": "San Francisco 49ers",
@@ -46,7 +46,7 @@ def add_live_bets():
                     "target": -2.5
                 },
                 {
-                    "game_date": "2025-11-03",
+                    "game_date": "2025-11-02",
                     "away": "Indianapolis Colts",
                     "home": "Pittsburgh Steelers",
                     "team": "Indianapolis Colts",
@@ -54,7 +54,7 @@ def add_live_bets():
                     "target": 1
                 },
                 {
-                    "game_date": "2025-11-03",
+                    "game_date": "2025-11-02",
                     "away": "Atlanta Falcons",
                     "home": "New England Patriots",
                     "team": "New England Patriots",
@@ -62,7 +62,7 @@ def add_live_bets():
                     "target": 1
                 },
                 {
-                    "game_date": "2025-11-03",
+                    "game_date": "2025-11-02",
                     "away": "Los Angeles Chargers",
                     "home": "Tennessee Titans",
                     "team": "Los Angeles Chargers",
@@ -70,7 +70,7 @@ def add_live_bets():
                     "target": 1
                 },
                 {
-                    "game_date": "2025-11-03",
+                    "game_date": "2025-11-02",
                     "away": "New Orleans Saints",
                     "home": "Los Angeles Rams",
                     "team": "Los Angeles Rams",
@@ -101,7 +101,7 @@ def add_live_bets():
             "legs": [
                 # Chicago Bears @ Cincinnati Bengals
                 {
-                    "game_date": "2025-11-03",
+                    "game_date": "2025-11-02",
                     "away": "Chicago Bears",
                     "home": "Cincinnati Bengals",
                     "player": "Caleb Williams",
@@ -110,7 +110,7 @@ def add_live_bets():
                     "over_under": "over"
                 },
                 {
-                    "game_date": "2025-11-03",
+                    "game_date": "2025-11-02",
                     "away": "Chicago Bears",
                     "home": "Cincinnati Bengals",
                     "player": "Joe Flacco",
@@ -120,7 +120,7 @@ def add_live_bets():
                 },
                 # Minnesota Vikings @ Detroit Lions
                 {
-                    "game_date": "2025-11-03",
+                    "game_date": "2025-11-02",
                     "away": "Minnesota Vikings",
                     "home": "Detroit Lions",
                     "player": "Jared Goff",
@@ -129,7 +129,7 @@ def add_live_bets():
                     "over_under": "over"
                 },
                 {
-                    "game_date": "2025-11-03",
+                    "game_date": "2025-11-02",
                     "away": "Minnesota Vikings",
                     "home": "Detroit Lions",
                     "player": "J.J. McCarthy",
@@ -139,7 +139,7 @@ def add_live_bets():
                 },
                 # Atlanta Falcons @ New England Patriots
                 {
-                    "game_date": "2025-11-03",
+                    "game_date": "2025-11-02",
                     "away": "Atlanta Falcons",
                     "home": "New England Patriots",
                     "player": "Michael Penix Jr.",
@@ -148,7 +148,7 @@ def add_live_bets():
                     "over_under": "over"
                 },
                 {
-                    "game_date": "2025-11-03",
+                    "game_date": "2025-11-02",
                     "away": "Atlanta Falcons",
                     "home": "New England Patriots",
                     "player": "Drake Maye",
@@ -158,7 +158,7 @@ def add_live_bets():
                 },
                 # Denver Broncos @ Houston Texans
                 {
-                    "game_date": "2025-11-03",
+                    "game_date": "2025-11-02",
                     "away": "Denver Broncos",
                     "home": "Houston Texans",
                     "player": "Bo Nix",
@@ -167,7 +167,7 @@ def add_live_bets():
                     "over_under": "over"
                 },
                 {
-                    "game_date": "2025-11-03",
+                    "game_date": "2025-11-02",
                     "away": "Denver Broncos",
                     "home": "Houston Texans",
                     "player": "C.J. Stroud",
@@ -177,7 +177,7 @@ def add_live_bets():
                 },
                 # Carolina Panthers @ Green Bay Packers
                 {
-                    "game_date": "2025-11-03",
+                    "game_date": "2025-11-02",
                     "away": "Carolina Panthers",
                     "home": "Green Bay Packers",
                     "player": "Bryce Young",
@@ -186,7 +186,7 @@ def add_live_bets():
                     "over_under": "over"
                 },
                 {
-                    "game_date": "2025-11-03",
+                    "game_date": "2025-11-02",
                     "away": "Carolina Panthers",
                     "home": "Green Bay Packers",
                     "player": "Jordan Love",
@@ -196,7 +196,7 @@ def add_live_bets():
                 },
                 # San Francisco 49ers @ New York Giants
                 {
-                    "game_date": "2025-11-03",
+                    "game_date": "2025-11-02",
                     "away": "San Francisco 49ers",
                     "home": "New York Giants",
                     "player": "Mac Jones",
@@ -205,7 +205,7 @@ def add_live_bets():
                     "over_under": "over"
                 },
                 {
-                    "game_date": "2025-11-03",
+                    "game_date": "2025-11-02",
                     "away": "San Francisco 49ers",
                     "home": "New York Giants",
                     "player": "Jaxson Dart",
@@ -215,7 +215,7 @@ def add_live_bets():
                 },
                 # Los Angeles Chargers @ Tennessee Titans
                 {
-                    "game_date": "2025-11-03",
+                    "game_date": "2025-11-02",
                     "away": "Los Angeles Chargers",
                     "home": "Tennessee Titans",
                     "player": "Justin Herbert",
@@ -224,7 +224,7 @@ def add_live_bets():
                     "over_under": "over"
                 },
                 {
-                    "game_date": "2025-11-03",
+                    "game_date": "2025-11-02",
                     "away": "Los Angeles Chargers",
                     "home": "Tennessee Titans",
                     "player": "Cam Ward",
@@ -234,7 +234,7 @@ def add_live_bets():
                 },
                 # Indianapolis Colts @ Pittsburgh Steelers
                 {
-                    "game_date": "2025-11-03",
+                    "game_date": "2025-11-02",
                     "away": "Indianapolis Colts",
                     "home": "Pittsburgh Steelers",
                     "player": "Aaron Rodgers",
