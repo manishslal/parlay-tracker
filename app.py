@@ -1093,14 +1093,15 @@ def register():
     if not username or not email or not password:
         return jsonify({'error': 'Missing required fields'}), 400
     
-    # Check if user already exists
-    if User.query.filter_by(username=username).first():
+    # Check if user already exists (case-insensitive)
+    if User.query.filter(db.func.lower(User.username) == username.lower()).first():
         return jsonify({'error': 'Username already exists'}), 400
-    if User.query.filter_by(email=email).first():
+    if User.query.filter(db.func.lower(User.email) == email.lower()).first():
         return jsonify({'error': 'Email already exists'}), 400
     
     try:
-        user = User(username=username, email=email)
+        # Store username in lowercase for consistency
+        user = User(username=username.lower(), email=email.lower())
         user.set_password(password)
         db.session.add(user)
         db.session.commit()
@@ -1116,7 +1117,7 @@ def register():
 
 @app.route('/auth/login', methods=['POST'])
 def login():
-    """Login with username/email and password"""
+    """Login with username/email and password (case-insensitive)"""
     data = request.json
     identifier = data.get('username') or data.get('email')
     password = data.get('password')
@@ -1124,9 +1125,10 @@ def login():
     if not identifier or not password:
         return jsonify({'error': 'Missing credentials'}), 400
     
-    # Try to find user by username or email
+    # Try to find user by username or email (case-insensitive)
     user = User.query.filter(
-        (User.username == identifier) | (User.email == identifier)
+        (db.func.lower(User.username) == identifier.lower()) | 
+        (db.func.lower(User.email) == identifier.lower())
     ).first()
     
     if not user or not user.check_password(password):
