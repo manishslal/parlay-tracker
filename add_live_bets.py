@@ -96,7 +96,7 @@ def add_live_bets():
             "betting_site": "DraftKings",
             "bet_date": "2025-11-02",
             "wager": 5.00,
-            "potential_payout": 5769.00,
+            "potential_payout": 57.69,
             "odds": "+1053",
             "legs": [
                 # Chicago Bears @ Cincinnati Bengals
