@@ -9,7 +9,7 @@ from datetime import datetime
 import json
 
 # Import database models
-from models import db, User, Bet
+from models import db, User, Bet, bet_users
 
 # Data directory for JSON fixtures
 DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
@@ -107,6 +107,33 @@ def _compute_parlay_returns_from_odds(wager, parlay_odds=None, leg_odds_list=Non
 
 
 from functools import wraps
+
+def get_user_bets_query(user, **filters):
+    """
+    Get bets for a user using the many-to-many relationship.
+    This returns all bets the user has access to (owned + shared).
+    
+    Args:
+        user: User object
+        **filters: Additional filters (status, is_active, is_archived, etc.)
+    
+    Returns:
+        SQLAlchemy query object
+    """
+    query = Bet.query.join(bet_users, bet_users.c.bet_id == Bet.id).filter(
+        bet_users.c.user_id == user.id
+    )
+    
+    # Apply additional filters
+    for key, value in filters.items():
+        if hasattr(Bet, key):
+            if isinstance(value, list):
+                # Handle IN clause for lists
+                query = query.filter(getattr(Bet, key).in_(value))
+            else:
+                query = query.filter(getattr(Bet, key) == value)
+    
+    return query
 
 # Configure Flask to serve static files from root directory
 app = Flask(__name__, static_folder='.', static_url_path='')
@@ -1141,12 +1168,13 @@ def check_auth():
 @app.route("/live")
 @login_required
 def live():
-    # Get live bets from database for current user (is_active=1, is_archived=0)
-    bets = Bet.query.filter_by(
-        user_id=current_user.id,
+    # Get live bets using many-to-many relationship
+    bets = get_user_bets_query(
+        current_user,
         is_active=True,
-        is_archived=False
-    ).filter(Bet.status.in_(['live', 'pending'])).all()
+        is_archived=False,
+        status=['live', 'pending']
+    ).all()
     # Convert Bet objects to dict format with db_id included
     live_parlays = [bet.to_dict() for bet in bets]
     processed = process_parlay_data(live_parlays)
@@ -1160,9 +1188,9 @@ def todays():
     # Auto-move completed bets (games that have ended)
     auto_move_completed_bets(current_user.id)
     
-    # Get today's bets from database for current user (is_active=1, is_archived=0)
-    bets = Bet.query.filter_by(
-        user_id=current_user.id,
+    # Get today's bets using many-to-many relationship
+    bets = get_user_bets_query(
+        current_user,
         is_active=True,
         is_archived=False,
         status='pending'
@@ -1178,10 +1206,10 @@ def historical():
     try:
         app.logger.info("Starting historical endpoint processing")
         
-        # Load historical parlays from database for current user (is_active=0, is_archived=0)
+        # Load historical parlays using many-to-many relationship
         try:
-            bets = Bet.query.filter_by(
-                user_id=current_user.id,
+            bets = get_user_bets_query(
+                current_user,
                 is_active=False,
                 is_archived=False
             ).all()
@@ -1485,7 +1513,8 @@ def create_bet():
 def update_bet(bet_id):
     """Update an existing bet"""
     try:
-        bet = Bet.query.filter_by(id=bet_id, user_id=current_user.id).first()
+        # Check if user has access to this bet
+        bet = get_user_bets_query(current_user).filter(Bet.id == bet_id).first()
         if not bet:
             return jsonify({'error': 'Bet not found'}), 404
         
@@ -1526,7 +1555,8 @@ def update_bet(bet_id):
 def delete_bet(bet_id):
     """Delete a bet"""
     try:
-        bet = Bet.query.filter_by(id=bet_id, user_id=current_user.id).first()
+        # Check if user has access to this bet
+        bet = get_user_bets_query(current_user).filter(Bet.id == bet_id).first()
         if not bet:
             return jsonify({'error': 'Bet not found'}), 404
         
@@ -1546,7 +1576,8 @@ def delete_bet(bet_id):
 def archive_bet(bet_id):
     """Archive a bet - changes status to 'archived'"""
     try:
-        bet = Bet.query.filter_by(id=bet_id, user_id=current_user.id).first()
+        # Check if user has access to this bet
+        bet = get_user_bets_query(current_user).filter(Bet.id == bet_id).first()
         if not bet:
             return jsonify({'error': 'Bet not found'}), 404
         
@@ -1577,8 +1608,8 @@ def archive_bet(bet_id):
 def get_archived_bets():
     """Get all archived bets for the current user (is_archived=1)"""
     try:
-        archived_bets = Bet.query.filter_by(
-            user_id=current_user.id,
+        archived_bets = get_user_bets_query(
+            current_user,
             is_archived=True
         ).order_by(Bet.bet_date.desc()).all()
         

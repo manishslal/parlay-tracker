@@ -7,6 +7,14 @@ import json
 
 db = SQLAlchemy()
 
+# Association table for many-to-many relationship between users and bets
+bet_users = db.Table('bet_users',
+    db.Column('bet_id', db.Integer, db.ForeignKey('bets.id'), primary_key=True),
+    db.Column('user_id', db.Integer, db.ForeignKey('users.id'), primary_key=True),
+    db.Column('is_primary_bettor', db.Boolean, default=False),
+    db.Column('created_at', db.DateTime, default=datetime.utcnow)
+)
+
 class User(UserMixin, db.Model):
     """User model for authentication and bet ownership"""
     __tablename__ = 'users'
@@ -18,8 +26,11 @@ class User(UserMixin, db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     is_active = db.Column(db.Boolean, default=True)
     
-    # Relationship to bets
-    bets = db.relationship('Bet', backref='owner', lazy='dynamic', cascade='all, delete-orphan')
+    # Old one-to-many relationship (kept for backward compatibility during migration)
+    bets = db.relationship('Bet', backref='owner', lazy='dynamic', foreign_keys='Bet.user_id')
+    
+    # New many-to-many relationship for shared bets
+    shared_bets = db.relationship('Bet', secondary=bet_users, backref='users', lazy='dynamic')
     
     def set_password(self, password):
         """Hash and set password"""
@@ -28,6 +39,20 @@ class User(UserMixin, db.Model):
     def check_password(self, password):
         """Verify password against hash"""
         return bcrypt.checkpw(password.encode('utf-8'), self.password_hash.encode('utf-8'))
+    
+    def get_all_bets(self):
+        """Get all bets visible to this user (owned + shared)"""
+        from sqlalchemy import or_
+        return Bet.query.join(bet_users, bet_users.c.bet_id == Bet.id).filter(
+            bet_users.c.user_id == self.id
+        )
+    
+    def get_primary_bets(self):
+        """Get bets where this user is the primary bettor"""
+        return Bet.query.join(bet_users, bet_users.c.bet_id == Bet.id).filter(
+            bet_users.c.user_id == self.id,
+            bet_users.c.is_primary_bettor == True
+        )
     
     def to_dict(self):
         """Convert user to dictionary (excluding sensitive data)"""
@@ -112,11 +137,59 @@ class Bet(db.Model):
         """Parse and return bet data as dictionary"""
         return json.loads(self.bet_data)
     
+    def add_user(self, user, is_primary=False):
+        """Add a user to this bet with specified role"""
+        # Check if user already has access
+        existing = db.session.execute(
+            bet_users.select().where(
+                db.and_(
+                    bet_users.c.bet_id == self.id,
+                    bet_users.c.user_id == user.id
+                )
+            )
+        ).fetchone()
+        
+        if not existing:
+            stmt = bet_users.insert().values(
+                bet_id=self.id,
+                user_id=user.id,
+                is_primary_bettor=is_primary
+            )
+            db.session.execute(stmt)
+            db.session.commit()
+            return True
+        return False
+    
+    def remove_user(self, user):
+        """Remove a user's access to this bet"""
+        stmt = bet_users.delete().where(
+            db.and_(
+                bet_users.c.bet_id == self.id,
+                bet_users.c.user_id == user.id
+            )
+        )
+        db.session.execute(stmt)
+        db.session.commit()
+    
+    def get_primary_bettor(self):
+        """Get the username of the primary bettor"""
+        result = db.session.execute(
+            db.select(User.username).join(
+                bet_users, bet_users.c.user_id == User.id
+            ).where(
+                bet_users.c.bet_id == self.id,
+                bet_users.c.is_primary_bettor == True
+            )
+        ).fetchone()
+        
+        return result[0] if result else None
+    
     def to_dict(self):
         """Convert bet to dictionary for API responses"""
         bet_dict = self.get_bet_data()
         bet_dict['db_id'] = self.id
         bet_dict['user_id'] = self.user_id
+        bet_dict['bettor'] = self.get_primary_bettor()  # Add primary bettor name
         bet_dict['created_at'] = self.created_at.isoformat()
         bet_dict['updated_at'] = self.updated_at.isoformat()
         return bet_dict
