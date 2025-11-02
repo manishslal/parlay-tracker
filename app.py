@@ -198,6 +198,25 @@ def save_bet_to_db(user_id, bet_data):
         db.session.rollback()
         raise
 
+def has_complete_final_data(bet_data):
+    """Check if a bet has complete final data for all legs
+    
+    Returns True if all legs have final_value OR current stats saved.
+    This indicates the bet doesn't need ESPN API fetching anymore.
+    """
+    legs = bet_data.get('legs', [])
+    if not legs:
+        return False
+    
+    for leg in legs:
+        # Check if leg has final data stored
+        has_final = 'final_value' in leg or 'current' in leg
+        if not has_final:
+            return False
+    
+    return True
+
+
 def save_final_results_to_bet(bet, processed_data):
     """Save final game results to bet data when games are completed
     
@@ -1248,36 +1267,61 @@ def historical():
             else:
                 bets_needing_fetch.append(parlay)
         
-        app.logger.info(f"Historical bets: {len(bets_with_results)} have results, "
-                       f"{len(bets_needing_fetch)} need ESPN fetch")
+        app.logger.info(f"Historical bets: {len(bets_with_results)} have complete data, "
+                       f"{len(bets_needing_fetch)} missing final stats")
         
-        # Try to fetch ESPN data for bets that haven't been fetched yet
+        # Try to fetch ESPN data ONLY for bets that don't have complete final data
         # This handles cases like:
-        # - User added old bet retroactively (give ESPN a chance)
+        # - User added old bet retroactively (give ESPN a chance to fetch historical data)
         # - Bet was marked complete before ESPN fetch happened
+        # But SKIP fetching if bet already has complete final data (hardcoded stats)
         processed = []
         if bets_needing_fetch:
-            app.logger.info(f"Attempting ESPN fetch for {len(bets_needing_fetch)} historical bets (api_fetched='No')")
-            try:
-                processed = process_parlay_data(bets_needing_fetch)
-                
-                # Mark these bets as fetched in database
-                for parlay in processed:
-                    bet_obj = bet_objects.get(parlay.get('db_id'))
-                    if bet_obj:
-                        bet_obj.api_fetched = 'Yes'
-                
-                db.session.commit()
-                app.logger.info(f"✅ Marked {len(processed)} bets as api_fetched='Yes'")
-                
-            except Exception as e:
-                app.logger.error(f"Error processing historical bets: {str(e)}")
-                # If processing fails, use unprocessed data
-                processed = bets_needing_fetch
-                # Add empty games array for frontend compatibility
-                for parlay in processed:
-                    if 'games' not in parlay:
-                        parlay['games'] = []
+            app.logger.info(f"Checking {len(bets_needing_fetch)} historical bets for ESPN fetch eligibility")
+            
+            # Separate: bets that truly need fetch vs bets that have complete data
+            truly_need_fetch = []
+            already_complete = []
+            
+            for parlay in bets_needing_fetch:
+                if has_complete_final_data(parlay):
+                    app.logger.info(f"Bet {parlay.get('name')} already has complete final data - skipping ESPN fetch")
+                    already_complete.append(parlay)
+                else:
+                    app.logger.info(f"Bet {parlay.get('name')} missing final data - will fetch from ESPN")
+                    truly_need_fetch.append(parlay)
+            
+            # Only fetch for bets that truly need it (newly added past bets)
+            if truly_need_fetch:
+                app.logger.info(f"Fetching ESPN data for {len(truly_need_fetch)} historical bets (newly added past bets)")
+                try:
+                    processed = process_parlay_data(truly_need_fetch)
+                    
+                    # Save final results and mark as fetched
+                    for parlay in processed:
+                        bet_obj = bet_objects.get(parlay.get('db_id'))
+                        if bet_obj:
+                            # Save the fetched data as final results
+                            save_final_results_to_bet(bet_obj, [parlay])
+                            bet_obj.api_fetched = 'Yes'
+                    
+                    db.session.commit()
+                    app.logger.info(f"✅ Fetched and saved final results for {len(processed)} bets")
+                    
+                except Exception as e:
+                    app.logger.error(f"Error processing historical bets: {str(e)}")
+                    # If processing fails, use unprocessed data
+                    processed = truly_need_fetch
+                    # Add empty games array for frontend compatibility
+                    for parlay in processed:
+                        if 'games' not in parlay:
+                            parlay['games'] = []
+            
+            # Add already complete bets to processed list (no fetch needed)
+            for parlay in already_complete:
+                if 'games' not in parlay:
+                    parlay['games'] = []
+                processed.append(parlay)
         
         # For bets with results, just add empty games array (display uses stored data)
         processed_with_results = []
@@ -1529,11 +1573,24 @@ def update_bet(bet_id):
         
         # Update other fields if provided
         if 'status' in data:
+            old_status = bet.status
             bet.status = data['status']
             # If marking as completed/won/lost, update is_active and api_fetched
             if data['status'] in ['completed', 'won', 'lost']:
                 bet.is_active = False
-                bet.api_fetched = 'Yes'  # Assume stats already captured or manually entered
+                
+                # Try to fetch and save final results if transitioning to completed
+                # and bet doesn't already have complete final data
+                if old_status not in ['completed', 'won', 'lost'] and not has_complete_final_data(data):
+                    app.logger.info(f"Bet {bet.id} manually marked complete - attempting to fetch final results")
+                    try:
+                        processed_data = process_parlay_data([data])
+                        save_final_results_to_bet(bet, processed_data)
+                        app.logger.info(f"✅ Saved final results for manually completed bet {bet.id}")
+                    except Exception as e:
+                        app.logger.error(f"Failed to fetch final results for bet {bet.id}: {e}")
+                
+                bet.api_fetched = 'Yes'  # Mark as fetched
         if 'bet_type' in data:
             bet.bet_type = data['bet_type']
         if 'betting_site' in data:
