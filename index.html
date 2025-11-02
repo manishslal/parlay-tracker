@@ -1092,7 +1092,7 @@
         min-width: auto;
         max-width: none;
         font-size: 0.65rem;
-        padding: 0.35rem 0.5rem;
+        padding: 0.35rem; /* Equal padding all around */
         gap: 0.15rem;
       }
       
@@ -1111,8 +1111,8 @@
       }
       
       .scoreboard-row .game-info {
-        flex: 0 0 calc(30% - 0.5rem); /* 3 per row, wider for better text fit */
-        max-width: calc(30% - 0.5rem);
+        flex: 0 0 calc(28% - 0.5rem); /* 3 per row, balanced width */
+        max-width: calc(28% - 0.5rem);
       }
       
       /* Multiple games: center items that wrap to second row (4th item onwards) */
@@ -1122,7 +1122,7 @@
       
       .game-info {
         font-size: 0.65rem;
-        padding: 0.35rem 0.5rem;
+        padding: 0.35rem; /* Equal padding all around */
         gap: 0.15rem;
       }
       
