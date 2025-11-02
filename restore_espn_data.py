@@ -11,11 +11,15 @@ from models import Bet
 def restore_espn_data(backup_file):
     """Restore ESPN data from backup JSON to PostgreSQL bets"""
     
-    print(f"📁 Loading backup from: {backup_file}")
+    print("Loading backup data...")
     with open(backup_file, 'r') as f:
         backup_data = json.load(f)
     
-    print(f"✅ Loaded {len(backup_data)} bets from backup")
+    if not backup_data:
+        print("❌ Backup file is empty! Check the file path.")
+        return
+    
+    print(f"✅ Loaded {len(backup_data)} bets from backup\n")
     
     with app.app_context():
         # Get all completed bets from database
@@ -24,6 +28,7 @@ def restore_espn_data(backup_file):
         
         updated_count = 0
         skipped_count = 0
+        already_have_data = 0
         
         for db_bet in completed_bets:
             bet_data = db_bet.get_bet_data()
@@ -41,17 +46,16 @@ def restore_espn_data(backup_file):
                 skipped_count += 1
                 continue
             
-            # Check if backup has ESPN data (legs have 'current' values)
+            # Check if this bet already has ESPN data
             has_espn_data = False
-            for leg in backup_bet.get('legs', []):
-                if 'current' in leg:
+            for leg in bet_data.get('legs', []):
+                if 'current' in leg and leg.get('current') is not None:
                     has_espn_data = True
                     break
             
-            if not has_espn_data:
-                print(f"  ⏭️  Backup missing ESPN data for: {bet_name}")
-                skipped_count += 1
-                continue
+            if has_espn_data:
+                already_have_data += 1
+                continue  # Skip bets that already have data
             
             # Merge ESPN data from backup into database bet
             # Preserve the leg structure but add ESPN results
@@ -99,20 +103,10 @@ def restore_espn_data(backup_file):
         return True
 
 if __name__ == '__main__':
-    # Use the Historical_Bets.json in data directory (has ESPN data from before migration)
-    backup_file = 'data/Historical_Bets.json'
+    # Use the latest backup folder that has the full data (107KB)
+    backup_file = 'data/backup_20251101_110041/Historical_Bets.json'
     
-    if len(sys.argv) > 1:
-        backup_file = sys.argv[1]
+    print("� Starting ESPN Data Restoration")
+    print(f"� Using backup file: {backup_file}\n")
     
-    print("🚀 Starting ESPN data restoration...")
-    print(f"📊 Database: {app.config['SQLALCHEMY_DATABASE_URI'][:50]}...")
-    
-    success = restore_espn_data(backup_file)
-    
-    if success:
-        print("\n✅ Restoration successful!")
-        print("🎉 Your historical bets now have ESPN game data!")
-    else:
-        print("\n❌ Restoration failed")
-        sys.exit(1)
+    restore_espn_data(backup_file)
