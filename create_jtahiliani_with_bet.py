@@ -40,8 +40,11 @@ def create_user_and_bet():
         
         print("\n[Step 1/3] Checking for jtahiliani user...")
         
-        # Check if user exists
-        cur.execute("SELECT id, username FROM users WHERE username = %s", ('jtahiliani',))
+        # Check if user exists by username OR email
+        cur.execute("""
+            SELECT id, username FROM users 
+            WHERE username = %s OR email = %s
+        """, ('jtahiliani', 'jtahiliani@example.com'))
         user = cur.fetchone()
         
         if user:
@@ -58,7 +61,7 @@ def create_user_and_bet():
                 'jtahiliani',
                 'jtahiliani@example.com',
                 '$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewY5jtRfkKT7yjRe',  # Password: changeme123
-                datetime.utcnow(),
+                datetime.now(datetime.UTC) if hasattr(datetime, 'UTC') else datetime.utcnow(),
                 True
             ))
             user_id, username = cur.fetchone()
@@ -150,8 +153,8 @@ def create_user_and_bet():
             'SGP',  # bet_type
             'FanDuel',  # betting_site
             '2025-11-02',  # bet_date
-            datetime.utcnow(),  # created_at
-            datetime.utcnow(),  # updated_at
+            datetime.now(datetime.UTC) if hasattr(datetime, 'UTC') else datetime.utcnow(),  # created_at
+            datetime.now(datetime.UTC) if hasattr(datetime, 'UTC') else datetime.utcnow(),  # updated_at
             True,  # is_active
             False,  # is_archived
             'No',  # api_fetched (will fetch live data)
@@ -173,7 +176,7 @@ def create_user_and_bet():
             cur.execute("""
                 INSERT INTO bet_users (bet_id, user_id, is_primary_bettor, created_at)
                 VALUES (%s, %s, %s, %s)
-            """, (bet_id, user_id, True, datetime.utcnow()))
+            """, (bet_id, user_id, True, datetime.now(datetime.UTC) if hasattr(datetime, 'UTC') else datetime.utcnow()))
             print("✅ Added to bet_users table (many-to-many)")
         
         conn.commit()
