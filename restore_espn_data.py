@@ -99,7 +99,8 @@ def restore_espn_data(backup_file):
         return True
 
 if __name__ == '__main__':
-    backup_file = 'data/backup_20251101_110041/Historical_Bets.json'
+    # Use the Historical_Bets.json in data directory (has ESPN data from before migration)
+    backup_file = 'data/Historical_Bets.json'
     
     if len(sys.argv) > 1:
         backup_file = sys.argv[1]
