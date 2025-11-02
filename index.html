@@ -2508,12 +2508,16 @@ async function logoutToken() {
       const isSpreadOrML = leg.stat === 'spread' || leg.stat === 'moneyline';
       if (isSpreadOrML) return ''; // Don't show for team bets
       
-      // Look up position
-      const position = playerPositions[leg.player] || '';
+      // Prioritize leg data (from database), fallback to hardcoded dictionaries
+      const position = leg.position || playerPositions[leg.player] || '';
       
-      // Look up team from player mapping
-      const playerTeam = playerTeams[leg.player];
-      const teamAbbr = playerTeam ? getPlayerTeamAbbr(leg.player, playerTeam) : '';
+      // Get team abbreviation - prioritize leg.team
+      let teamAbbr = '';
+      if (leg.team) {
+        teamAbbr = getPlayerTeamAbbr(leg.player, leg.team);
+      } else if (playerTeams[leg.player]) {
+        teamAbbr = getPlayerTeamAbbr(leg.player, playerTeams[leg.player]);
+      }
       
       if (position && teamAbbr) {
         return `${teamAbbr} ${position}`;

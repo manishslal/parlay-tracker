@@ -5,11 +5,11 @@ Fix the 4 remaining players without team/position data
 from app import app, db
 from models import Bet
 
-# Correct data for the 4 missing players
+# Correct data for the 4 players (based on user's info)
 MISSING_PLAYERS = {
     'Bryce Young': {'team': 'Carolina Panthers', 'position': 'QB'},
-    'Jaxson Dart': {'team': 'Ole Miss', 'position': 'QB'},  # College player, not in NFL yet
-    'Cam Ward': {'team': 'Miami (FL)', 'position': 'QB'},  # College player, not in NFL yet
+    'Jaxson Dart': {'team': 'New York Giants', 'position': 'QB'},
+    'Cam Ward': {'team': 'Tennessee Titans', 'position': 'QB'},
     'C.J. Stroud': {'team': 'Houston Texans', 'position': 'QB'}
 }
 
