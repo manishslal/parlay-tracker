@@ -118,10 +118,10 @@ def restore_espn_data(backup_file):
         return True
 
 if __name__ == '__main__':
-    # Use the latest backup folder that has the full data (107KB)
-    backup_file = 'data/backup_20251101_110041/Historical_Bets.json'
+    # Use the main Historical_Bets.json file which has the most complete data
+    backup_file = 'data/Historical_Bets.json'
     
-    print("� Starting ESPN Data Restoration")
-    print(f"� Using backup file: {backup_file}\n")
+    print("🔄 Starting ESPN Data Restoration")
+    print(f"📁 Using backup file: {backup_file}\n")
     
     restore_espn_data(backup_file)
