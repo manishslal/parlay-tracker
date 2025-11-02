@@ -1111,8 +1111,8 @@
       }
       
       .scoreboard-row .game-info {
-        flex: 0 0 calc(33.333% - 0.35rem); /* 3 per row */
-        max-width: calc(33.333% - 0.35rem);
+        flex: 0 0 calc(26.666% - 0.5rem); /* 3 per row, 20% smaller */
+        max-width: calc(26.666% - 0.5rem);
       }
       
       /* Multiple games: center items that wrap to second row (4th item onwards) */
@@ -3052,7 +3052,7 @@ async function logoutToken() {
               let playerDisplay = p.player || p.team || 'N/A';
               
               // Handle total points over/under - show matchup as "player"
-              if (isTotalPoints) {
+              if (isTotalPoints && p.away && p.home) {
                 // Get friendly team names (e.g., "Tampa" instead of "TB", "Saints" instead of "NO")
                 const getFriendlyTeamName = (fullName) => {
                   // Extract the last word (team name) from full name
@@ -3421,7 +3421,7 @@ async function logoutToken() {
         
         const startPress = (e) => {
           // Don't start timer if clicking the collapse arrow
-          if (e.target.classList.contains('collapse-arrow')) {
+          if (e.target.classList.contains('collapse-icon')) {
             return;
           }
           
@@ -3459,7 +3459,7 @@ async function logoutToken() {
         
         const endPress = (e) => {
           // If clicking the collapse arrow, just toggle collapse
-          if (e.target.classList.contains('collapse-arrow')) {
+          if (e.target.classList.contains('collapse-icon')) {
             section.classList.toggle('collapsed');
             return;
           }
