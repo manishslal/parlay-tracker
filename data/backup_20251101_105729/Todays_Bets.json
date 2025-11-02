@@ -1,0 +1,60 @@
+[
+  {
+    "name": "Same Game Parlay",
+    "type": "SGP",
+    "odds": "+208",
+    "wager": 10.0,
+    "returns": 30.89,
+    "betting_site": "FanDuel",
+    "bet_id": "0/0240915/0000062",
+    "legs": [
+      {
+        "game_date": "2025-10-30",
+        "away": "Baltimore Ravens",
+        "home": "Miami Dolphins",
+        "player": "Lamar Jackson",
+        "target": 175,
+        "stat": "passing_yards_alt",
+        "stat_add": "over"
+      },
+      {
+        "game_date": "2025-10-30",
+        "away": "Baltimore Ravens",
+        "home": "Miami Dolphins",
+        "player": "Tua Tagovailoa",
+        "target": 150,
+        "stat": "passing_yards_alt",
+        "stat_add": "over"
+      },
+      {
+        "game_date": "2025-10-30",
+        "away": "Baltimore Ravens",
+        "home": "Miami Dolphins",
+        "player": "Malik Washington",
+        "target": 15,
+        "stat": "receiving_yards_alt",
+        "stat_add": "over"
+      },
+      {
+        "game_date": "2025-10-30",
+        "away": "Baltimore Ravens",
+        "home": "Miami Dolphins",
+        "player": "Derrick Henry",
+        "target": 60,
+        "stat": "rushing_yards_alt",
+        "stat_add": "over"
+      },
+      {
+        "game_date": "2025-10-30",
+        "away": "Baltimore Ravens",
+        "home": "Miami Dolphins",
+        "player": "De'Von Achane",
+        "target": 30,
+        "stat": "rushing_yards_alt",
+        "stat_add": "over"
+      }
+    ],
+    "bet_date": "2025-10-30",
+    "sport": "NFL"
+  }
+]
