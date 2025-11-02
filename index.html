@@ -3411,13 +3411,14 @@ async function logoutToken() {
           pressHandled = false;
           
           if (!selectionMode) {
-            // Not in selection mode: start press-and-hold timer (500ms)
+            // Not in selection mode: start press-and-hold timer (500ms) for FIRST selection
             localPressTimer = setTimeout(() => {
               pressHandled = true;
               selectBet(parlay.db_id);
-              // Auto-collapse when selected
-              section.classList.add('collapsed');
             }, 500);
+          } else {
+            // Already in selection mode: no timer needed, will toggle on tap
+            // Don't set pressHandled, let endPress handle the tap
           }
         };
         
@@ -3435,14 +3436,8 @@ async function logoutToken() {
           
           // Short tap behavior
           if (selectionMode) {
-            // In selection mode: toggle selection
+            // In selection mode: toggle selection immediately (no hold needed)
             toggleBetSelection(parlay.db_id);
-            // Auto-collapse when selected, auto-expand when deselected
-            if (selectedBets.has(parlay.db_id)) {
-              section.classList.add('collapsed');
-            } else {
-              section.classList.remove('collapsed');
-            }
           } else {
             // Normal mode: toggle collapse/expand
             section.classList.toggle('collapsed');

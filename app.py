@@ -1197,22 +1197,28 @@ def historical():
             app.logger.warning("No historical parlays found")
             return jsonify([])
         
-        # Separate bets by api_fetched status
-        # Only call ESPN API for bets that haven't been fetched yet (api_fetched='No')
-        bets_already_fetched = []  # api_fetched='Yes'
-        bets_needing_fetch = []     # api_fetched='No'
+        # For historical bets, check if they actually have final results stored
+        # Even if api_fetched='Yes', they might not have current values saved
+        bets_with_results = []  # Has 'current' or 'final_value' in legs
+        bets_needing_fetch = [] # Missing final results
         
-        # Get the actual Bet objects to check api_fetched column
+        # Get the actual Bet objects
         bet_objects = {bet.id: bet for bet in bets}
         
         for parlay in historical_parlays:
-            bet_obj = bet_objects.get(parlay.get('db_id'))
-            if bet_obj and bet_obj.api_fetched == 'Yes':
-                bets_already_fetched.append(parlay)
+            # Check if legs have final results
+            has_results = False
+            for leg in parlay.get('legs', []):
+                if 'current' in leg or 'final_value' in leg or 'result' in leg:
+                    has_results = True
+                    break
+            
+            if has_results:
+                bets_with_results.append(parlay)
             else:
                 bets_needing_fetch.append(parlay)
         
-        app.logger.info(f"Historical bets: {len(bets_already_fetched)} already fetched, "
+        app.logger.info(f"Historical bets: {len(bets_with_results)} have results, "
                        f"{len(bets_needing_fetch)} need ESPN fetch")
         
         # Try to fetch ESPN data for bets that haven't been fetched yet
@@ -1243,13 +1249,16 @@ def historical():
                     if 'games' not in parlay:
                         parlay['games'] = []
         
-        # For bets already fetched, add empty games array (no live data needed)
-        for parlay in bets_already_fetched:
+        # For bets with results, just add empty games array (display uses stored data)
+        processed_with_results = []
+        for parlay in bets_with_results:
+            # Add empty games array (no live ESPN data needed for completed bets)
             if 'games' not in parlay:
                 parlay['games'] = []
+            processed_with_results.append(parlay)
         
         # Combine all historical bets
-        all_historical = bets_already_fetched + processed
+        all_historical = processed_with_results + processed
         app.logger.info(f"Total historical bets to return: {len(all_historical)}")
         
         # Sort and return
