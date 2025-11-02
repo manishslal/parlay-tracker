@@ -1100,8 +1100,8 @@ def register():
         return jsonify({'error': 'Email already exists'}), 400
     
     try:
-        # Store username in lowercase for consistency
-        user = User(username=username.lower(), email=email.lower())
+        # Store username with original capitalization (but check uniqueness case-insensitively)
+        user = User(username=username, email=email.lower())
         user.set_password(password)
         db.session.add(user)
         db.session.commit()
