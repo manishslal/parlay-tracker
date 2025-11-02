@@ -93,12 +93,27 @@ def restore_espn_data(backup_file):
         # Commit all changes
         db.session.commit()
         
+        # Count total bets with ESPN data now
+        all_completed = Bet.query.filter_by(status='completed').all()
+        total_with_data = 0
+        for bet in all_completed:
+            bet_data = bet.get_bet_data()
+            for leg in bet_data.get('legs', []):
+                if 'current' in leg and leg.get('current') is not None:
+                    total_with_data += 1
+                    break
+        
         print(f"\n✅ Restore complete!")
         print(f"  ✅ Updated: {updated_count} bets")
-        print(f"  ⏭️  Skipped: {skipped_count} bets")
+        print(f"  ⏭️  Skipped (no backup match): {skipped_count} bets")
+        print(f"  ⏭️  Already had data: {already_have_data} bets")
         print(f"\n📊 Final stats:")
-        print(f"  Total completed bets: {Bet.query.filter_by(status='completed').count()}")
-        print(f"  Bets with ESPN data: {updated_count}")
+        print(f"  Total completed bets: {len(all_completed)}")
+        print(f"  Bets with ESPN data: {total_with_data} ({total_with_data/len(all_completed)*100:.1f}%)")
+        print(f"  Bets without ESPN data: {len(all_completed) - total_with_data}")
+        
+        if total_with_data == len(all_completed):
+            print(f"\n🎉 ALL HISTORICAL BETS NOW HAVE ESPN DATA! 🎉")
         
         return True
 
