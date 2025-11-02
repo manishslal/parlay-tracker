@@ -47,15 +47,37 @@ with app.app_context():
     bet_65 = Bet.query.join(User).filter(Bet.bet_data.cast(db.String).like('%O/0240915/0000065%')).first()
     
     if bet_64:
+        bet_data_64 = bet_64.get_bet_data()
         print(f"✅ Found bet O/0240915/0000064 (7 leg parlay)")
-        print(f"   DB ID: {bet_64.id}, Status: {bet_64.status}")
+        print(f"   DB ID: {bet_64.id}")
+        print(f"   Status: {bet_64.status}")
+        print(f"   is_active: {bet_64.is_active}")
+        print(f"   is_archived: {bet_64.is_archived}")
+        print(f"   User ID: {bet_64.user_id}")
+        print(f"   Wager: ${bet_data_64.get('wager', 0):.2f}")
     else:
         print(f"❌ Bet O/0240915/0000064 NOT FOUND")
     
     if bet_65:
-        print(f"✅ Found bet O/0240915/0000065 (15 leg SGP+)")
-        print(f"   DB ID: {bet_65.id}, Status: {bet_65.status}")
+        bet_data_65 = bet_65.get_bet_data()
+        print(f"\n✅ Found bet O/0240915/0000065 (15 leg SGP+)")
+        print(f"   DB ID: {bet_65.id}")
+        print(f"   Status: {bet_65.status}")
+        print(f"   is_active: {bet_65.is_active}")
+        print(f"   is_archived: {bet_65.is_archived}")
+        print(f"   User ID: {bet_65.user_id}")
+        print(f"   Wager: ${bet_data_65.get('wager', 0):.2f}")
     else:
         print(f"❌ Bet O/0240915/0000065 NOT FOUND")
+    
+    # Check for bets with is_active filter
+    print(f"\n{'-'*80}")
+    print(f"ACTIVE BETS (is_active=True, is_archived=False):")
+    print(f"{'-'*80}\n")
+    active_bets = Bet.query.filter_by(is_active=True, is_archived=False).all()
+    print(f"Total active bets: {len(active_bets)}")
+    for bet in active_bets[:5]:
+        bet_data = bet.get_bet_data()
+        print(f"  - ID {bet.id}: {bet_data.get('name', 'N/A')} (Status: {bet.status})")
     
     print(f"\n{'='*80}\n")
