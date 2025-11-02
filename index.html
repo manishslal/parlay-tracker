@@ -3039,7 +3039,7 @@ async function logoutToken() {
               
               // Check if this is a total points over/under bet
               const isTotalPoints = p.stat === 'total_points' || p.stat === 'total_points_under' || p.stat === 'total_points_over';
-              const statAdd = p.stat_add || null;
+              const statAdd = p.stat_add || p.over_under || null;
               
               // Get game data for this leg
               const gameData = parlay.games ? parlay.games.find(g => 
@@ -3319,7 +3319,7 @@ async function logoutToken() {
               
               // Get team and position for player props
               const teamPosition = getPlayerTeamPosition(p);
-              const playerCellContent = p.player || p.team || 'N/A';
+              const playerCellContent = playerDisplay; // Use the same logic as playerDisplay
               const playerCellHTML = teamPosition ? 
                 `<div>${playerCellContent}</div><div style="font-size:0.65rem;color:#999;margin-top:0.15rem;">${teamPosition}</div>` : 
                 playerCellContent;
