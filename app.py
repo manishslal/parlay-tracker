@@ -274,8 +274,11 @@ def save_final_results_to_bet(bet, processed_data):
     return False
 
 def auto_move_completed_bets(user_id):
-    """Automatically move bets to 'completed' status when all their games have ended
+    """Automatically move bets to historical when:
+    1. Any leg is a confirmed loss (Miss) - bet is dead, but keep fetching until all games finish
+    2. All games have finished (STATUS_FINAL) - bet outcome is final
     
+    This moves bets immediately rather than waiting until the next day.
     Also saves final game results before moving to completed status.
     """
     try:
@@ -297,38 +300,132 @@ def auto_move_completed_bets(user_id):
             if not legs:
                 continue
             
-            # Check if all games have ended (all game_dates are in the past)
-            all_games_ended = True
-            for leg in legs:
-                game_date_str = leg.get('game_date', '')
-                if game_date_str:
-                    try:
-                        # Parse game date (format: YYYY-MM-DD)
-                        game_date = datetime.strptime(game_date_str, '%Y-%m-%d').date()
-                        # If game date is today or future, games haven't ended
-                        if game_date >= today:
-                            all_games_ended = False
-                            break
-                    except ValueError:
-                        # If date parsing fails, skip this leg
-                        continue
+            # Find matching processed data for this bet
+            matching_processed = None
+            for p in processed_data:
+                if p.get('bet_id') == bet_data.get('bet_id') or p.get('name') == bet_data.get('name'):
+                    matching_processed = p
+                    break
             
-            # If all games have ended, save final results and move to completed
-            if all_games_ended and legs:  # Make sure there are legs to check
-                app.logger.info(f"Auto-moving bet {bet.id} to completed (all games ended)")
+            if not matching_processed:
+                continue
+            
+            # Check two conditions for moving to historical:
+            # 1. Does any leg have a confirmed loss (Miss)?
+            # 2. Are all games finished (STATUS_FINAL)?
+            
+            has_confirmed_loss = False
+            all_games_finished = True
+            games_data = matching_processed.get('games', [])
+            
+            for i, leg in enumerate(legs):
+                # Find corresponding processed leg
+                processed_leg = matching_processed.get('legs', [])[i] if i < len(matching_processed.get('legs', [])) else None
                 
-                # Save final results before marking as completed
-                save_final_results_to_bet(bet, processed_data)
+                if not processed_leg:
+                    continue
                 
+                # Find game data for this leg
+                game_data = None
+                for game in games_data:
+                    if (game.get('teams', {}).get('away') == leg.get('away') and 
+                        game.get('teams', {}).get('home') == leg.get('home')):
+                        game_data = game
+                        break
+                
+                if not game_data:
+                    # No game data means game not finished yet
+                    all_games_finished = False
+                    continue
+                
+                game_status = game_data.get('statusTypeName', '')
+                
+                # Check if game is finished
+                if game_status != 'STATUS_FINAL':
+                    all_games_finished = False
+                else:
+                    # Game is final - check if this leg is a loss
+                    is_spread_or_ml = leg.get('stat') in ['spread', 'moneyline']
+                    current = processed_leg.get('current', 0)
+                    target = leg.get('target', 0)
+                    
+                    if is_spread_or_ml:
+                        # For spread/moneyline, check if bet lost
+                        score_diff = leg.get('score_diff', processed_leg.get('score_diff', 0))
+                        
+                        if leg.get('stat') == 'moneyline':
+                            # Moneyline: team must win (score_diff > 0)
+                            if score_diff <= 0:
+                                has_confirmed_loss = True
+                                app.logger.info(f"Bet {bet.id} - Leg {i+1} MISS (moneyline lost)")
+                        elif leg.get('stat') == 'spread':
+                            # Spread: (score_diff + spread) must be > 0
+                            if (score_diff + target) <= 0:
+                                has_confirmed_loss = True
+                                app.logger.info(f"Bet {bet.id} - Leg {i+1} MISS (spread not covered)")
+                    else:
+                        # For regular player props/totals
+                        # Check if final and missed target
+                        if target > 0:
+                            pct = (current / target) * 100
+                            
+                            # Check for over/under bets
+                            stat_add = leg.get('stat_add') or leg.get('over_under')
+                            
+                            if leg.get('stat') in ['total_points', 'total_points_under', 'total_points_over']:
+                                # Total points bet
+                                is_under = stat_add == 'under' or leg.get('stat') == 'total_points_under'
+                                is_over = stat_add == 'over' or leg.get('stat') == 'total_points_over'
+                                
+                                if is_under and current >= target:
+                                    has_confirmed_loss = True
+                                    app.logger.info(f"Bet {bet.id} - Leg {i+1} MISS (total under failed)")
+                                elif is_over and current <= target:
+                                    has_confirmed_loss = True
+                                    app.logger.info(f"Bet {bet.id} - Leg {i+1} MISS (total over failed)")
+                            elif stat_add == 'under':
+                                # Player stat under
+                                if current >= target:
+                                    has_confirmed_loss = True
+                                    app.logger.info(f"Bet {bet.id} - Leg {i+1} MISS (under failed)")
+                            else:
+                                # Regular over bet or no stat_add (assume over)
+                                if current < target:
+                                    has_confirmed_loss = True
+                                    app.logger.info(f"Bet {bet.id} - Leg {i+1} MISS (target not reached)")
+            
+            # Decide whether to move to historical
+            should_move = False
+            move_reason = ""
+            
+            if has_confirmed_loss:
+                should_move = True
+                move_reason = "has confirmed loss"
+                # Don't mark as fully complete yet if games are still in progress
+                # This allows continued ESPN fetching until all games finish
+                if not all_games_finished:
+                    bet.status = 'live'  # Keep as live to continue fetching
+                    bet.api_fetched = 'No'  # Keep fetching until all games done
+                else:
+                    bet.status = 'completed'
+                    bet.api_fetched = 'Yes'
+                    save_final_results_to_bet(bet, processed_data)
+            elif all_games_finished:
+                should_move = True
+                move_reason = "all games finished"
                 bet.status = 'completed'
+                bet.api_fetched = 'Yes'
+                save_final_results_to_bet(bet, processed_data)
+            
+            if should_move:
+                app.logger.info(f"Auto-moving bet {bet.id} to historical ({move_reason})")
                 bet.is_active = False  # Move to historical
-                bet.api_fetched = 'Yes'  # Mark as fetched (we just processed it)
                 updated_count += 1
         
         # Commit all changes at once
         if updated_count > 0:
             db.session.commit()
-            app.logger.info(f"Auto-moved {updated_count} bets to completed status with final results")
+            app.logger.info(f"Auto-moved {updated_count} bets to historical")
             
     except Exception as e:
         app.logger.error(f"Error auto-moving completed bets: {e}")
@@ -1246,82 +1343,100 @@ def historical():
             app.logger.warning("No historical parlays found")
             return jsonify([])
         
-        # For historical bets, check if they actually have final results stored
-        # Even if api_fetched='Yes', they might not have current values saved
-        bets_with_results = []  # Has 'current' or 'final_value' in legs
-        bets_needing_fetch = [] # Missing final results
+        # For historical bets, separate into three categories:
+        # 1. Bets with complete final data (no fetch needed)
+        # 2. Bets marked api_fetched='No' (still need live updates - e.g., lost bet with unfinished games)
+        # 3. Newly added old bets without data (fetch once to get historical data)
+        
+        bets_with_results = []  # Complete data - no fetch needed
+        bets_needing_live_fetch = []  # api_fetched='No' - continue fetching
+        bets_needing_initial_fetch = []  # New old bets - fetch once
         
         # Get the actual Bet objects
         bet_objects = {bet.id: bet for bet in bets}
         
         for parlay in historical_parlays:
-            # Check if legs have final results
-            has_results = False
-            for leg in parlay.get('legs', []):
-                if 'current' in leg or 'final_value' in leg or 'result' in leg:
-                    has_results = True
-                    break
+            bet_obj = bet_objects.get(parlay.get('db_id'))
             
-            if has_results:
+            # Check if bet explicitly needs continued fetching (lost bet with games still in progress)
+            if bet_obj and bet_obj.api_fetched == 'No':
+                app.logger.info(f"Bet {parlay.get('name')} marked for continued ESPN fetch (lost bet with games in progress)")
+                bets_needing_live_fetch.append(parlay)
+                continue
+            
+            # Check if legs have final results stored
+            if has_complete_final_data(parlay):
                 bets_with_results.append(parlay)
             else:
-                bets_needing_fetch.append(parlay)
+                # Newly added old bet or bet without data yet
+                bets_needing_initial_fetch.append(parlay)
         
-        app.logger.info(f"Historical bets: {len(bets_with_results)} have complete data, "
-                       f"{len(bets_needing_fetch)} missing final stats")
+        app.logger.info(f"Historical bets: {len(bets_with_results)} complete, "
+                       f"{len(bets_needing_live_fetch)} need live updates, "
+                       f"{len(bets_needing_initial_fetch)} need initial fetch")
         
-        # Try to fetch ESPN data ONLY for bets that don't have complete final data
-        # This handles cases like:
-        # - User added old bet retroactively (give ESPN a chance to fetch historical data)
-        # - Bet was marked complete before ESPN fetch happened
-        # But SKIP fetching if bet already has complete final data (hardcoded stats)
+        # Fetch ESPN data for bets that need it
+        # This includes:
+        # 1. Bets with api_fetched='No' (lost bets with games still in progress - need live updates)
+        # 2. Newly added old bets without data (fetch once to get historical data)
         processed = []
-        if bets_needing_fetch:
-            app.logger.info(f"Checking {len(bets_needing_fetch)} historical bets for ESPN fetch eligibility")
+        bets_to_fetch = bets_needing_live_fetch + bets_needing_initial_fetch
+        
+        if bets_to_fetch:
+            app.logger.info(f"Fetching ESPN data for {len(bets_to_fetch)} historical bets")
             
-            # Separate: bets that truly need fetch vs bets that have complete data
-            truly_need_fetch = []
-            already_complete = []
-            
-            for parlay in bets_needing_fetch:
-                if has_complete_final_data(parlay):
-                    app.logger.info(f"Bet {parlay.get('name')} already has complete final data - skipping ESPN fetch")
-                    already_complete.append(parlay)
+            for parlay in bets_to_fetch:
+                bet_obj = bet_objects.get(parlay.get('db_id'))
+                is_live_fetch = bet_obj and bet_obj.api_fetched == 'No'
+                
+                if is_live_fetch:
+                    app.logger.info(f"Live fetch for {parlay.get('name')} (lost bet with games in progress)")
                 else:
-                    app.logger.info(f"Bet {parlay.get('name')} missing final data - will fetch from ESPN")
-                    truly_need_fetch.append(parlay)
+                    app.logger.info(f"Initial fetch for {parlay.get('name')} (newly added old bet)")
             
-            # Only fetch for bets that truly need it (newly added past bets)
-            if truly_need_fetch:
-                app.logger.info(f"Fetching ESPN data for {len(truly_need_fetch)} historical bets (newly added past bets)")
-                try:
-                    processed = process_parlay_data(truly_need_fetch)
-                    
-                    # Save final results and mark as fetched
-                    for parlay in processed:
-                        bet_obj = bet_objects.get(parlay.get('db_id'))
-                        if bet_obj:
-                            # Save the fetched data as final results
+            try:
+                processed = process_parlay_data(bets_to_fetch)
+                
+                # Process each fetched bet
+                for parlay in processed:
+                    bet_obj = bet_objects.get(parlay.get('db_id'))
+                    if bet_obj:
+                        is_live_fetch = bet_obj.api_fetched == 'No'
+                        
+                        if is_live_fetch:
+                            # For lost bets with games still in progress, check if all games are now finished
+                            all_finished = True
+                            for game in parlay.get('games', []):
+                                if game.get('statusTypeName') != 'STATUS_FINAL':
+                                    all_finished = False
+                                    break
+                            
+                            if all_finished:
+                                # All games finished - save final results and mark as complete
+                                save_final_results_to_bet(bet_obj, [parlay])
+                                bet_obj.api_fetched = 'Yes'
+                                bet_obj.status = 'completed'
+                                app.logger.info(f"✅ All games finished for {parlay.get('name')} - saved final results")
+                            else:
+                                # Games still in progress - keep fetching
+                                app.logger.info(f"⏳ Games still in progress for {parlay.get('name')} - will continue fetching")
+                        else:
+                            # Initial fetch for newly added old bet - save results
                             save_final_results_to_bet(bet_obj, [parlay])
                             bet_obj.api_fetched = 'Yes'
-                    
-                    db.session.commit()
-                    app.logger.info(f"✅ Fetched and saved final results for {len(processed)} bets")
-                    
-                except Exception as e:
-                    app.logger.error(f"Error processing historical bets: {str(e)}")
-                    # If processing fails, use unprocessed data
-                    processed = truly_need_fetch
-                    # Add empty games array for frontend compatibility
-                    for parlay in processed:
-                        if 'games' not in parlay:
-                            parlay['games'] = []
-            
-            # Add already complete bets to processed list (no fetch needed)
-            for parlay in already_complete:
-                if 'games' not in parlay:
-                    parlay['games'] = []
-                processed.append(parlay)
+                            app.logger.info(f"✅ Saved initial data for {parlay.get('name')}")
+                
+                db.session.commit()
+                app.logger.info(f"✅ Processed {len(processed)} historical bets")
+                
+            except Exception as e:
+                app.logger.error(f"Error processing historical bets: {str(e)}")
+                # If processing fails, use unprocessed data
+                processed = bets_to_fetch
+                # Add empty games array for frontend compatibility
+                for parlay in processed:
+                    if 'games' not in parlay:
+                        parlay['games'] = []
         
         # For bets with results, just add empty games array (display uses stored data)
         processed_with_results = []
