@@ -1426,6 +1426,7 @@
     let authCheckComplete = false;
     let isAuthenticated = false;
     let authCheckPromise = null;
+    let isRedirecting = false;
     
     authCheckPromise = (async function checkAuth() {
       try {
@@ -1435,8 +1436,11 @@
         const data = await response.json();
         
         if (!data.authenticated) {
-          // Not logged in, redirect to login page
-          window.location.href = '/login.html';
+          // Not logged in, redirect to login page (only once)
+          if (!isRedirecting) {
+            isRedirecting = true;
+            window.location.href = '/login.html';
+          }
           throw new Error('Not authenticated');
         }
         
@@ -2198,7 +2202,12 @@
     // Authentication is now handled via session cookies
     // See auth check at the top of the script
 
+let isLoggingOut = false;
+
 async function logoutToken() {
+  if (isLoggingOut) return; // Prevent double-clicks
+  isLoggingOut = true;
+  
   try {
     await fetch('/auth/logout', {
       method: 'POST',
@@ -3406,9 +3415,22 @@ async function logoutToken() {
         // Add press-and-hold selection + collapse/expand functionality
         let localPressTimer = null;
         let pressHandled = false;
+        let startX = 0;
+        let startY = 0;
+        const MOVEMENT_THRESHOLD = 10; // pixels of movement to cancel press
         
         const startPress = (e) => {
+          // Don't start timer if clicking the collapse arrow
+          if (e.target.classList.contains('collapse-arrow')) {
+            return;
+          }
+          
           pressHandled = false;
+          
+          // Record starting position for scroll detection
+          const touch = e.touches ? e.touches[0] : e;
+          startX = touch.clientX;
+          startY = touch.clientY;
           
           if (!selectionMode) {
             // Not in selection mode: start press-and-hold timer (500ms) for FIRST selection
@@ -3422,7 +3444,26 @@ async function logoutToken() {
           }
         };
         
+        const checkMovement = (e) => {
+          if (!localPressTimer) return;
+          
+          const touch = e.touches ? e.touches[0] : e;
+          const deltaX = Math.abs(touch.clientX - startX);
+          const deltaY = Math.abs(touch.clientY - startY);
+          
+          // If user moved more than threshold, cancel the press (they're scrolling)
+          if (deltaX > MOVEMENT_THRESHOLD || deltaY > MOVEMENT_THRESHOLD) {
+            cancelPress();
+          }
+        };
+        
         const endPress = (e) => {
+          // If clicking the collapse arrow, just toggle collapse
+          if (e.target.classList.contains('collapse-arrow')) {
+            section.classList.toggle('collapsed');
+            return;
+          }
+          
           if (localPressTimer) {
             clearTimeout(localPressTimer);
             localPressTimer = null;
@@ -3437,10 +3478,15 @@ async function logoutToken() {
           // Short tap behavior
           if (selectionMode) {
             // In selection mode: toggle selection immediately (no hold needed)
+            // Keep collapsed state if already collapsed
+            const wasCollapsed = section.classList.contains('collapsed');
             toggleBetSelection(parlay.db_id);
+            if (wasCollapsed) {
+              section.classList.add('collapsed');
+            }
           } else {
-            // Normal mode: toggle collapse/expand
-            section.classList.toggle('collapsed');
+            // Normal mode: do nothing (collapse is handled by arrow only)
+            // Could add some feedback here if needed
           }
         };
         
@@ -3457,25 +3503,27 @@ async function logoutToken() {
         if (header._pressHandlers) {
           const old = header._pressHandlers;
           header.removeEventListener('touchstart', old.startPress);
+          header.removeEventListener('touchmove', old.checkMovement);
           header.removeEventListener('touchend', old.endPress);
           header.removeEventListener('touchcancel', old.cancelPress);
-          header.removeEventListener('touchmove', old.cancelPress);
           header.removeEventListener('mousedown', old.startPress);
+          header.removeEventListener('mousemove', old.checkMovement);
           header.removeEventListener('mouseup', old.endPress);
           header.removeEventListener('mouseleave', old.cancelPress);
         }
         
         // Store handlers for future cleanup
-        header._pressHandlers = { startPress, endPress, cancelPress };
+        header._pressHandlers = { startPress, checkMovement, endPress, cancelPress };
         
         // Touch events for mobile
         header.addEventListener('touchstart', startPress, { passive: true });
+        header.addEventListener('touchmove', checkMovement, { passive: true }); // Check for scrolling
         header.addEventListener('touchend', endPress);
         header.addEventListener('touchcancel', cancelPress);
-        header.addEventListener('touchmove', cancelPress); // Cancel if user scrolls
         
         // Mouse events for desktop
         header.addEventListener('mousedown', startPress);
+        header.addEventListener('mousemove', checkMovement);
         header.addEventListener('mouseup', endPress);
         header.addEventListener('mouseleave', cancelPress);
         
