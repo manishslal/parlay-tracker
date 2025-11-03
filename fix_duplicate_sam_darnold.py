@@ -45,28 +45,42 @@ def fix_duplicate_leg():
         print(f"\n✅ Found bet (DB ID: {db_bet_id})")
         print(f"Current legs: {len(bet_data['legs'])}")
         
-        # Show current legs
+        # Show current legs with raw stat field
         print("\nCurrent legs:")
         for i, leg in enumerate(bet_data['legs'], 1):
             stat_display = leg['stat'].replace('_', ' ').title()
             addon = f" ({leg['stat_add']})" if leg.get('stat_add') else ""
             print(f"  {i}. {leg['player']} - {stat_display} {leg['target']}{addon}")
+            print(f"      [Raw stat: '{leg['stat']}']")
         
-        # Remove the duplicate Sam Darnold leg (the second one at index 1)
+        # Remove the duplicate Sam Darnold leg (the second one)
         original_count = len(bet_data['legs'])
         
-        # Find and remove duplicate Sam Darnold entries
-        # Keep only the first one
-        seen_legs = []
+        # Specifically look for Sam Darnold 200+ passing yards and keep only the FIRST occurrence
+        sam_darnold_200_count = 0
         unique_legs = []
         
         for leg in bet_data['legs']:
-            leg_key = (leg['player'], leg['stat'], leg['target'], leg.get('stat_add'))
-            if leg_key not in seen_legs:
-                seen_legs.append(leg_key)
-                unique_legs.append(leg)
+            # Check if this is a Sam Darnold 200+ passing yards leg
+            is_sam_200 = (
+                leg.get('player') == 'Sam Darnold' and
+                leg.get('target') == 200 and
+                leg.get('stat_add') == 'over' and
+                'passing' in leg.get('stat', '').lower()
+            )
+            
+            if is_sam_200:
+                sam_darnold_200_count += 1
+                if sam_darnold_200_count == 1:
+                    # Keep the first one
+                    unique_legs.append(leg)
+                    print(f"\n✓ Keeping first Sam Darnold 200+ passing yards")
+                else:
+                    # Skip duplicates
+                    print(f"\n🗑️  Removing duplicate: {leg['player']} - {leg['stat']} {leg['target']} {leg.get('stat_add', '')}")
             else:
-                print(f"\n🗑️  Removing duplicate: {leg['player']} - {leg['stat']} {leg['target']} {leg.get('stat_add', '')}")
+                # Keep all non-Sam-Darnold-200 legs
+                unique_legs.append(leg)
         
         bet_data['legs'] = unique_legs
         
