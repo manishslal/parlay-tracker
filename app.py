@@ -1291,7 +1291,7 @@ def live():
         current_user,
         is_active=True,
         is_archived=False,
-        status=['live', 'pending']
+        status='live'
     ).all()
     # Convert Bet objects to dict format with db_id included
     live_parlays = [bet.to_dict() for bet in bets]
