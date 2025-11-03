@@ -1944,6 +1944,48 @@ def serve_media(filename):
     """Serve other media files"""
     return send_from_directory('media', filename)
 
+@app.route("/admin/fix-duplicate-leg/<bet_db_id>")
+@login_required
+def fix_duplicate_leg(bet_db_id):
+    """Remove duplicate legs from a bet"""
+    try:
+        bet = Bet.query.get(int(bet_db_id))
+        if not bet:
+            return jsonify({"error": "Bet not found"}), 404
+        
+        bet_data = bet.bet_data
+        original_count = len(bet_data.get('legs', []))
+        
+        # Remove duplicates based on player, stat, target, and stat_add
+        seen_legs = []
+        unique_legs = []
+        duplicates = []
+        
+        for leg in bet_data.get('legs', []):
+            leg_key = (leg.get('player'), leg.get('stat'), leg.get('target'), leg.get('stat_add'))
+            if leg_key not in seen_legs:
+                seen_legs.append(leg_key)
+                unique_legs.append(leg)
+            else:
+                duplicates.append(f"{leg.get('player')} - {leg.get('stat')} {leg.get('target')}")
+        
+        if len(duplicates) == 0:
+            return jsonify({"message": "No duplicates found", "leg_count": original_count})
+        
+        # Update bet data
+        bet_data['legs'] = unique_legs
+        bet.bet_data = bet_data
+        db.session.commit()
+        
+        return jsonify({
+            "message": "Duplicates removed",
+            "original_legs": original_count,
+            "current_legs": len(unique_legs),
+            "removed": duplicates
+        })
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 if __name__ == "__main__":
     # Initialize database tables
     with app.app_context():
