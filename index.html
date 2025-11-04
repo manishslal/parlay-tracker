@@ -56,7 +56,7 @@
     /* Hamburger Menu Button */
     .menu-button {
       position: fixed;
-      top: 1rem;
+      top: calc(1rem + env(safe-area-inset-top));
       right: 1rem;
       background: var(--primary);
       color: #fff;
@@ -570,6 +570,20 @@
       transition: transform 0.2s ease, border 0.2s ease, box-shadow 0.2s ease;
     }
     
+    /* Winning bet styling */
+    .parlay-section.won {
+      border: 3px solid transparent !important;
+      background-image: linear-gradient(var(--parlay-bg), var(--parlay-bg)), 
+                        linear-gradient(135deg, #DAA520 0%, #FFD700 50%, #DAA520 100%);
+      background-origin: border-box;
+      background-clip: padding-box, border-box;
+    }
+    
+    .parlay-section.won .parlay-header,
+    .parlay-section.won .parlay-footer {
+      background: rgba(70, 130, 180, 0.3) !important; /* Light blue tint */
+    }
+    
     /* Select button with selection */
     #select-dropdown-btn.has-selection {
       background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
@@ -644,6 +658,66 @@
     
     .pull-refresh.active {
       opacity: 1;
+    }
+    
+    /* Profile page styles */
+    .profile-header {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 2rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid var(--border);
+    }
+    
+    .back-button {
+      padding: 0.5rem 1rem;
+      background: var(--surface);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      transition: all 0.2s;
+    }
+    
+    .back-button:hover {
+      background: var(--primary);
+      color: #fff;
+      border-color: var(--primary);
+    }
+    
+    .profile-header h2 {
+      margin: 0;
+      color: var(--text);
+      font-size: 1.5rem;
+    }
+    
+    .profile-content {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+    
+    .profile-section {
+      background: var(--surface);
+      padding: 1.5rem;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+    }
+    
+    .profile-label {
+      font-size: 0.85rem;
+      color: #888;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 0.5rem;
+    }
+    
+    .profile-value {
+      font-size: 1.1rem;
+      color: var(--text);
+      font-weight: 500;
     }
     
     .tabs {
@@ -817,6 +891,8 @@
       cursor: pointer;
       z-index: 10;
       transition: background 0.2s;
+      min-width: 95px; /* Fixed width to prevent button movement */
+      text-align: center; /* Center text within fixed width */
     }
     .show-scores-btn:hover {
       background: rgba(20, 13, 82, 1);
@@ -1336,8 +1412,6 @@
       <span class="menu-item-text">Add New Bet</span>
     </div>
     
-    <div class="menu-divider"></div>
-    
     <div class="menu-item" id="theme-toggle">
       <span class="menu-item-icon">🌙</span>
       <span class="menu-item-text" id="theme-text">Light Mode</span>
@@ -1345,7 +1419,13 @@
     
     <div class="menu-divider"></div>
     
+    <div class="menu-item" id="profile-item" style="display:none;">
+      <span class="menu-item-icon">👤</span>
+      <span class="menu-item-text">Profile</span>
+    </div>
+    
     <div class="menu-item" id="logout-item" style="display:none;">
+      <span class="menu-item-icon">🚪</span>
       <span class="menu-item-text">Logout</span>
     </div>
   </div>
@@ -1416,6 +1496,25 @@
     <div id="parlay-sections" class="tab-content active" data-tab="current"></div>
     <div id="historical-sections" class="tab-content" data-tab="historical" style="display:none"></div>
     <div id="archived-sections" class="tab-content" data-tab="archived" style="display:none"></div>
+    
+    <!-- Profile Page -->
+    <div id="profile-page" style="display:none;">
+      <div class="profile-header">
+        <button class="back-button" id="back-to-bets">← Back to Bets</button>
+        <h2>Profile</h2>
+      </div>
+      <div class="profile-content">
+        <div class="profile-section">
+          <div class="profile-label">Username</div>
+          <div class="profile-value" id="profile-username">-</div>
+        </div>
+        <div class="profile-section">
+          <div class="profile-label">Email</div>
+          <div class="profile-value" id="profile-email">-</div>
+        </div>
+      </div>
+    </div>
+    
     <div style="text-align: right; margin-top: 2rem;">
       <button id="move-completed-button">Move Completed to History</button>
     </div>
@@ -2202,6 +2301,54 @@
     // Authentication is now handled via session cookies
     // See auth check at the top of the script
 
+// Profile page functions
+function showProfilePage() {
+  // Hide main content areas
+  document.getElementById('parlay-sections').style.display = 'none';
+  document.getElementById('historical-sections').style.display = 'none';
+  document.getElementById('archived-sections').style.display = 'none';
+  document.querySelector('.tabs').style.display = 'none';
+  document.querySelector('.toolbar').style.display = 'none';
+  document.querySelector('.button-container').style.display = 'none';
+  document.getElementById('move-completed-button').parentElement.style.display = 'none';
+  
+  // Show profile page
+  const profilePage = document.getElementById('profile-page');
+  profilePage.style.display = 'block';
+  
+  // Populate profile data
+  if (window.currentUser) {
+    document.getElementById('profile-username').textContent = window.currentUser.username || '-';
+    document.getElementById('profile-email').textContent = window.currentUser.email || '-';
+  }
+  
+  // Close side menu
+  closeSideMenu();
+}
+
+function showBetsPage() {
+  // Show main content areas
+  const activeTab = document.querySelector('.tab.active');
+  const activeTabName = activeTab ? activeTab.dataset.tab : 'current';
+  
+  document.querySelector('.tabs').style.display = 'flex';
+  document.querySelector('.toolbar').style.display = 'block';
+  document.querySelector('.button-container').style.display = 'flex';
+  document.getElementById('move-completed-button').parentElement.style.display = 'block';
+  
+  // Show the correct tab content
+  if (activeTabName === 'current') {
+    document.getElementById('parlay-sections').style.display = 'block';
+  } else if (activeTabName === 'historical') {
+    document.getElementById('historical-sections').style.display = 'block';
+  } else if (activeTabName === 'archived') {
+    document.getElementById('archived-sections').style.display = 'block';
+  }
+  
+  // Hide profile page
+  document.getElementById('profile-page').style.display = 'none';
+}
+
 let isLoggingOut = false;
 
 async function logoutToken() {
@@ -2227,6 +2374,21 @@ async function logoutToken() {
   const logoutItem = document.getElementById('logout-item');
   logoutItem.style.display = 'flex';
   logoutItem.addEventListener('click', logoutToken);
+})();
+
+// Setup profile item
+(function setupProfile(){
+  const profileItem = document.getElementById('profile-item');
+  profileItem.style.display = 'flex';
+  profileItem.addEventListener('click', function() {
+    showProfilePage();
+  });
+  
+  // Setup back button
+  const backButton = document.getElementById('back-to-bets');
+  backButton.addEventListener('click', function() {
+    showBetsPage();
+  });
 })();
 
 // Setup add bet button
@@ -2795,12 +2957,32 @@ async function logoutToken() {
           // Mobile: prioritize bet_date field
           if (parlay.bet_date) {
             try {
-              const betDate = new Date(parlay.bet_date);
+              // Validate and sanitize date string before parsing
+              let dateStr = String(parlay.bet_date).trim();
+              
+              // Handle common date formats
+              let betDate;
+              if (dateStr.includes('-')) {
+                // ISO format YYYY-MM-DD
+                betDate = new Date(dateStr + 'T00:00:00');
+              } else if (dateStr.length === 8 && /^\d{8}$/.test(dateStr)) {
+                // YYYYMMDD format
+                const year = dateStr.substring(0, 4);
+                const month = dateStr.substring(4, 6);
+                const day = dateStr.substring(6, 8);
+                betDate = new Date(`${year}-${month}-${day}T00:00:00`);
+              } else {
+                // Try parsing as-is
+                betDate = new Date(dateStr);
+              }
+              
               if (betDate && !isNaN(betDate.getTime())) {
                 const monthName = betDate.toLocaleDateString('en-US', { month: 'short' });
                 const dayNum = betDate.getDate();
                 const yearNum = betDate.getFullYear();
                 formattedDate = `${monthName} ${dayNum}, ${yearNum}`;
+              } else {
+                formattedDate = 'input date';
               }
             } catch (e) {
               console.error('Error parsing bet_date:', parlay.bet_date, e);
@@ -2879,6 +3061,11 @@ async function logoutToken() {
         
         // Store bet ID in section data attribute for selection
         section.dataset.betId = parlay.db_id;
+        
+        // Add 'won' class to winning bets for special styling
+        if (allLegsComplete) {
+          section.classList.add('won');
+        }
 
         // Helper function to create scoreboard HTML
         const createScoreboard = (g) => {
