@@ -567,17 +567,10 @@
     }
     
     /* Selected bet styling */
-    .parlay-section.selected {
-      transform: scale(0.95);
-      border: 3px solid #fff !important;
-      box-shadow: 0 0 15px rgba(255, 255, 255, 0.5);
-      transition: transform 0.2s ease, border 0.2s ease, box-shadow 0.2s ease;
-    }
-    
-    /* Winning bet styling */
+    /* Winning bet styling - with 20% opacity yellow border */
     .parlay-section.won {
-      border: 3px solid #FFD700 !important; /* Solid yellow/gold border */
-      box-shadow: 0 0 15px rgba(255, 215, 0, 0.5);
+      border: 3px solid rgba(255, 215, 0, 0.2) !important; /* 20% opacity yellow/gold border */
+      box-shadow: 0 0 15px rgba(255, 215, 0, 0.3);
     }
     
     .parlay-section.won .parlay-header,
@@ -589,6 +582,14 @@
     body:not(.dark-mode) .parlay-section.won .parlay-header,
     body:not(.dark-mode) .parlay-section.won .parlay-footer {
       background: rgba(34, 139, 34, 0.4) !important; /* Dark green tint for light mode */
+    }
+    
+    /* Selected state - must come after .won to override */
+    .parlay-section.selected {
+      transform: scale(0.95);
+      border: 3px solid #fff !important; /* White border overrides yellow */
+      box-shadow: 0 0 15px rgba(255, 255, 255, 0.5) !important;
+      transition: transform 0.2s ease, border 0.2s ease, box-shadow 0.2s ease;
     }
     
     /* Select button with selection */
@@ -963,7 +964,8 @@
       z-index: 1;
     }
     table{width:100%;border-collapse:separate;border-spacing:0;}
-    th,td{padding:.375rem;border-bottom:1px solid var(--border);
+    /* Reduce vertical padding by 10% (0.375rem -> 0.3375rem) */
+    th,td{padding:0.3375rem 0.375rem;border-bottom:1px solid var(--border);
       vertical-align:middle;text-align:left;}
     /* Double padding for Player column (column 1) - header and data */
     th:nth-child(1){padding-left:0.75rem !important;}
@@ -1018,6 +1020,11 @@
     .status-live{background:var(--error);color:#ffffff;}
     .status-halftime{background:transparent;color:#ffffff;border:1px solid #ffffff;}
     .status-final{background:#808080;color:#ffffff;}
+    
+    /* Reduce status badge font size by 10% (0.75rem -> 0.675rem) */
+    .status-badge {
+      font-size: 0.675rem;
+    }
     
     /* Mobile-specific layout classes (hidden on desktop) */
     .mobile-line-1,
@@ -3516,15 +3523,17 @@ async function logoutToken() {
               const mobileTargetDisplay = formatStatForMobile(targetDisplay, p.stat);
               
               // Get team and position for player props
+              // Reduce spacing between elements by 50% (0.15rem -> 0.075rem)
               const teamPosition = getPlayerTeamPosition(p);
               const playerCellContent = playerDisplay; // Use the same logic as playerDisplay
               const playerCellHTML = teamPosition ? 
-                `<div>${playerCellContent}</div><div style="font-size:0.65rem;color:#999;margin-top:0.15rem;">${teamPosition}</div>` : 
+                `<div>${playerCellContent}</div><div style="font-size:0.65rem;color:#999;margin-top:0.075rem;">${teamPosition}</div>` : 
                 playerCellContent;
               
               // Mobile player name with stat type on same line, team/position below
+              // Reduce spacing between elements by 50% (0.15rem -> 0.075rem)
               const mobilePlayerHTML = teamPosition ? 
-                `<strong>${playerOrTeam}</strong><span style="font-weight:normal;"> - ${statType}</span><div style="font-size:0.65rem;font-weight:bold;color:#999;margin-top:0.15rem;">${teamPosition}</div>` : 
+                `<strong>${playerOrTeam}</strong><span style="font-weight:normal;"> - ${statType}</span><div style="font-size:0.65rem;font-weight:bold;color:#999;margin-top:0.075rem;">${teamPosition}</div>` : 
                 `<strong>${playerOrTeam}</strong><span style="font-weight:normal;"> - ${statType}</span>`;
               
               return`
@@ -3532,14 +3541,14 @@ async function logoutToken() {
                   <td>
                     <div class="mobile-line-1">
                       <span>${mobilePlayerHTML}</span>
-                      <span>${txt}</span>
+                      <span class="status-badge">${txt}</span>
                     </div>
                   </td>
                   <td>
                     <div class="mobile-line-2">
-                      <span>${mobileCurrentDisplay}<div style="font-size:0.65rem;color:#999;margin-top:0.075rem;">Current</div></span>
+                      <span>${mobileCurrentDisplay}<div style="font-size:0.65rem;color:#999;margin-top:0.0375rem;">Current</div></span>
                       <span>${progressCol}</span>
-                      <span>${mobileTargetDisplay}<div style="font-size:0.65rem;color:#999;margin-top:0.075rem;">Target</div></span>
+                      <span>${mobileTargetDisplay}<div style="font-size:0.65rem;color:#999;margin-top:0.0375rem;">Target</div></span>
                     </div>
                   </td>
                   <td>${playerCellHTML}</td>
@@ -3547,7 +3556,7 @@ async function logoutToken() {
                   <td>${currentDisplay}</td>
                   <td>${targetDisplay}</td>
                   <td>${progressCol}</td>
-                  <td>${txt}</td>
+                  <td class="status-badge">${txt}</td>
                 </tr>`;
             }).join('')}
           </tbody>`;
