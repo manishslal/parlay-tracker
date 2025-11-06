@@ -570,7 +570,6 @@
     /* Winning bet styling - with 20% opacity yellow border */
     .parlay-section.won {
       border: 3px solid rgba(255, 215, 0, 0.2) !important; /* 20% opacity yellow/gold border */
-      box-shadow: 0 0 15px rgba(255, 215, 0, 0.3);
     }
     
     .parlay-section.won .parlay-header,
@@ -964,8 +963,8 @@
       z-index: 1;
     }
     table{width:100%;border-collapse:separate;border-spacing:0;}
-    /* Reduce vertical padding by 10% (0.375rem -> 0.3375rem) */
-    th,td{padding:0.3375rem 0.375rem;border-bottom:1px solid var(--border);
+    /* Reduce vertical padding significantly for tighter rows (0.375rem -> 0.25rem) */
+    th,td{padding:0.25rem 0.375rem;border-bottom:1px solid var(--border);
       vertical-align:middle;text-align:left;}
     /* Double padding for Player column (column 1) - header and data */
     th:nth-child(1){padding-left:0.75rem !important;}
@@ -992,7 +991,7 @@
     body.light-mode th {
       color: #fff !important;
     }
-    .progress-bar{background:var(--progress-bg);border-radius:13px;position:relative;height:1.5rem;border:2px solid var(--outline-blue);padding:3px;}
+    .progress-bar{background:var(--progress-bg);border-radius:13px;position:relative;height:1.25rem;border:2px solid var(--outline-blue);padding:2px;}
     .progress-bar.pct-vlow { border-color: #f44336; }  /* Red */
     .progress-bar.pct-low { border-color: #ff9800; }   /* Orange */
     .progress-bar.pct-mid { border-color: #ffeb3b; }   /* Yellow */
@@ -1280,7 +1279,7 @@
       /* Make mobile-specific content visible */
       .mobile-line-1 {
         display: flex !important;
-        font-size: 0.9rem;
+        font-size: 0.85rem; /* Reduced by 0.05rem for tighter display */
       }
       
       .mobile-line-2-header {
@@ -1290,12 +1289,12 @@
       
       .mobile-line-2 {
         display: grid !important;
-        font-size: 0.85rem;
+        font-size: 0.8rem; /* Reduced by 0.05rem for consistency */
       }
       
       /* Line 1 styling */
       tr td:nth-child(1) {
-        margin-bottom: 0.25rem; /* Reduced by 50% from 0.5rem */
+        margin-bottom: 0.15rem; /* Further reduced for tighter spacing */
       }
 
       .progress-bar {
