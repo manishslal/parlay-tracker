@@ -60,8 +60,9 @@
     /* Hamburger Menu Button */
     .menu-button {
       position: fixed;
-      top: calc(1rem + env(safe-area-inset-top));
-      right: 1rem;
+      /* Position below the safe area (dynamic island/notch) with additional spacing */
+      top: calc(env(safe-area-inset-top) + 1rem);
+      right: max(1rem, env(safe-area-inset-right));
       background: var(--primary);
       color: #fff;
       border: none;
