@@ -80,6 +80,14 @@
       transition: transform 0.2s, opacity 0.3s;
     }
     
+    /* Extra spacing for PWA standalone mode (home screen app) */
+    @media (display-mode: standalone) {
+      .menu-button {
+        /* Add extra padding in standalone mode to account for status bar */
+        top: calc(env(safe-area-inset-top, 44px) + 2.5rem);
+      }
+    }
+    
     .menu-button:hover {
       transform: scale(1.05);
     }
