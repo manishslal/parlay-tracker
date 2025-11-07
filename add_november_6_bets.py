@@ -224,24 +224,28 @@ def add_bets():
         print("\nAdding Bet 1 (Lamar Jackson SGP)...")
         bet1 = Bet(user_id=manish.id, status='pending', is_active=True)
         bet1.set_bet_data(bet1_data)
-        bet1.shared_with.append(etoteja)
         db.session.add(bet1)
+        db.session.commit()  # Commit to get bet1.id
+        bet1.add_user(manish, is_primary=True)
+        bet1.add_user(etoteja, is_primary=False)
         
         # Add Bet 2 - Tre Tucker/Broncos SGP (Tonight)
         print("Adding Bet 2 (Tre Tucker/Broncos SGP)...")
         bet2 = Bet(user_id=manish.id, status='pending', is_active=True)
         bet2.set_bet_data(bet2_data)
-        bet2.shared_with.append(etoteja)
         db.session.add(bet2)
+        db.session.commit()  # Commit to get bet2.id
+        bet2.add_user(manish, is_primary=True)
+        bet2.add_user(etoteja, is_primary=False)
         
         # Add Bet 3 - 7 Pick Parlay (Tonight - all 7 legs)
         print("Adding Bet 3 (7 Pick Parlay - all 7 legs)...")
         bet3 = Bet(user_id=manish.id, status='pending', is_active=True)
         bet3.set_bet_data(bet3_data)
-        bet3.shared_with.append(etoteja)
         db.session.add(bet3)
-        
-        db.session.commit()
+        db.session.commit()  # Commit to get bet3.id
+        bet3.add_user(manish, is_primary=True)
+        bet3.add_user(etoteja, is_primary=False)
         
         print("\n✅ Successfully added 3 bets!")
         print(f"   - Bet 1 (Lamar Jackson SGP) ID: {bet1.id}")
