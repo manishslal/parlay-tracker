@@ -38,17 +38,32 @@ def update_november_6_bets():
             "O/0240915/0000068": {
                 "name": "Lamar Jackson SGP",
                 "betting_site": "FanDuel",
-                "bet_date": "2025-11-09"
+                "bet_date": "2025-11-09",
+                "leg_positions": {
+                    "Lamar Jackson": "QB"
+                }
             },
             "O/1368367/0000044": {
                 "name": "Tre Tucker/Broncos SGP",
                 "betting_site": "FanDuel",
-                "bet_date": "2025-11-06"
+                "bet_date": "2025-11-06",
+                "leg_positions": {
+                    "Tre Tucker": "WR"
+                }
             },
             "DK63898069623329495": {
                 "name": "7 Pick Parlay",
                 "betting_site": "DraftKings",
-                "bet_date": "2025-11-06"
+                "bet_date": "2025-11-06",
+                "leg_positions": {
+                    "Geno Smith": "QB",
+                    "Bo Nix": "QB",
+                    "J.K. Dobbins": "RB",
+                    "Ashton Jeanty": "RB",
+                    "Brock Bowers": "TE",
+                    "Tre Tucker": "WR",
+                    "Courtland Sutton": "WR"
+                }
             }
         }
         
@@ -86,6 +101,23 @@ def update_november_6_bets():
                     bet_data['bet_date'] = update_info['bet_date']
                     changes_made = True
                     print(f"  ✓ Added bet_date: {update_info['bet_date']}")
+                
+                # Add positions to legs if provided
+                if 'leg_positions' in update_info:
+                    leg_positions = update_info['leg_positions']
+                    positions_added = 0
+                    
+                    for leg in bet_data.get('legs', []):
+                        player_name = leg.get('player')
+                        if player_name and player_name in leg_positions:
+                            # Check if position is missing or empty
+                            if not leg.get('position'):
+                                leg['position'] = leg_positions[player_name]
+                                positions_added += 1
+                                print(f"  ✓ Added position for {player_name}: {leg_positions[player_name]}")
+                    
+                    if positions_added > 0:
+                        changes_made = True
                 
                 if changes_made:
                     # Save back to database
