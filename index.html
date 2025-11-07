@@ -62,12 +62,11 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      position: sticky;
-      top: 0;
+      position: relative; /* Not sticky - allow it to scroll away */
       background: var(--primary); /* Purple background to match theme */
       z-index: 100;
-      padding: 1rem;
-      margin: -2rem -2rem 1.5rem -2rem; /* Extend to container edges */
+      padding: 0.25rem 0; /* 25% of 1rem = 0.25rem */
+      margin-bottom: 1.5rem;
       box-shadow: 0 2px 8px rgba(0,0,0,0.2);
     }
     
@@ -1489,7 +1488,7 @@
   <div class="pull-refresh" id="pull-refresh">Release to refresh...</div>
   
   <!-- Scroll to Top Button -->
-  <button class="scroll-top-btn" id="scroll-top-btn">^</button>
+  <button class="scroll-top-btn" id="scroll-top-btn">↑</button>
   
   <div class="container">
     <!-- Page Header with Title and Hamburger Menu -->
@@ -1666,7 +1665,28 @@
     const scrollTopBtn = document.getElementById('scroll-top-btn');
     if (scrollTopBtn) {
       scrollTopBtn.addEventListener('click', () => {
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+        // Custom fast scroll animation (2x speed)
+        const startPosition = window.scrollY;
+        const duration = 300; // 300ms instead of default ~600ms for 2x speed
+        const startTime = performance.now();
+        
+        function easeInOutQuad(t) {
+          return t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
+        }
+        
+        function animateScroll(currentTime) {
+          const elapsed = currentTime - startTime;
+          const progress = Math.min(elapsed / duration, 1);
+          const ease = easeInOutQuad(progress);
+          
+          window.scrollTo(0, startPosition * (1 - ease));
+          
+          if (progress < 1) {
+            requestAnimationFrame(animateScroll);
+          }
+        }
+        
+        requestAnimationFrame(animateScroll);
       });
     }
     
