@@ -102,8 +102,9 @@
     /* Simplified positioning for PWA standalone mode with status bar background */
     @media (display-mode: standalone) {
       .menu-button {
-        /* Position just below the status bar background */
-        top: calc(env(safe-area-inset-top, 44px) + 0.5rem);
+        /* Position BELOW the status bar background */
+        /* Status bar ends at env(safe-area-inset-top), so start there + spacing */
+        top: calc(env(safe-area-inset-top, 44px) + 1rem);
       }
       
       /* Remove body top padding in standalone - status bar handles it */
