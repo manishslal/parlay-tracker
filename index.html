@@ -65,9 +65,10 @@
       position: relative; /* Not sticky - allow it to scroll away */
       background: var(--primary); /* Purple background to match theme */
       z-index: 100;
-      padding: 0.25rem 0; /* 25% of 1rem = 0.25rem */
+      padding: 0.5rem; /* Increased for better vertical spacing */
       margin-bottom: 1.5rem;
       box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+      border-radius: 12px; /* Rounded corners to match theme */
     }
     
     h1 {
@@ -133,15 +134,22 @@
       color: #fff;
       border: none;
       border-radius: 50%;
-      font-size: 1.5rem;
-      font-weight: bold;
+      font-size: 1.8rem;
+      font-weight: 900; /* Extra bold for better Android rendering */
+      line-height: 1; /* Prevent vertical misalignment */
       cursor: pointer;
       box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-      z-index: 1000;
+      z-index: 1001; /* Higher z-index to ensure it's always on top */
       display: none; /* Hidden by default */
       align-items: center;
       justify-content: center;
-      transition: opacity 0.3s, transform 0.2s;
+      transition: opacity 0.3s; /* Only opacity transition, no transform */
+      /* iOS-specific fixes for stable positioning */
+      -webkit-transform: translateZ(0);
+      transform: translateZ(0);
+      -webkit-backface-visibility: hidden;
+      backface-visibility: hidden;
+      will-change: opacity;
     }
     
     .scroll-top-btn.visible {
