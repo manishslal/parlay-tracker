@@ -47,6 +47,7 @@ def add_bets():
             "bet_id": "O/0240915/0000068",
             "name": "Lamar Jackson SGP",
             "type": "Same Game Parlay",
+            "betting_site": "FanDuel",
             "wager": "20.00",
             "odds": "+363",
             "returns": "72.70",  # $92.70 payout - $20 wager
@@ -79,6 +80,7 @@ def add_bets():
             "bet_id": "O/1368367/0000044",
             "name": "Tre Tucker/Broncos SGP",
             "type": "Same Game Parlay",
+            "betting_site": "FanDuel",
             "wager": "10.00",
             "odds": "+122",
             "returns": "12.24",  # $22.24 payout - $10 wager
@@ -110,6 +112,7 @@ def add_bets():
             "bet_id": "DK63898069623329495",
             "name": "7 Pick Parlay",
             "type": "Parlay",
+            "betting_site": "DraftKings",
             "wager": "10.00",
             "odds": "+442",
             "returns": "44.20",  # $54.20 payout - $10 wager
