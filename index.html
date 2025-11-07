@@ -3126,14 +3126,14 @@ async function logoutToken() {
           }
         }
 
-        // Show inline scoreboards for Single Bet or SGP
-        if ((isSingleBet || isSGP) && gamesToShow.length > 0) {
+        // Show inline scoreboards for Single Bet, SGP, or single-game parlays
+        if ((isSingleBet || isSGP || gamesToShow.length === 1) && gamesToShow.length > 0) {
           const allGamesDiv=document.createElement('div');
           allGamesDiv.className='game-info-wrapper';
           gamesToShow.forEach(g => allGamesDiv.appendChild(createScoreboard(g)));
           header.appendChild(allGamesDiv);
         }
-        // For multi-game parlays, add "Show Scores" toggle
+        // For multi-game parlays (2+ games), add "Show Scores" toggle
         else if (gamesToShow.length > 1) {
           const showScoresBtn = document.createElement('button');
           showScoresBtn.className = 'show-scores-btn';
