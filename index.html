@@ -1174,9 +1174,9 @@
         font-size: 0.7rem;
       }
       
-      /* Reduce line spacing in footer for mobile - halved again */
+      /* Reduce line spacing in footer for mobile - halved from desktop */
       .footer-left, .footer-right {
-        gap: 0.05rem; /* Reduced by 50% from 0.1rem for even tighter line spacing */
+        gap: 0.125rem; /* Reduced by 50% from 0.25rem for tighter line spacing */
       }
       
       /* Adjust trophy icon for mobile */
@@ -3382,9 +3382,9 @@ async function logoutToken() {
                   if (gameData && gameData.statusTypeName !== 'STATUS_SCHEDULED') {
                     const isFinal = gameData.statusTypeName === 'STATUS_FINAL';
                     if (scoreDiff > 0) {
-                      currentDisplay = isFinal ? 'Win' : `Winning by ${scoreDiff}`;
+                      currentDisplay = isFinal ? 'Win' : `Up ${scoreDiff}`;
                     } else if (scoreDiff < 0) {
-                      currentDisplay = isFinal ? 'Loss' : `Losing by ${Math.abs(scoreDiff)}`;
+                      currentDisplay = isFinal ? 'Loss' : `Down ${Math.abs(scoreDiff)}`;
                     } else {
                       currentDisplay = 'Tied';
                     }
@@ -3539,10 +3539,21 @@ async function logoutToken() {
                 playerCellContent;
               
               // Mobile player name with stat type on same line, team/position below
-              // Reduce spacing between elements by 50% (0.15rem -> 0.075rem)
+              // Reduce spacing between elements by 75% (0.15rem -> 0.0375rem)
               const mobilePlayerHTML = teamPosition ? 
-                `<strong>${playerOrTeam}</strong><span style="font-weight:normal;"> - ${statType}</span><div style="font-size:0.65rem;font-weight:bold;color:#999;margin-top:0.075rem;">${teamPosition}</div>` : 
+                `<strong>${playerOrTeam}</strong><span style="font-weight:normal;"> - ${statType}</span><div style="font-size:0.65rem;font-weight:bold;color:#999;margin-top:0.0375rem;">${teamPosition}</div>` : 
                 `<strong>${playerOrTeam}</strong><span style="font-weight:normal;"> - ${statType}</span>`;
+              
+              // Check if game has started (for hiding progress bar and current stat in Live Bets)
+              const gameNotStarted = (gameData && gameData.statusTypeName === 'STATUS_SCHEDULED') || 
+                                     (!gameData && (areAllGamesScheduled || (!isAnyGameLive && !areAllGamesFinal)));
+              
+              // For Live Bets that haven't started: hide progress bar and current stat, center the target
+              const mobileLine2Content = gameNotStarted ? 
+                `<span style="grid-column: 1 / -1; text-align: center;">${mobileTargetDisplay}<div style="font-size:0.65rem;color:#999;margin-top:0.0375rem;">Target</div></span>` :
+                `<span>${mobileCurrentDisplay}<div style="font-size:0.65rem;color:#999;margin-top:0.0375rem;">Current</div></span>
+                      <span>${progressCol}</span>
+                      <span>${mobileTargetDisplay}<div style="font-size:0.65rem;color:#999;margin-top:0.0375rem;">Target</div></span>`;
               
               return`
                 <tr>
@@ -3554,9 +3565,7 @@ async function logoutToken() {
                   </td>
                   <td>
                     <div class="mobile-line-2">
-                      <span>${mobileCurrentDisplay}<div style="font-size:0.65rem;color:#999;margin-top:0.0375rem;">Current</div></span>
-                      <span>${progressCol}</span>
-                      <span>${mobileTargetDisplay}<div style="font-size:0.65rem;color:#999;margin-top:0.0375rem;">Target</div></span>
+                      ${mobileLine2Content}
                     </div>
                   </td>
                   <td>${playerCellHTML}</td>
