@@ -76,40 +76,43 @@
       }
     }
     
-    /* Hamburger Menu Button */
+    /* Page Header with Title and Hamburger Menu */
+    .page-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      background: var(--surface);
+      z-index: 100;
+      padding: 1rem 0;
+      margin-bottom: 1.5rem;
+    }
+    
+    h1 {
+      color: var(--title-color);
+      margin: 0;
+      flex: 1;
+      text-align: center;
+    }
+    
+    /* Hamburger Menu Button - 80% size, inline with title */
     .menu-button {
-      position: fixed;
-      /* Position below the safe area (dynamic island/notch) with additional spacing */
-      top: calc(env(safe-area-inset-top) + 1rem);
-      right: max(1rem, env(safe-area-inset-right));
       background: var(--primary);
       color: #fff;
       border: none;
       border-radius: 8px;
-      width: 50px;
-      height: 50px;
+      width: 40px;  /* 80% of 50px */
+      height: 40px; /* 80% of 50px */
       cursor: pointer;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: 5px;
-      z-index: 1002; /* Above status bar background */
+      gap: 4px;     /* 80% of 5px */
       box-shadow: 0 4px 12px rgba(0,0,0,0.3);
       transition: transform 0.2s, opacity 0.3s;
-    }
-    
-    /* Simplified positioning for PWA standalone mode with status bar background */
-    @media (display-mode: standalone) {
-      .menu-button {
-        /* Position well BELOW the status bar background with extra spacing */
-        top: calc(env(safe-area-inset-top, 44px) + 2.5rem);
-      }
-      
-      /* Remove body top padding in standalone - status bar handles it */
-      body {
-        padding-top: 0 !important;
-      }
+      flex-shrink: 0;
     }
     
     .menu-button:hover {
@@ -117,8 +120,8 @@
     }
     
     .menu-button span {
-      width: 25px;
-      height: 3px;
+      width: 20px;  /* 80% of 25px */
+      height: 2.4px; /* 80% of 3px */
       background: #fff;
       border-radius: 2px;
       transition: all 0.3s;
@@ -126,7 +129,7 @@
     
     /* Menu button animation when open */
     .menu-button.active span:nth-child(1) {
-      transform: rotate(45deg) translate(7px, 7px);
+      transform: rotate(45deg) translate(5.6px, 5.6px); /* 80% of 7px */
     }
     
     .menu-button.active span:nth-child(2) {
@@ -134,12 +137,42 @@
     }
     
     .menu-button.active span:nth-child(3) {
-      transform: rotate(-45deg) translate(7px, -7px);
+      transform: rotate(-45deg) translate(5.6px, -5.6px); /* 80% of 7px */
+    }
+    
+    /* Scroll to Top Button */
+    .scroll-top-btn {
+      position: fixed;
+      bottom: 2rem;
+      right: 2rem;
+      width: 50px;
+      height: 50px;
+      background: var(--primary);
+      color: #fff;
+      border: none;
+      border-radius: 50%;
+      font-size: 1.5rem;
+      font-weight: bold;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      z-index: 1000;
+      display: none; /* Hidden by default */
+      align-items: center;
+      justify-content: center;
+      transition: opacity 0.3s, transform 0.2s;
+    }
+    
+    .scroll-top-btn.visible {
+      display: flex;
+    }
+    
+    .scroll-top-btn:hover {
+      transform: scale(1.1);
     }
     
     /* Reduce opacity when scrolling */
-    body.scrolling .menu-button {
-      opacity: 0.25;
+    body.scrolling .scroll-top-btn {
+      opacity: 0.2;
     }
     
     /* Side Menu Panel - Compact half-width design */
@@ -807,7 +840,6 @@
       }
     }
     
-    h1{text-align:center;color:var(--title-color);margin-bottom:1.5rem;}
     button{display:block;margin:0 auto 1.5rem;padding:.75rem 1.5rem;
       background:var(--primary);color:#fff;font-weight:bold;
       border:none;border-radius:8px;cursor:pointer;}
@@ -1452,13 +1484,6 @@
   <!-- Fixed Status Bar Background for iOS PWA (like Android) -->
   <div class="status-bar-bg"></div>
   
-  <!-- Hamburger Menu Button -->
-  <button class="menu-button" id="menu-button">
-    <span></span>
-    <span></span>
-    <span></span>
-  </button>
-  
   <!-- Menu Overlay -->
   <div class="menu-overlay" id="menu-overlay"></div>
   
@@ -1490,8 +1515,20 @@
   <!-- Pull to Refresh Indicator -->
   <div class="pull-refresh" id="pull-refresh">Release to refresh...</div>
   
+  <!-- Scroll to Top Button -->
+  <button class="scroll-top-btn" id="scroll-top-btn">^</button>
+  
   <div class="container">
-    <h1>Parlay & Wager Tracker</h1>
+    <!-- Page Header with Title and Hamburger Menu -->
+    <div class="page-header">
+      <h1>Parlay & Wager Tracker</h1>
+      <button class="menu-button" id="menu-button">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+    
     <div class="tabs">
       <button class="tab active" data-tab="current">Live Bets</button>
       <button class="tab" data-tab="historical">Historical Bets</button>
@@ -1639,7 +1676,28 @@
       scrollTimer = setTimeout(() => {
         document.body.classList.remove('scrolling');
       }, 1000);
+      
+      // Show/hide scroll-to-top button
+      const scrollTopBtn = document.getElementById('scroll-top-btn');
+      const pageHeader = document.querySelector('.page-header');
+      if (pageHeader && scrollTopBtn) {
+        const headerRect = pageHeader.getBoundingClientRect();
+        // Show button when header is out of view
+        if (headerRect.bottom < 0) {
+          scrollTopBtn.classList.add('visible');
+        } else {
+          scrollTopBtn.classList.remove('visible');
+        }
+      }
     });
+    
+    // Scroll to top button click handler
+    const scrollTopBtn = document.getElementById('scroll-top-btn');
+    if (scrollTopBtn) {
+      scrollTopBtn.addEventListener('click', () => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      });
+    }
     
     // Helper to read query params
     function getQueryParam(name) {
