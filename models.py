@@ -21,6 +21,7 @@ class User(UserMixin, db.Model):
     
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=False, index=True)
+    display_name = db.Column(db.String(80), nullable=True)  # Display name for UI
     email = db.Column(db.String(120), unique=True, nullable=False, index=True)
     password_hash = db.Column(db.String(200), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
@@ -59,6 +60,7 @@ class User(UserMixin, db.Model):
         return {
             'id': self.id,
             'username': self.username,
+            'display_name': self.display_name or self.username,  # Fallback to username if no display_name
             'email': self.email,
             'created_at': self.created_at.isoformat(),
             'is_active': self.is_active
