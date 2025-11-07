@@ -57,6 +57,25 @@
       --tab-active: #e0e0e0;
     }
     
+    /* Fixed Status Bar Background for iOS PWA (like Android's blue bar) */
+    .status-bar-bg {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: env(safe-area-inset-top, 0px);
+      background: var(--primary);
+      z-index: 1000;
+      display: none; /* Hidden by default */
+    }
+    
+    /* Show status bar background only in PWA standalone mode */
+    @media (display-mode: standalone) {
+      .status-bar-bg {
+        display: block;
+      }
+    }
+    
     /* Hamburger Menu Button */
     .menu-button {
       position: fixed;
@@ -75,16 +94,16 @@
       align-items: center;
       justify-content: center;
       gap: 5px;
-      z-index: 1001;
+      z-index: 1002; /* Above status bar background */
       box-shadow: 0 4px 12px rgba(0,0,0,0.3);
       transition: transform 0.2s, opacity 0.3s;
     }
     
-    /* Extra spacing for PWA standalone mode (home screen app) */
+    /* Simplified positioning for PWA standalone mode with status bar background */
     @media (display-mode: standalone) {
       .menu-button {
-        /* Add extra padding in standalone mode to account for status bar */
-        top: calc(env(safe-area-inset-top, 44px) + 2.5rem);
+        /* Position just below the status bar background */
+        top: calc(env(safe-area-inset-top, 44px) + 0.5rem);
       }
     }
     
@@ -1417,6 +1436,9 @@
   </style>
 </head>
 <body>
+  <!-- Fixed Status Bar Background for iOS PWA (like Android) -->
+  <div class="status-bar-bg"></div>
+  
   <!-- Hamburger Menu Button -->
   <button class="menu-button" id="menu-button">
     <span></span>
