@@ -53,6 +53,7 @@ def add_bets():
             "legs": [
                 {
                     "player": "Lamar Jackson",
+                    "position": "QB",
                     "team": "Baltimore Ravens",
                     "stat": "anytime_touchdown",
                     "target": 1,
@@ -62,6 +63,7 @@ def add_bets():
                 },
                 {
                     "player": "Lamar Jackson",
+                    "position": "QB",
                     "team": "Baltimore Ravens",
                     "stat": "rushing_yards",
                     "target": 37.5,
@@ -91,6 +93,7 @@ def add_bets():
                 },
                 {
                     "player": "Tre Tucker",
+                    "position": "WR",
                     "team": "Las Vegas Raiders",
                     "stat": "receiving_yards",
                     "target": 46.5,
@@ -113,6 +116,7 @@ def add_bets():
             "legs": [
                 {
                     "player": "Geno Smith",
+                    "position": "QB",
                     "team": "Las Vegas Raiders",
                     "stat": "passing_yards",
                     "target": 160,
@@ -122,6 +126,7 @@ def add_bets():
                 },
                 {
                     "player": "Bo Nix",
+                    "position": "QB",
                     "team": "Denver Broncos",
                     "stat": "passing_yards",
                     "target": 170,
@@ -131,6 +136,7 @@ def add_bets():
                 },
                 {
                     "player": "J.K. Dobbins",
+                    "position": "RB",
                     "team": "Denver Broncos",
                     "stat": "rushing_yards",
                     "target": 50,
@@ -140,6 +146,7 @@ def add_bets():
                 },
                 {
                     "player": "Ashton Jeanty",
+                    "position": "RB",
                     "team": "Las Vegas Raiders",
                     "stat": "rushing_yards",
                     "target": 40,
@@ -149,6 +156,7 @@ def add_bets():
                 },
                 {
                     "player": "Brock Bowers",
+                    "position": "TE",
                     "team": "Las Vegas Raiders",
                     "stat": "receiving_yards",
                     "target": 40,
@@ -158,6 +166,7 @@ def add_bets():
                 },
                 {
                     "player": "Tre Tucker",
+                    "position": "WR",
                     "team": "Las Vegas Raiders",
                     "stat": "receiving_yards",
                     "target": 25,
@@ -167,6 +176,7 @@ def add_bets():
                 },
                 {
                     "player": "Courtland Sutton",
+                    "position": "WR",
                     "team": "Denver Broncos",
                     "stat": "receiving_yards",
                     "target": 40,
