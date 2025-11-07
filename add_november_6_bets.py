@@ -20,18 +20,27 @@ from models import User, Bet
 
 def add_bets():
     with app.app_context():
-        # Get users
-        manish = User.query.filter_by(username='ManishSLal').first()
-        etoteja = User.query.filter_by(username='EToteja').first()
+        # Get users (case-insensitive search)
+        manish = User.query.filter(db.func.lower(User.username) == 'manishslal').first()
+        etoteja = User.query.filter(db.func.lower(User.username) == 'etoteja').first()
+        
+        # Create EToteja if doesn't exist
+        if not etoteja:
+            print("EToteja user not found, creating...")
+            etoteja = User(username='EToteja', email='etoteja@example.com')
+            etoteja.set_password('changeme123')  # Set a default password
+            db.session.add(etoteja)
+            db.session.commit()
+            print(f"Created EToteja user (ID: {etoteja.id})")
         
         if not manish:
             print("ERROR: ManishSLal user not found!")
-            return
-        if not etoteja:
-            print("ERROR: EToteja user not found!")
+            print("Available users:")
+            for u in User.query.all():
+                print(f"  - {u.username} (ID: {u.id})")
             return
         
-        print(f"Found users - ManishSLal (ID: {manish.id}), EToteja (ID: {etoteja.id})")
+        print(f"Found users - {manish.username} (ID: {manish.id}), {etoteja.username} (ID: {etoteja.id})")
         
         # Bet 1: Lamar Jackson SGP - Sunday Nov 9, 2025
         bet1_data = {
