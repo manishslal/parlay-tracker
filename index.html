@@ -63,8 +63,7 @@
       top: 0;
       left: 0;
       right: 0;
-      /* Make status bar taller: safe area + extra header space */
-      height: calc(env(safe-area-inset-top, 44px) + 3.5rem);
+      height: env(safe-area-inset-top, 0px);
       background: var(--primary);
       z-index: 1000;
       display: none; /* Hidden by default */
@@ -103,9 +102,9 @@
     /* Simplified positioning for PWA standalone mode with status bar background */
     @media (display-mode: standalone) {
       .menu-button {
-        /* Position within the status bar area */
-        /* Safe area height + small offset to center in the colored bar area */
-        top: calc(env(safe-area-inset-top, 44px) + 0.75rem);
+        /* Position BELOW the status bar background */
+        /* Status bar ends at env(safe-area-inset-top), so start there + spacing */
+        top: calc(env(safe-area-inset-top, 44px) + 1rem);
       }
       
       /* Remove body top padding in standalone - status bar handles it */
@@ -805,8 +804,7 @@
     /* Add top margin to container in standalone mode to account for status bar */
     @media (display-mode: standalone) {
       .container {
-        /* Match the status bar total height */
-        margin-top: calc(env(safe-area-inset-top, 44px) + 3.5rem);
+        margin-top: calc(env(safe-area-inset-top, 44px) + 1rem);
       }
     }
     
