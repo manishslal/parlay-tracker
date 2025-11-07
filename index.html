@@ -57,25 +57,6 @@
       --tab-active: #e0e0e0;
     }
     
-    /* Fixed Status Bar Background for iOS PWA (like Android's blue bar) */
-    .status-bar-bg {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      height: env(safe-area-inset-top, 44px);
-      background: var(--primary);
-      z-index: 1000;
-      display: none; /* Hidden by default */
-    }
-    
-    /* Show status bar background only in PWA standalone mode */
-    @media (display-mode: standalone) {
-      .status-bar-bg {
-        display: block;
-      }
-    }
-    
     /* Page Header with Title and Hamburger Menu */
     .page-header {
       display: flex;
@@ -83,17 +64,19 @@
       align-items: center;
       position: sticky;
       top: 0;
-      background: var(--surface);
+      background: var(--primary); /* Purple background to match theme */
       z-index: 100;
-      padding: 1rem 0;
-      margin-bottom: 1.5rem;
+      padding: 1rem;
+      margin: -2rem -2rem 1.5rem -2rem; /* Extend to container edges */
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
     }
     
     h1 {
-      color: var(--title-color);
+      color: #fff; /* White text on purple background */
       margin: 0;
       flex: 1;
       text-align: center;
+      font-size: 1.5rem;
     }
     
     /* Hamburger Menu Button - 80% size, inline with title */
@@ -833,13 +816,6 @@
       background:var(--surface);border-radius:12px;
       box-shadow:0 4px 20px rgba(0,0,0,0.25);}
     
-    /* Add top margin to container in standalone mode to account for status bar */
-    @media (display-mode: standalone) {
-      .container {
-        margin-top: calc(env(safe-area-inset-top, 44px) + 1rem);
-      }
-    }
-    
     button{display:block;margin:0 auto 1.5rem;padding:.75rem 1.5rem;
       background:var(--primary);color:#fff;font-weight:bold;
       border:none;border-radius:8px;cursor:pointer;}
@@ -1481,9 +1457,6 @@
   </style>
 </head>
 <body>
-  <!-- Fixed Status Bar Background for iOS PWA (like Android) -->
-  <div class="status-bar-bg"></div>
-  
   <!-- Menu Overlay -->
   <div class="menu-overlay" id="menu-overlay"></div>
   
@@ -1679,11 +1652,9 @@
       
       // Show/hide scroll-to-top button
       const scrollTopBtn = document.getElementById('scroll-top-btn');
-      const pageHeader = document.querySelector('.page-header');
-      if (pageHeader && scrollTopBtn) {
-        const headerRect = pageHeader.getBoundingClientRect();
-        // Show button when header is out of view
-        if (headerRect.bottom < 0) {
+      if (scrollTopBtn) {
+        // Show button when scrolled down more than 300px
+        if (window.scrollY > 300) {
           scrollTopBtn.classList.add('visible');
         } else {
           scrollTopBtn.classList.remove('visible');
