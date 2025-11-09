@@ -1293,8 +1293,8 @@ def live():
         is_archived=False,
         status='live'
     ).all()
-    # Convert Bet objects to dict format with db_id included
-    live_parlays = [bet.to_dict() for bet in bets]
+    # Convert Bet objects to dict format with db_id included (using structured database)
+    live_parlays = [bet.to_dict_structured() for bet in bets]
     processed = process_parlay_data(live_parlays)
     return jsonify(sort_parlays_by_date(processed))
 
@@ -1313,7 +1313,7 @@ def todays():
         is_archived=False,
         status='pending'
     ).all()
-    todays_parlays = [bet.to_dict() for bet in bets]  # Use to_dict() to include db_id
+    todays_parlays = [bet.to_dict_structured() for bet in bets]  # Use structured DB with jersey numbers
     # Return the raw today's bets
     processed = process_parlay_data(todays_parlays)
     return jsonify(sort_parlays_by_date(processed))
@@ -1331,7 +1331,7 @@ def historical():
                 is_active=False,
                 is_archived=False
             ).all()
-            historical_parlays = [bet.to_dict() for bet in bets]  # Use to_dict() to include db_id
+            historical_parlays = [bet.to_dict_structured() for bet in bets]  # Use structured DB with jersey numbers
             app.logger.info(f"Loaded {len(historical_parlays)} historical parlays")
             for parlay in historical_parlays:
                 app.logger.info(f"Parlay: {parlay.get('name')}, type: {parlay.get('type')}, legs: {len(parlay.get('legs', []))}")
@@ -1787,7 +1787,7 @@ def get_archived_bets():
             is_archived=True
         ).order_by(Bet.bet_date.desc()).all()
         
-        bets_data = [bet.to_dict() for bet in archived_bets]
+        bets_data = [bet.to_dict_structured() for bet in archived_bets]
         
         return jsonify({
             'archived': bets_data,
