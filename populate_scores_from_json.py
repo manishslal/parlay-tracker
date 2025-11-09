@@ -26,6 +26,10 @@ def populate_scores():
     if database_url.startswith('postgres://'):
         database_url = database_url.replace('postgres://', 'postgresql://', 1)
     
+    # Add SSL mode for production connections
+    if 'sslmode' not in database_url:
+        database_url += '?sslmode=require'
+    
     print("Connecting to database...")
     conn = psycopg2.connect(database_url)
     cur = conn.cursor(cursor_factory=RealDictCursor)
