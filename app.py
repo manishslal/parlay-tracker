@@ -8,6 +8,10 @@ import os
 from datetime import datetime
 import json
 
+# Load environment variables from .env file
+from dotenv import load_dotenv
+load_dotenv()
+
 # Import database models
 from models import db, User, Bet, bet_users
 
@@ -1504,6 +1508,48 @@ def admin_compute_returns():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+@app.route('/admin/update_teams', methods=['POST'])
+@login_required
+def admin_update_teams():
+    """Admin endpoint to manually trigger team data update.
+    Forces update regardless of last update time.
+    """
+    try:
+        import subprocess
+        
+        # Run the update script
+        result = subprocess.run(
+            ['python', 'update_team_records.py'],
+            cwd=os.path.dirname(__file__),
+            capture_output=True,
+            text=True,
+            timeout=120
+        )
+        
+        if result.returncode == 0:
+            return jsonify({
+                'success': True,
+                'message': 'Team data updated successfully',
+                'output': result.stdout
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'error': 'Update script failed',
+                'output': result.stderr
+            }), 500
+            
+    except subprocess.TimeoutExpired:
+        return jsonify({
+            'success': False,
+            'error': 'Update timed out after 2 minutes'
+        }), 500
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
 @app.route('/admin/move_completed', methods=['POST'])
 @login_required
 def admin_move_completed():
@@ -1990,11 +2036,40 @@ def fix_duplicate_leg(bet_db_id):
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+def update_team_data_on_startup():
+    """Update team records on application startup (runs in background)"""
+    import subprocess
+    import threading
+    
+    def run_update():
+        try:
+            app.logger.info("Starting background team data update...")
+            result = subprocess.run(
+                ['python', 'update_team_records.py'],
+                cwd=os.path.dirname(__file__),
+                capture_output=True,
+                text=True,
+                timeout=120  # 2 minute timeout
+            )
+            if result.returncode == 0:
+                app.logger.info("Team data update completed successfully")
+            else:
+                app.logger.warning(f"Team data update failed: {result.stderr}")
+        except Exception as e:
+            app.logger.error(f"Error updating team data: {e}")
+    
+    # Run in background thread so it doesn't block startup
+    thread = threading.Thread(target=run_update, daemon=True)
+    thread.start()
+
 if __name__ == "__main__":
     # Initialize database tables
     with app.app_context():
         db.create_all()
         app.logger.info("Database tables created/verified")
+        
+        # Update team data on startup (runs in background)
+        update_team_data_on_startup()
     
     # Initialize and organize parlays before starting server
     # Note: This is legacy code for JSON files, will be phased out

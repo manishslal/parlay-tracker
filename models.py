@@ -97,6 +97,83 @@ class Player(db.Model):
         return f'<Player {self.player_name} ({self.sport})>'
 
 
+class Team(db.Model):
+    """Team model for storing NFL and NBA team information"""
+    __tablename__ = 'teams'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    
+    # Basic Team Info
+    team_name = db.Column(db.String(100), nullable=False)
+    team_name_short = db.Column(db.String(50))
+    team_abbr = db.Column(db.String(10), nullable=False)
+    espn_team_id = db.Column(db.String(50), unique=True)
+    
+    # Sport & League Info
+    sport = db.Column(db.String(50), nullable=False)
+    league = db.Column(db.String(50))
+    conference = db.Column(db.String(50))
+    division = db.Column(db.String(50))
+    
+    # Current Season Record
+    games_played = db.Column(db.Integer, default=0)
+    wins = db.Column(db.Integer, default=0)
+    losses = db.Column(db.Integer, default=0)
+    ties = db.Column(db.Integer, default=0)
+    win_percentage = db.Column(db.Numeric(5, 3))
+    
+    # Standings Info
+    division_rank = db.Column(db.Integer)
+    conference_rank = db.Column(db.Integer)
+    league_rank = db.Column(db.Integer)
+    playoff_seed = db.Column(db.Integer)
+    games_behind = db.Column(db.Numeric(4, 1))
+    streak = db.Column(db.String(20))
+    
+    # Team Details
+    location = db.Column(db.String(100))
+    nickname = db.Column(db.String(50))
+    logo_url = db.Column(db.Text)
+    color = db.Column(db.String(20))
+    alternate_color = db.Column(db.String(20))
+    
+    # Status & Metadata
+    is_active = db.Column(db.Boolean, default=True)
+    season_year = db.Column(db.String(10))
+    last_game_date = db.Column(db.Date)
+    next_game_date = db.Column(db.Date)
+    
+    # API References
+    api_data_url = db.Column(db.Text)
+    last_stats_update = db.Column(db.DateTime)
+    
+    # Timestamps
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    def to_dict(self):
+        """Convert team to dictionary"""
+        return {
+            'id': self.id,
+            'team_name': self.team_name,
+            'team_name_short': self.team_name_short,
+            'team_abbr': self.team_abbr,
+            'espn_team_id': self.espn_team_id,
+            'sport': self.sport,
+            'conference': self.conference,
+            'division': self.division,
+            'wins': self.wins,
+            'losses': self.losses,
+            'ties': self.ties,
+            'win_percentage': float(self.win_percentage) if self.win_percentage else None,
+            'logo_url': self.logo_url,
+            'color': self.color
+        }
+    
+    def __repr__(self):
+        return f'<Team {self.team_name} ({self.sport})>'
+
+
 class BetLeg(db.Model):
     """BetLeg model for individual parlay legs"""
     __tablename__ = 'bet_legs'
@@ -114,8 +191,12 @@ class BetLeg(db.Model):
     home_team = db.Column(db.String(50), nullable=False)
     away_team = db.Column(db.String(50), nullable=False)
     game_id = db.Column(db.String(50))
+    game_date = db.Column(db.Date)
+    game_time = db.Column(db.Time)
+    game_status = db.Column(db.String(20))
     sport = db.Column(db.String(50))
     parlay_sport = db.Column(db.String(50))
+    is_home_game = db.Column(db.Boolean)
     
     # Bet Details
     bet_type = db.Column(db.String(50), nullable=False)
@@ -124,15 +205,32 @@ class BetLeg(db.Model):
     achieved_value = db.Column(db.Numeric(10, 2))
     stat_type = db.Column(db.String(20))
     
+    # Player Stats
+    player_season_avg = db.Column(db.Numeric(10, 2))
+    player_last_5_avg = db.Column(db.Numeric(10, 2))
+    vs_opponent_avg = db.Column(db.Numeric(10, 2))
+    target_vs_season = db.Column(db.Numeric(10, 2))
+    
+    # Odds
+    original_leg_odds = db.Column(db.Integer)
+    boosted_leg_odds = db.Column(db.Integer)
+    final_leg_odds = db.Column(db.Integer)
+    
     # Leg Status
     status = db.Column(db.String(20), default='pending')
     is_hit = db.Column(db.Boolean)
+    void_reason = db.Column(db.String(100))
     
     # Live Game Data
     current_quarter = db.Column(db.String(10))
     time_remaining = db.Column(db.String(20))
     home_score = db.Column(db.Integer)
     away_score = db.Column(db.Integer)
+    
+    # Additional Game Info
+    weather_conditions = db.Column(db.String(100))
+    injury_during_game = db.Column(db.Boolean)
+    dnp_reason = db.Column(db.String(100))
     
     # Metadata
     leg_order = db.Column(db.Integer)
@@ -298,8 +396,8 @@ class Bet(db.Model):
             'betting_site': self.betting_site or 'Unknown',
             'status': self.status,
             'bet_date': self.bet_date or '',
-            'created_at': self.created_at.isoformat(),
-            'updated_at': self.updated_at.isoformat(),
+            'created_at': self.created_at.isoformat() if self.created_at else '',
+            'updated_at': self.updated_at.isoformat() if self.updated_at else '',
         }
         
         # Add financial data
@@ -362,6 +460,7 @@ class Bet(db.Model):
                 # Add fields needed by process_parlay_data
                 'home': bet_leg.home_team,  # process_parlay_data uses 'home'
                 'away': bet_leg.away_team,  # process_parlay_data uses 'away'
+                'game_date': bet_leg.game_date.strftime('%Y-%m-%d') if bet_leg.game_date else '',  # CRITICAL: process_parlay_data needs this
             }
             
             # Add jersey number if available from player table
