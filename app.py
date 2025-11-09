@@ -1297,8 +1297,8 @@ def live():
         is_archived=False,
         status='live'
     ).all()
-    # Convert Bet objects to dict format with db_id included (using structured database)
-    live_parlays = [bet.to_dict_structured() for bet in bets]
+    # Convert Bet objects to dict format - use_live_data=True forces ESPN API fetch for real-time stats
+    live_parlays = [bet.to_dict_structured(use_live_data=True) for bet in bets]
     processed = process_parlay_data(live_parlays)
     return jsonify(sort_parlays_by_date(processed))
 
@@ -1317,7 +1317,8 @@ def todays():
         is_archived=False,
         status='pending'
     ).all()
-    todays_parlays = [bet.to_dict_structured() for bet in bets]  # Use structured DB with jersey numbers
+    # Use live data for today's bets too (games might have started)
+    todays_parlays = [bet.to_dict_structured(use_live_data=True) for bet in bets]
     # Return the raw today's bets
     processed = process_parlay_data(todays_parlays)
     return jsonify(sort_parlays_by_date(processed))

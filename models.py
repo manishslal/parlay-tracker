@@ -381,11 +381,15 @@ class Bet(db.Model):
         bet_dict['updated_at'] = self.updated_at.isoformat()
         return bet_dict
     
-    def to_dict_structured(self):
+    def to_dict_structured(self, use_live_data=False):
         """Convert bet to dictionary using structured database tables
         
         This method queries bet_legs and players tables instead of using the JSON blob.
         Includes jersey numbers and all relational data.
+        
+        Args:
+            use_live_data: If True, don't include achieved_value (force fetch from ESPN API).
+                          If False (default), include achieved_value from database (for historical bets).
         """
         # Get bet-level data from columns
         bet_dict = {
@@ -452,7 +456,9 @@ class Bet(db.Model):
                 'opponent': opponent,
                 'stat': bet_leg.bet_type,
                 'target': float(bet_leg.target_value) if bet_leg.target_value else 0,
-                'current': float(bet_leg.achieved_value) if bet_leg.achieved_value else None,
+                # For live bets, set current to None to force ESPN API fetch
+                # For historical bets, use achieved_value from database
+                'current': None if use_live_data else (float(bet_leg.achieved_value) if bet_leg.achieved_value else None),
                 'status': bet_leg.status or 'pending',
                 'gameId': bet_leg.game_id or '',
                 'homeTeam': bet_leg.home_team,
