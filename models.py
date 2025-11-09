@@ -417,8 +417,10 @@ class Bet(db.Model):
                 bet_dict['boost'] = json_data['boost']
             if 'sport' in json_data:
                 bet_dict['sport'] = json_data['sport']
-        except:
-            pass
+        except Exception as e:
+            # Log but don't fail if JSON fallback has issues
+            import logging
+            logging.warning(f"JSON fallback failed: {e}")
         
         return bet_dict
     
