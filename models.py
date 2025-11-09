@@ -381,6 +381,20 @@ class Bet(db.Model):
             if bet_leg.current_quarter:
                 leg_dict['gameStatus'] = bet_leg.current_quarter
             
+            # Calculate score_diff for spread/moneyline bets
+            # score_diff = (bet team's score) - (opponent's score)
+            if bet_leg.home_score is not None and bet_leg.away_score is not None:
+                # Determine which team the bet is on
+                if player_team and bet_leg.home_team:
+                    # For player props, check if player's team is home or away
+                    is_home = player_team in bet_leg.home_team or bet_leg.home_team in player_team
+                    score_diff = bet_leg.home_score - bet_leg.away_score if is_home else bet_leg.away_score - bet_leg.home_score
+                    leg_dict['score_diff'] = score_diff
+                elif bet_leg.bet_type in ['spread', 'moneyline']:
+                    # For team bets, need to determine which team from player_name or other field
+                    # Default: assume bet is on home team (can be refined)
+                    leg_dict['score_diff'] = bet_leg.home_score - bet_leg.away_score
+            
             legs.append(leg_dict)
         
         bet_dict['legs'] = legs

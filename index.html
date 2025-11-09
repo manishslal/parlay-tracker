@@ -3243,6 +3243,32 @@ async function logoutToken() {
           } else {
             gamesToShow = parlay.games;
           }
+        } else if (parlay.legs && parlay.legs.length > 0) {
+          // For historical bets without ESPN game data, create game objects from leg data
+          const uniqueGames = new Map();
+          parlay.legs.forEach(leg => {
+            if (leg.home && leg.away) {
+              const gameKey = `${leg.away}-${leg.home}`;
+              if (!uniqueGames.has(gameKey)) {
+                // Create a mock game object from leg data
+                const mockGame = {
+                  teams: {
+                    home: leg.home,
+                    away: leg.away
+                  },
+                  score: {
+                    home: leg.homeScore ?? 0,
+                    away: leg.awayScore ?? 0
+                  },
+                  statusTypeName: leg.status === 'won' || leg.status === 'lost' ? 'STATUS_FINAL' : 'STATUS_SCHEDULED',
+                  game_date: leg.game_date,
+                  startDateTime: leg.game_date
+                };
+                uniqueGames.set(gameKey, mockGame);
+              }
+            }
+          });
+          gamesToShow = Array.from(uniqueGames.values());
         }
 
         // Show inline scoreboards for Single Bet, SGP, or single-game parlays
@@ -3479,6 +3505,7 @@ async function logoutToken() {
                 let isWinning = false;
                 let progressColor = '';
                 
+                // Check if we have ESPN game data
                 if (gameData && gameData.statusTypeName !== 'STATUS_SCHEDULED') {
                   if (p.stat === 'moneyline') {
                     isWinning = scoreDiff > 0;
@@ -3488,19 +3515,35 @@ async function logoutToken() {
                   }
                   progressColor = isWinning ? 'color: #4caf50;' : 'color: #f44336;'; // Green if winning, red if losing
                 }
+                // For historical games, use database status
+                else if (p.status === 'won' || p.status === 'lost') {
+                  isWinning = p.status === 'won';
+                  progressColor = isWinning ? 'color: #4caf50;' : 'color: #f44336;';
+                }
                 
-                // Find opponent team name
+                // Find opponent team name and scores
                 let opponentTeamName = '';
+                let betTeamScore = null;
+                let oppTeamScore = null;
+                
                 if (gameData) {
+                  // Use ESPN game data
                   const isHome = betTeam === gameData.teams.home;
                   const opponentFull = isHome ? gameData.teams.away : gameData.teams.home;
                   opponentTeamName = opponentFull.split(' ').pop();
-                  
-                  // Get actual scores
-                  const betTeamScore = isHome ? gameData.score.home : gameData.score.away;
-                  const oppTeamScore = isHome ? gameData.score.away : gameData.score.home;
-                  
-                  // Show score in format: "Cowboys 21 - 7 Falcons" with color based on winning/losing
+                  betTeamScore = isHome ? gameData.score.home : gameData.score.away;
+                  oppTeamScore = isHome ? gameData.score.away : gameData.score.home;
+                } else if (p.homeScore !== undefined && p.awayScore !== undefined) {
+                  // Use database scores (for historical games)
+                  // Determine if bet team is home or away
+                  const isHome = betTeam === p.home || (p.home && betTeam && p.home.includes(betTeamName));
+                  opponentTeamName = isHome ? (p.away || '').split(' ').pop() : (p.home || '').split(' ').pop();
+                  betTeamScore = isHome ? p.homeScore : p.awayScore;
+                  oppTeamScore = isHome ? p.awayScore : p.homeScore;
+                }
+                
+                // Show score if available
+                if (betTeamScore !== null && oppTeamScore !== null) {
                   progressCol = `<div style="text-align:center;padding:0.5rem;font-weight:bold;${progressColor}">${betTeamName} ${betTeamScore} - ${oppTeamScore} ${opponentTeamName}</div>`;
                 } else {
                   // No game data yet (scheduled game)
