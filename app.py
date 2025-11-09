@@ -977,13 +977,26 @@ def calculate_bet_value(bet, game_data):
         home_team = game_data["teams"]["home"]
         away_team = game_data["teams"]["away"]
         
-        # Determine if the bet team won
-        if bet_team == home_team:
-            return 1 if home_score > away_score else 0
-        elif bet_team == away_team:
-            return 1 if away_score > home_score else 0
+        # Normalize team names for comparison (handle both abbreviations and full names)
+        bet_team_norm = bet_team.lower().strip()
+        home_team_norm = home_team.lower().strip()
+        away_team_norm = away_team.lower().strip()
+        
+        # Calculate score differential from bet team's perspective
+        # This shows if the team is winning (+) or losing (-)
+        if (bet_team_norm == home_team_norm or 
+            bet_team_norm in home_team_norm or 
+            home_team_norm in bet_team_norm):
+            score_diff = home_score - away_score
+        elif (bet_team_norm == away_team_norm or 
+              bet_team_norm in away_team_norm or 
+              away_team_norm in bet_team_norm):
+            score_diff = away_score - home_score
         else:
             return 0
+        
+        # Return score differential (positive = winning, negative = losing)
+        return score_diff
     
     # --- Spread (Point Spread Betting) ---
     if stat == "spread":
@@ -1152,7 +1165,8 @@ def process_parlay_data(parlays):
 
         for leg in parlay.get("legs", []):
             app.logger.info(f"Processing leg in final stage: {leg}")
-            game_key = f"{leg['game_date']}_{leg['away']}_{leg['home']}"
+            sport = leg.get('sport', 'NFL')  # Get sport for this leg
+            game_key = f"{leg['game_date']}_{sport}_{leg['away']}_{leg['home']}"
             game_data = parlay_games.get(game_key)
             app.logger.info(f"Game data for {game_key}: {game_data is not None}")
             
@@ -1160,13 +1174,18 @@ def process_parlay_data(parlays):
 
             if game_data:
                 try:
+                    # Update leg with live scores from game_data
+                    home_score = game_data.get("score", {}).get("home", 0)
+                    away_score = game_data.get("score", {}).get("away", 0)
+                    leg["homeScore"] = home_score
+                    leg["awayScore"] = away_score
+                    app.logger.info(f"Updated scores: {leg.get('away')} {away_score} @ {leg.get('home')} {home_score}")
+                    
                     leg["current"] = calculate_bet_value(leg, game_data)
                     app.logger.info(f"Calculated value for {leg.get('player', leg.get('team', 'Unknown'))} - {leg['stat']}: {leg['current']}")
                     
                     # Add score differential for spread/moneyline bets
                     if leg["stat"] in ["spread", "moneyline"]:
-                        home_score = game_data.get("score", {}).get("home", 0)
-                        away_score = game_data.get("score", {}).get("away", 0)
                         home_team = game_data.get("teams", {}).get("home", "")
                         away_team = game_data.get("teams", {}).get("away", "")
                         
