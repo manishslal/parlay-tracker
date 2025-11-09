@@ -3333,36 +3333,62 @@ async function logoutToken() {
                 g.teams.away === leg.away && g.teams.home === leg.home
               ) : null;
               
-              const isSpreadOrML = leg.stat === 'spread' || leg.stat === 'moneyline';
+              // Normalize stat to lowercase for comparison
+              const statLower = (leg.stat || '').toLowerCase();
+              const isSpreadOrML = statLower === 'spread' || statLower === 'moneyline';
               const current = leg.current ?? 0;
               const pct = leg.target > 0 ? Math.min(100, Math.round(current / leg.target * 100)) : 0;
               
+              // Check leg.gameStatus first (from database), then fall back to gameData
+              const gameStatus = leg.gameStatus || (gameData ? gameData.statusTypeName : null);
+              
               // Check if game is in progress
-              if (gameData && (gameData.statusTypeName === 'STATUS_IN_PROGRESS' || gameData.statusTypeName === 'STATUS_HALFTIME')) {
+              if (gameStatus === 'in_progress' || gameStatus === 'STATUS_IN_PROGRESS' || gameStatus === 'STATUS_HALFTIME') {
+                // For in-progress spread/moneyline bets, check if currently winning/losing
+                if (isSpreadOrML && current !== null) {
+                  const scoreDiff = leg.score_diff ?? current;
+                  let isWinning = false;
+                  if (statLower === 'moneyline') {
+                    isWinning = scoreDiff > 0;
+                  } else if (statLower === 'spread') {
+                    isWinning = (scoreDiff + leg.target) > 0;
+                  }
+                  return isWinning ? 'In Progress (Winning)' : 'In Progress (Losing)';
+                }
                 return 'In Progress';
               }
               
               // Check if not started
-              if (gameData && gameData.statusTypeName === 'STATUS_SCHEDULED') {
+              if (gameStatus === 'scheduled' || gameStatus === 'STATUS_SCHEDULED' || gameStatus === 'pre') {
                 return 'Not Started';
               }
-              if (!gameData && (areAllGamesScheduled || (!isAnyGameLive && !areAllGamesFinal))) {
+              if (!gameStatus && (areAllGamesScheduled || (!isAnyGameLive && !areAllGamesFinal))) {
                 return 'Not Started';
               }
               
-              // Check if hit (100% or winning bet)
-              if (!isSpreadOrML && pct === 100) {
-                return 'Hit';
-              }
-              if (isSpreadOrML && gameData && gameData.statusTypeName === 'STATUS_FINAL') {
-                const scoreDiff = leg.score_diff ?? 0;
-                let isWinningBet = false;
-                if (leg.stat === 'moneyline') {
-                  isWinningBet = scoreDiff > 0;
-                } else if (leg.stat === 'spread') {
-                  isWinningBet = (scoreDiff + leg.target) > 0;
+              // Check if game is final/completed
+              if (gameStatus === 'completed' || gameStatus === 'final' || gameStatus === 'STATUS_FINAL') {
+                if (isSpreadOrML) {
+                  const scoreDiff = leg.score_diff ?? current;
+                  let isWinningBet = false;
+                  if (statLower === 'moneyline') {
+                    isWinningBet = scoreDiff > 0;
+                  } else if (statLower === 'spread') {
+                    isWinningBet = (scoreDiff + leg.target) > 0;
+                  }
+                  return isWinningBet ? 'Hit' : 'Miss';
                 }
-                return isWinningBet ? 'Hit' : 'Miss';
+                // For other stats, check if target was reached
+                if (pct >= 100) {
+                  return 'Hit';
+                } else {
+                  return 'Miss';
+                }
+              }
+              
+              // Check if hit (100% or winning bet for non-final games)
+              if (!isSpreadOrML && pct >= 100) {
+                return 'Hit';
               }
               
               return 'In Progress'; // Default
