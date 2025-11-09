@@ -359,6 +359,9 @@ class Bet(db.Model):
                 'gameId': bet_leg.game_id or '',
                 'homeTeam': bet_leg.home_team,
                 'awayTeam': bet_leg.away_team,
+                # Add fields needed by process_parlay_data
+                'home': bet_leg.home_team,  # process_parlay_data uses 'home'
+                'away': bet_leg.away_team,  # process_parlay_data uses 'away'
             }
             
             # Add jersey number if available from player table
@@ -394,12 +397,20 @@ class Bet(db.Model):
                     # Add missing fields from JSON
                     if not leg_dict.get('opponent') and json_leg.get('opponent'):
                         leg_dict['opponent'] = json_leg['opponent']
-                    if not leg_dict.get('homeTeam') and json_leg.get('home'):
+                    
+                    # Always override with JSON data if available (structured DB may be incomplete)
+                    if json_leg.get('home'):
                         leg_dict['homeTeam'] = json_leg['home']
-                    if not leg_dict.get('awayTeam') and json_leg.get('away'):
+                        leg_dict['home'] = json_leg['home']
+                    if json_leg.get('away'):
                         leg_dict['awayTeam'] = json_leg['away']
+                        leg_dict['away'] = json_leg['away']
                     if json_leg.get('game_date'):
                         leg_dict['game_date'] = json_leg['game_date']
+                    
+                    # Also merge other potentially missing fields
+                    if json_leg.get('stat_add'):
+                        leg_dict['stat_add'] = json_leg['stat_add']
             
             # Preserve boost, sport, and other metadata
             if 'boost' in json_data:
