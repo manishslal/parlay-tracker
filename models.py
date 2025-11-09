@@ -385,15 +385,25 @@ class Bet(db.Model):
             # score_diff = (bet team's score) - (opponent's score)
             if bet_leg.home_score is not None and bet_leg.away_score is not None:
                 # Determine which team the bet is on
-                if player_team and bet_leg.home_team:
+                if bet_leg.bet_type in ['spread', 'moneyline']:
+                    # For team bets, player_name contains the team name
+                    # Check if the bet team matches home or away
+                    bet_team_name = bet_leg.player_name or player_team or ''
+                    is_home_bet = False
+                    
+                    if bet_leg.home_team and bet_team_name:
+                        # Check if bet team is home team
+                        is_home_bet = (bet_team_name in bet_leg.home_team) or (bet_leg.home_team in bet_team_name)
+                    
+                    if is_home_bet:
+                        leg_dict['score_diff'] = bet_leg.home_score - bet_leg.away_score
+                    else:
+                        leg_dict['score_diff'] = bet_leg.away_score - bet_leg.home_score
+                elif player_team and bet_leg.home_team:
                     # For player props, check if player's team is home or away
                     is_home = player_team in bet_leg.home_team or bet_leg.home_team in player_team
                     score_diff = bet_leg.home_score - bet_leg.away_score if is_home else bet_leg.away_score - bet_leg.home_score
                     leg_dict['score_diff'] = score_diff
-                elif bet_leg.bet_type in ['spread', 'moneyline']:
-                    # For team bets, need to determine which team from player_name or other field
-                    # Default: assume bet is on home team (can be refined)
-                    leg_dict['score_diff'] = bet_leg.home_score - bet_leg.away_score
             
             legs.append(leg_dict)
         
@@ -421,6 +431,24 @@ class Bet(db.Model):
                         leg_dict['away'] = json_leg['away']
                     if json_leg.get('game_date'):
                         leg_dict['game_date'] = json_leg['game_date']
+                    
+                    # Add scores from JSON if not in database
+                    if not leg_dict.get('homeScore') and json_leg.get('homeScore') is not None:
+                        leg_dict['homeScore'] = json_leg['homeScore']
+                    if not leg_dict.get('awayScore') and json_leg.get('awayScore') is not None:
+                        leg_dict['awayScore'] = json_leg['awayScore']
+                    
+                    # Calculate score_diff from JSON scores if needed for spread/moneyline
+                    if not leg_dict.get('score_diff') and leg_dict.get('homeScore') is not None and leg_dict.get('awayScore') is not None:
+                        if leg_dict.get('stat') in ['spread', 'moneyline']:
+                            bet_team_name = leg_dict.get('player') or leg_dict.get('team') or ''
+                            home_team = leg_dict.get('home', '')
+                            is_home_bet = bet_team_name and home_team and (bet_team_name in home_team or home_team in bet_team_name)
+                            
+                            if is_home_bet:
+                                leg_dict['score_diff'] = leg_dict['homeScore'] - leg_dict['awayScore']
+                            else:
+                                leg_dict['score_diff'] = leg_dict['awayScore'] - leg_dict['homeScore']
                     
                     # Also merge other potentially missing fields
                     if json_leg.get('stat_add'):
