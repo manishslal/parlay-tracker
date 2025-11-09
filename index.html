@@ -3274,6 +3274,16 @@ async function logoutToken() {
           legsToRender = [...parlay.legs].sort((a, b) => {
             // Helper function to determine leg status
             const getLegStatus = (leg) => {
+              // PRIORITY 1: Check database status for completed games (historical bets)
+              // If we have a definitive status from the database, use it
+              if (leg.status === 'won') {
+                return 'Hit';
+              }
+              if (leg.status === 'lost') {
+                return 'Miss';
+              }
+              
+              // PRIORITY 2: Check ESPN live game data (for current/live games)
               const gameData = parlay.games ? parlay.games.find(g => 
                 g.teams.away === leg.away && g.teams.home === leg.home
               ) : null;
@@ -3587,8 +3597,12 @@ async function logoutToken() {
                 }
               }
               
-              // Status logic - check game state FIRST before showing win/loss
-              if(gameData && gameData.statusTypeName === 'STATUS_SCHEDULED') {
+              // Status logic - PRIORITY 1: Check database status for completed games (historical bets)
+              if (p.status === 'won') {
+                txt = '✅ Hit';
+              } else if (p.status === 'lost') {
+                txt = '🚫 Miss';
+              } else if(gameData && gameData.statusTypeName === 'STATUS_SCHEDULED') {
                 txt='🔜 Not Started';
               } else if(gameData && (gameData.statusTypeName === 'STATUS_IN_PROGRESS' || gameData.statusTypeName === 'STATUS_HALFTIME')) {
                 txt='⏳ In Progress';
@@ -3637,8 +3651,10 @@ async function logoutToken() {
                 `<strong>${playerOrTeam}</strong><span style="font-weight:normal;"> - ${statType}</span>`;
               
               // Check if game has started (for hiding progress bar and current stat in Live Bets)
-              const gameNotStarted = (gameData && gameData.statusTypeName === 'STATUS_SCHEDULED') || 
-                                     (!gameData && (areAllGamesScheduled || (!isAnyGameLive && !areAllGamesFinal)));
+              // If we have database status (won/lost), the game has definitely finished, so it's not "not started"
+              const gameNotStarted = (p.status !== 'won' && p.status !== 'lost') && 
+                                     ((gameData && gameData.statusTypeName === 'STATUS_SCHEDULED') || 
+                                     (!gameData && (areAllGamesScheduled || (!isAnyGameLive && !areAllGamesFinal))));
               
               // For Live Bets that haven't started: hide progress bar and current stat, center the target
               const mobileLine2Content = gameNotStarted ? 
