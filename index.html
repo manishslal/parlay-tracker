@@ -2777,7 +2777,7 @@ async function logoutToken() {
       "Travis Hunter": "Colorado Buffaloes"
     };
 
-    // Helper to get player team and position display
+    // Helper to get player team and position display with jersey number
     function getPlayerTeamPosition(leg) {
       if (!leg.player) return ''; // No player = team bet (moneyline/spread)
       
@@ -2795,10 +2795,20 @@ async function logoutToken() {
         teamAbbr = getPlayerTeamAbbr(leg.player, playerTeams[leg.player]);
       }
       
-      if (position && teamAbbr) {
+      // Get jersey number if available
+      const jerseyNum = leg.jersey_number ? `#${leg.jersey_number}` : '';
+      
+      // Build display string: "SEA RB #55" or "SEA RB" or "SEA #55"
+      if (position && teamAbbr && jerseyNum) {
+        return `${teamAbbr} ${position} ${jerseyNum}`;
+      } else if (position && teamAbbr) {
         return `${teamAbbr} ${position}`;
+      } else if (teamAbbr && jerseyNum) {
+        return `${teamAbbr} ${jerseyNum}`;
       } else if (teamAbbr) {
         return teamAbbr;
+      } else if (position && jerseyNum) {
+        return `${position} ${jerseyNum}`;
       } else if (position) {
         return position;
       }
@@ -3013,12 +3023,21 @@ async function logoutToken() {
         // Check if all legs are Hit AND all games are final (winning bet deserves trophy)
         const allLegsComplete = parlay.legs && parlay.legs.length > 0 && 
           parlay.legs.every(leg => {
+            // PRIORITY 1: Check database status for completed games (historical bets)
+            if (leg.status === 'won') {
+              return true; // Leg won according to database
+            }
+            if (leg.status === 'lost') {
+              return false; // Leg lost according to database
+            }
+            
+            // PRIORITY 2: Check ESPN game data for live/current games
             // Get game data for this leg
             const gameData = parlay.games ? parlay.games.find(g => 
               g.teams.away === leg.away && g.teams.home === leg.home
             ) : null;
             
-            // Game must be final to count as complete
+            // Game must be final to count as complete (only if no database status)
             if (!gameData || gameData.statusTypeName !== 'STATUS_FINAL') {
               return false;
             }
@@ -3364,7 +3383,17 @@ async function logoutToken() {
               let progressCol = '';
               let currentDisplay = current;
               let targetDisplay = p.target;
+              
+              // For spread/moneyline, use team name; for player props, use player name
               let playerDisplay = p.player || p.team || 'N/A';
+              if (isSpreadOrML && p.team) {
+                // Extract just the team name (e.g., "Dallas Cowboys" -> "Cowboys")
+                playerDisplay = p.team.split(' ').pop();
+              } else if (isSpreadOrML && (p.home || p.away)) {
+                // Fallback: use home or away team from game data
+                const betTeam = p.home || p.away;
+                playerDisplay = betTeam.split(' ').pop();
+              }
               
               // Handle total points over/under - show matchup as "player"
               if (isTotalPoints && p.away && p.home) {
