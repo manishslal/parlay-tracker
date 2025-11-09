@@ -477,8 +477,14 @@ class Bet(db.Model):
                 leg_dict['homeScore'] = bet_leg.home_score
             if bet_leg.away_score is not None:
                 leg_dict['awayScore'] = bet_leg.away_score
+            
+            # Add game status (scheduled, in_progress, completed, final)
+            if bet_leg.game_status:
+                leg_dict['gameStatus'] = bet_leg.game_status
+            
+            # Add quarter/period info if available
             if bet_leg.current_quarter:
-                leg_dict['gameStatus'] = bet_leg.current_quarter
+                leg_dict['currentPeriod'] = bet_leg.current_quarter
             
             # Calculate score_diff for spread/moneyline bets
             # score_diff = (bet team's score) - (opponent's score)
