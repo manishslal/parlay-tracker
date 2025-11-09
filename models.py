@@ -70,6 +70,79 @@ class User(UserMixin, db.Model):
         return f'<User {self.username}>'
 
 
+class Player(db.Model):
+    """Player model for storing player information"""
+    __tablename__ = 'players'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    player_name = db.Column(db.String(100), nullable=False)
+    normalized_name = db.Column(db.String(100), nullable=False)
+    display_name = db.Column(db.String(100), nullable=False)
+    sport = db.Column(db.String(50), nullable=False)
+    position = db.Column(db.String(20))
+    position_group = db.Column(db.String(20))
+    jersey_number = db.Column(db.Integer)
+    current_team = db.Column(db.String(50))
+    team_abbreviation = db.Column(db.String(10))
+    previous_teams = db.Column(db.Text)
+    espn_player_id = db.Column(db.String(50))
+    status = db.Column(db.String(20), default='active')
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Relationship to bet legs
+    bet_legs = db.relationship('BetLeg', backref='player', lazy='dynamic')
+    
+    def __repr__(self):
+        return f'<Player {self.player_name} ({self.sport})>'
+
+
+class BetLeg(db.Model):
+    """BetLeg model for individual parlay legs"""
+    __tablename__ = 'bet_legs'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    bet_id = db.Column(db.Integer, db.ForeignKey('bets.id'), nullable=False)
+    player_id = db.Column(db.Integer, db.ForeignKey('players.id'))
+    
+    # Player/Team Info
+    player_name = db.Column(db.String(100), nullable=False)
+    player_team = db.Column(db.String(50))
+    player_position = db.Column(db.String(10))
+    
+    # Game Info
+    home_team = db.Column(db.String(50), nullable=False)
+    away_team = db.Column(db.String(50), nullable=False)
+    game_id = db.Column(db.String(50))
+    sport = db.Column(db.String(50))
+    parlay_sport = db.Column(db.String(50))
+    
+    # Bet Details
+    bet_type = db.Column(db.String(50), nullable=False)
+    bet_line_type = db.Column(db.String(20))  # 'over', 'under', etc.
+    target_value = db.Column(db.Numeric(10, 2), nullable=False)
+    achieved_value = db.Column(db.Numeric(10, 2))
+    stat_type = db.Column(db.String(20))
+    
+    # Leg Status
+    status = db.Column(db.String(20), default='pending')
+    is_hit = db.Column(db.Boolean)
+    
+    # Live Game Data
+    current_quarter = db.Column(db.String(10))
+    time_remaining = db.Column(db.String(20))
+    home_score = db.Column(db.Integer)
+    away_score = db.Column(db.Integer)
+    
+    # Metadata
+    leg_order = db.Column(db.Integer)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    def __repr__(self):
+        return f'<BetLeg {self.player_name} - {self.bet_type}>'
+
+
 class Bet(db.Model):
     """Bet model for storing parlay data"""
     __tablename__ = 'bets'
@@ -95,10 +168,24 @@ class Bet(db.Model):
     # Bet data stored as JSON
     bet_data = db.Column(db.Text, nullable=False)  # Full bet JSON
     
+    # New structured data columns (from migration)
+    wager = db.Column(db.Numeric(10, 2))
+    final_odds = db.Column(db.Integer)
+    potential_winnings = db.Column(db.Numeric(10, 2))
+    actual_winnings = db.Column(db.Numeric(10, 2))
+    total_legs = db.Column(db.Integer, default=0)
+    legs_won = db.Column(db.Integer, default=0)
+    legs_lost = db.Column(db.Integer, default=0)
+    legs_pending = db.Column(db.Integer, default=0)
+    legs_live = db.Column(db.Integer, default=0)
+    
     # Timestamps
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     bet_date = db.Column(db.String(20))  # Date from original bet (e.g., "2024-10-27")
+    
+    # Relationships
+    bet_legs_rel = db.relationship('BetLeg', backref='bet', lazy='dynamic', cascade='all, delete-orphan')
     
     # Indexes for common queries
     __table_args__ = (
@@ -194,6 +281,134 @@ class Bet(db.Model):
         bet_dict['bettor'] = self.get_primary_bettor()  # Add primary bettor name
         bet_dict['created_at'] = self.created_at.isoformat()
         bet_dict['updated_at'] = self.updated_at.isoformat()
+        return bet_dict
+    
+    def to_dict_structured(self):
+        """Convert bet to dictionary using structured database tables
+        
+        This method queries bet_legs and players tables instead of using the JSON blob.
+        Includes jersey numbers and all relational data.
+        """
+        # Get bet-level data from columns
+        bet_dict = {
+            'db_id': self.id,
+            'user_id': self.user_id,
+            'bettor': self.get_primary_bettor(),
+            'bet_id': self.bet_id or '',
+            'betting_site': self.betting_site or 'Unknown',
+            'status': self.status,
+            'bet_date': self.bet_date or '',
+            'created_at': self.created_at.isoformat(),
+            'updated_at': self.updated_at.isoformat(),
+        }
+        
+        # Add financial data
+        bet_dict['wager'] = float(self.wager) if self.wager else 0
+        bet_dict['odds'] = self.final_odds or 0
+        bet_dict['returns'] = float(self.potential_winnings) if self.potential_winnings else 0
+        
+        # Construct bet name from type and leg count
+        if self.bet_type == 'SGP':
+            bet_dict['name'] = f"{self.total_legs} Leg SGP"
+        elif self.bet_type == 'Parlay':
+            bet_dict['name'] = f"{self.total_legs} Pick Parlay"
+        else:
+            bet_dict['name'] = self.bet_type or 'Parlay'
+        
+        bet_dict['type'] = self.bet_type or 'Parlay'
+        
+        # Query bet legs with player data
+        legs_query = db.session.query(BetLeg, Player).outerjoin(
+            Player, BetLeg.player_id == Player.id
+        ).filter(
+            BetLeg.bet_id == self.id
+        ).order_by(BetLeg.leg_order).all()
+        
+        legs = []
+        for bet_leg, player in legs_query:
+            # Get player team - use team_abbreviation from player table if available, otherwise player_team
+            player_team = ''
+            if player and player.team_abbreviation:
+                player_team = player.team_abbreviation
+            elif player and player.current_team:
+                player_team = player.current_team
+            elif bet_leg.player_team:
+                player_team = bet_leg.player_team
+            
+            # Determine opponent (@ for away, no @ for home)
+            opponent = ''
+            if bet_leg.home_team and bet_leg.away_team:
+                # Check if player's team matches away team (then opponent is @ home_team)
+                if player_team and bet_leg.away_team and player_team.upper() in bet_leg.away_team.upper():
+                    opponent = f"@ {bet_leg.home_team}"
+                elif player_team and bet_leg.home_team and player_team.upper() in bet_leg.home_team.upper():
+                    opponent = bet_leg.away_team
+                else:
+                    # Default: show away team as opponent
+                    opponent = bet_leg.away_team
+            
+            leg_dict = {
+                'player': bet_leg.player_name,
+                'team': player_team,
+                'position': bet_leg.player_position or (player.position if player else ''),
+                'opponent': opponent,
+                'stat': bet_leg.bet_type,
+                'target': float(bet_leg.target_value) if bet_leg.target_value else 0,
+                'current': float(bet_leg.achieved_value) if bet_leg.achieved_value else None,
+                'status': bet_leg.status or 'pending',
+                'gameId': bet_leg.game_id or '',
+                'homeTeam': bet_leg.home_team,
+                'awayTeam': bet_leg.away_team,
+            }
+            
+            # Add jersey number if available from player table
+            if player and player.jersey_number:
+                leg_dict['jersey_number'] = player.jersey_number
+                leg_dict['team_abbr'] = player.team_abbreviation or bet_leg.player_team
+            
+            # Add stat_add (over/under) if available
+            if bet_leg.bet_line_type:
+                leg_dict['stat_add'] = bet_leg.bet_line_type
+            
+            # Add live game data if available
+            if bet_leg.home_score is not None:
+                leg_dict['homeScore'] = bet_leg.home_score
+            if bet_leg.away_score is not None:
+                leg_dict['awayScore'] = bet_leg.away_score
+            if bet_leg.current_quarter:
+                leg_dict['gameStatus'] = bet_leg.current_quarter
+            
+            legs.append(leg_dict)
+        
+        bet_dict['legs'] = legs
+        
+        # Fallback: Merge with JSON data to fill in missing fields
+        try:
+            json_data = self.get_bet_data()
+            json_legs = json_data.get('legs', [])
+            
+            # Enrich each leg with JSON data if available
+            for i, leg_dict in enumerate(legs):
+                if i < len(json_legs):
+                    json_leg = json_legs[i]
+                    # Add missing fields from JSON
+                    if not leg_dict.get('opponent') and json_leg.get('opponent'):
+                        leg_dict['opponent'] = json_leg['opponent']
+                    if not leg_dict.get('homeTeam') and json_leg.get('home'):
+                        leg_dict['homeTeam'] = json_leg['home']
+                    if not leg_dict.get('awayTeam') and json_leg.get('away'):
+                        leg_dict['awayTeam'] = json_leg['away']
+                    if json_leg.get('game_date'):
+                        leg_dict['game_date'] = json_leg['game_date']
+            
+            # Preserve boost, sport, and other metadata
+            if 'boost' in json_data:
+                bet_dict['boost'] = json_data['boost']
+            if 'sport' in json_data:
+                bet_dict['sport'] = json_data['sport']
+        except:
+            pass
+        
         return bet_dict
     
     def __repr__(self):
