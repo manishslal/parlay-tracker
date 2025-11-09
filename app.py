@@ -873,7 +873,7 @@ def _get_touchdowns(player_name, boxscore, scoring_plays=None):
 
 def calculate_bet_value(bet, game_data):
     """Calculate the current value for a bet based on game data."""
-    stat = bet["stat"]
+    stat = bet["stat"].strip().lower()  # Normalize to lowercase for comparisons
     boxscore = game_data.get("boxscore", [])
     scoring_plays = game_data.get("scoring_plays", [])
     
@@ -978,20 +978,28 @@ def calculate_bet_value(bet, game_data):
         away_team = game_data["teams"]["away"]
         spread = bet.get("target", 0)
         
+        # Normalize team names for comparison (handle both abbreviations and full names)
+        bet_team_norm = bet_team.lower().strip()
+        home_team_norm = home_team.lower().strip()
+        away_team_norm = away_team.lower().strip()
+        
         # Calculate the score difference from bet team's perspective
-        if bet_team == home_team:
+        # Check if bet_team matches home_team (exact match or one contains the other)
+        if (bet_team_norm == home_team_norm or 
+            bet_team_norm in home_team_norm or 
+            home_team_norm in bet_team_norm):
             score_diff = home_score - away_score
-        elif bet_team == away_team:
+        elif (bet_team_norm == away_team_norm or 
+              bet_team_norm in away_team_norm or 
+              away_team_norm in bet_team_norm):
             score_diff = away_score - home_score
         else:
             return 0
         
-        # For spread: if target is -7, team needs to win by more than 7
-        # If target is +7, team can lose by up to 7 and still cover
-        # The bet wins if: score_diff > spread (for negative spreads)
-        # or score_diff >= -spread (for positive spreads)
-        # Simplified: score_diff + spread > 0
-        return 1 if score_diff + spread > 0 else 0
+        # For spread bets, return the score differential so frontend can show progress
+        # The frontend can determine if the bet covers by checking: score_diff + spread > 0
+        # For example: BUF -6.5 with score_diff=-13 shows Buffalo losing by 13 (not covering)
+        return score_diff
 
     return 0 # Default for unhandled stats
 
@@ -1005,9 +1013,17 @@ def fetch_game_details_from_espn(game_date, away_team, home_team):
         ev = None
         for event in events:
             try:
-                team_names = {c['team']['displayName'] for c in event['competitions'][0]['competitors']}
-                app.logger.info(f"Event team names: {team_names}")
-                if away_team in team_names and home_team in team_names:
+                competitors = event['competitions'][0]['competitors']
+                # Get both full names and abbreviations
+                team_names = {c['team']['displayName'] for c in competitors}
+                team_abbrs = {c['team']['abbreviation'] for c in competitors}
+                app.logger.info(f"Event teams: {team_names} | Abbreviations: {team_abbrs}")
+                
+                # Match by either full name or abbreviation
+                away_match = away_team in team_names or away_team in team_abbrs
+                home_match = home_team in team_names or home_team in team_abbrs
+                
+                if away_match and home_match:
                     ev = event
                     app.logger.info("Found matching event")
                     break
