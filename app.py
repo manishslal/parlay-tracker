@@ -1953,7 +1953,11 @@ def fix_duplicate_leg(bet_db_id):
         if not bet:
             return jsonify({"error": "Bet not found"}), 404
         
+        # Parse bet_data if it's a string
         bet_data = bet.bet_data
+        if isinstance(bet_data, str):
+            bet_data = json.loads(bet_data)
+        
         original_count = len(bet_data.get('legs', []))
         
         # Remove duplicates based on player, stat, target, and stat_add

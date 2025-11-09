@@ -96,7 +96,21 @@ def migrate_bet(cursor, bet_row):
     
     # Extract bet-level data
     wager = float(bet_data.get('wager') or 0)
-    odds = int(bet_data.get('odds') or 0)
+    
+    # Handle odds - may be int or string like '3x'
+    odds_value = bet_data.get('odds')
+    if odds_value:
+        # Try to parse as int, if fails (like '3x'), extract number or default to 0
+        try:
+            odds = int(odds_value)
+        except (ValueError, TypeError):
+            # Try to extract digits from string like '3x'
+            import re
+            match = re.search(r'(\d+)', str(odds_value))
+            odds = int(match.group(1)) if match else 0
+    else:
+        odds = 0
+    
     returns = float(bet_data.get('returns') or 0)
     legs = bet_data.get('legs', [])
     
