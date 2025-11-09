@@ -766,8 +766,14 @@ def is_past_date(game_date_str):
     game_date = datetime.strptime(game_date_str, "%Y-%m-%d").date()
     return game_date < today
 
-def get_events(date_str):
-    app.logger.info(f"Fetching events for date: {date_str}")
+def get_events(date_str, sport='NFL'):
+    """Fetch events from ESPN API for a given date and sport.
+    
+    Args:
+        date_str: Date string in YYYY-MM-DD format
+        sport: Sport code (NFL, NBA, MLB, NHL, etc.)
+    """
+    app.logger.info(f"Fetching {sport} events for date: {date_str}")
     # Mock data disabled - prefer real ESPN responses for accuracy. If you need
     # mock data for offline testing, re-enable or modify the block below.
     #
@@ -777,12 +783,26 @@ def get_events(date_str):
     
     # For other dates, try the real API
     d = datetime.strptime(date_str, "%Y-%m-%d").strftime("%Y%m%d")
-    url = f"http://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?dates={d}"
+    
+    # Map sport codes to ESPN API paths
+    sport_map = {
+        'NFL': 'football/nfl',
+        'NBA': 'basketball/nba',
+        'MLB': 'baseball/mlb',
+        'NHL': 'hockey/nhl',
+        'NCAAF': 'football/college-football',
+        'NCAAB': 'basketball/mens-college-basketball'
+    }
+    
+    sport_path = sport_map.get(sport.upper(), 'football/nfl')
+    url = f"http://site.api.espn.com/apis/site/v2/sports/{sport_path}/scoreboard?dates={d}"
+    
     try:
+        app.logger.info(f"Fetching from URL: {url}")
         data = requests.get(url).json()
         return data.get("events", [])
     except Exception as e:
-        app.logger.error(f"Failed to fetch events for {date_str}: {e}")
+        app.logger.error(f"Failed to fetch {sport} events for {date_str}: {e}")
         return []
 
 def _get_player_stat_from_boxscore(player_name, category_name, stat_label, boxscore):
@@ -1003,12 +1023,19 @@ def calculate_bet_value(bet, game_data):
 
     return 0 # Default for unhandled stats
 
-def fetch_game_details_from_espn(game_date, away_team, home_team):
-    """Fetch detailed game data for a single game."""
+def fetch_game_details_from_espn(game_date, away_team, home_team, sport='NFL'):
+    """Fetch detailed game data for a single game.
+    
+    Args:
+        game_date: Date string in YYYY-MM-DD format
+        away_team: Away team name or abbreviation
+        home_team: Home team name or abbreviation
+        sport: Sport code (NFL, NBA, MLB, NHL, etc.)
+    """
     try:
-        app.logger.info(f"Fetching game details for {away_team} @ {home_team} on {game_date}")
-        events = get_events(game_date)
-        app.logger.info(f"Found {len(events)} events for {game_date}")
+        app.logger.info(f"Fetching {sport} game details for {away_team} @ {home_team} on {game_date}")
+        events = get_events(game_date, sport)
+        app.logger.info(f"Found {len(events)} {sport} events for {game_date}")
         
         ev = None
         for event in events:
@@ -1050,8 +1077,18 @@ def fetch_game_details_from_espn(game_date, away_team, home_team):
         else:
             # Try fetching the summary endpoint which contains boxscore and scoringPlays
             try:
-                summary_url = f"http://site.api.espn.com/apis/site/v2/sports/football/nfl/summary?event={ev['id']}"
-                app.logger.info(f"Fetching summary for event {ev['id']}: {summary_url}")
+                # Map sport codes to ESPN API paths
+                sport_map = {
+                    'NFL': 'football/nfl',
+                    'NBA': 'basketball/nba',
+                    'MLB': 'baseball/mlb',
+                    'NHL': 'hockey/nhl',
+                    'NCAAF': 'football/college-football',
+                    'NCAAB': 'basketball/mens-college-basketball'
+                }
+                sport_path = sport_map.get(sport.upper(), 'football/nfl')
+                summary_url = f"http://site.api.espn.com/apis/site/v2/sports/{sport_path}/summary?event={ev['id']}"
+                app.logger.info(f"Fetching {sport} summary for event {ev['id']}: {summary_url}")
                 summary = requests.get(summary_url, timeout=8).json()
                 # summary may use camelCase keys
                 s_box = summary.get("boxscore") or summary.get("boxScore") or {}
@@ -1059,7 +1096,7 @@ def fetch_game_details_from_espn(game_date, away_team, home_team):
                 scoring_plays = summary.get("scoringPlays") or summary.get("scoring_plays") or []
                 app.logger.info(f"Summary fetched: box players={len(boxscore_players)}, scoring plays={len(scoring_plays)}")
             except Exception as e:
-                app.logger.error(f"Error fetching summary for event {ev.get('id')}: {e}")
+                app.logger.error(f"Error fetching {sport} summary for event {ev.get('id')}: {e}")
 
         game = {
             "espn_game_id": ev["id"],
@@ -1094,12 +1131,13 @@ def process_parlay_data(parlays):
         
         for leg in parlay.get("legs", []):
             app.logger.info(f"Processing leg for {leg.get('player')} - {leg.get('stat')}")
-            game_key = f"{leg['game_date']}_{leg['away']}_{leg['home']}"
+            sport = leg.get('sport', 'NFL')  # Default to NFL if not specified
+            game_key = f"{leg['game_date']}_{sport}_{leg['away']}_{leg['home']}"
             app.logger.info(f"Game key: {game_key}")
             
             if game_key not in game_data_cache:
-                app.logger.info(f"Fetching game data for {game_key}")
-                game_data = fetch_game_details_from_espn(leg['game_date'], leg['away'], leg['home'])
+                app.logger.info(f"Fetching {sport} game data for {game_key}")
+                game_data = fetch_game_details_from_espn(leg['game_date'], leg['away'], leg['home'], sport)
                 app.logger.info(f"Game data fetched: {game_data is not None}")
                 game_data_cache[game_key] = game_data
             else:

@@ -467,6 +467,7 @@ class Bet(db.Model):
                 'home': bet_leg.home_team,  # process_parlay_data uses 'home'
                 'away': bet_leg.away_team,  # process_parlay_data uses 'away'
                 'game_date': bet_leg.game_date.strftime('%Y-%m-%d') if bet_leg.game_date else '',  # CRITICAL: process_parlay_data needs this
+                'sport': bet_leg.sport or 'NFL',  # Default to NFL for backwards compatibility
             }
             
             # Add jersey number if available from player table
