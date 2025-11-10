@@ -1179,6 +1179,16 @@ def process_parlay_data(parlays):
                     away_score = game_data.get("score", {}).get("away", 0)
                     leg["homeScore"] = home_score
                     leg["awayScore"] = away_score
+                    
+                    # Update leg with full team names from game_data
+                    game_teams = game_data.get("teams", {})
+                    if game_teams.get("away"):
+                        leg["away"] = game_teams["away"]
+                        leg["awayTeam"] = game_teams["away"]
+                    if game_teams.get("home"):
+                        leg["home"] = game_teams["home"]
+                        leg["homeTeam"] = game_teams["home"]
+                    
                     app.logger.info(f"Updated scores: {leg.get('away')} {away_score} @ {leg.get('home')} {home_score}")
                     
                     leg["current"] = calculate_bet_value(leg, game_data)
