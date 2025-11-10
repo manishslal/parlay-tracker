@@ -340,12 +340,13 @@ def auto_move_completed_bets(user_id):
         bets = get_user_bets_from_db(user_id, status_filter=['pending', 'live'])
         
         # First, process all bets to get current data from ESPN
-        bet_data_list = [bet.get_bet_data() for bet in bets]
+        # Use to_dict_structured() to get legs from database, not JSON blob
+        bet_data_list = [bet.to_dict_structured(use_live_data=True) for bet in bets]
         processed_data = process_parlay_data(bet_data_list)
         
         updated_count = 0
         for bet in bets:
-            bet_data = bet.get_bet_data()
+            bet_data = bet.to_dict_structured(use_live_data=True)
             legs = bet_data.get('legs', [])
             
             if not legs:
@@ -377,10 +378,29 @@ def auto_move_completed_bets(user_id):
                     continue
                 
                 # Find game data for this leg
+                # Match by either full name or abbreviation (database stores abbreviations, API returns both)
                 game_data = None
+                leg_away = leg.get('away', '')
+                leg_home = leg.get('home', '')
+                
                 for game in games_data:
-                    if (game.get('teams', {}).get('away') == leg.get('away') and 
-                        game.get('teams', {}).get('home') == leg.get('home')):
+                    teams = game.get('teams', {})
+                    game_away = teams.get('away', '')
+                    game_home = teams.get('home', '')
+                    game_away_abbr = teams.get('away_abbr', '')
+                    game_home_abbr = teams.get('home_abbr', '')
+                    
+                    # Check if teams match (compare abbreviations or full names)
+                    away_match = (leg_away == game_away or 
+                                  leg_away == game_away_abbr or
+                                  game_away == leg_away or
+                                  game_away_abbr == leg_away)
+                    home_match = (leg_home == game_home or 
+                                  leg_home == game_home_abbr or
+                                  game_home == leg_home or
+                                  game_home_abbr == leg_home)
+                    
+                    if away_match and home_match:
                         game_data = game
                         break
                 
@@ -1160,7 +1180,12 @@ def fetch_game_details_from_espn(game_date, away_team, home_team, sport='NFL'):
 
         game = {
             "espn_game_id": ev["id"],
-            "teams": {"away": away["team"]["displayName"], "home": home["team"]["displayName"]},
+            "teams": {
+                "away": away["team"]["displayName"], 
+                "home": home["team"]["displayName"],
+                "away_abbr": away["team"].get("abbreviation", ""),
+                "home_abbr": home["team"].get("abbreviation", "")
+            },
             "startTime": ev.get("date", "").split("T")[1][:5] + " ET" if "T" in ev.get("date", "") else "",
             "startDateTime": ev.get("date", ""),  # Full ISO datetime for countdown calculations
             "game_date": game_date,
