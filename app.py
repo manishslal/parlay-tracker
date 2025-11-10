@@ -1446,9 +1446,9 @@ def historical():
                 is_active=False,
                 is_archived=False
             ).all()
-            # Use use_live_data=True to force ESPN fetch for bets without saved final data
-            # This ensures newly moved historical bets get their final stats populated
-            historical_parlays = [bet.to_dict_structured(use_live_data=True) for bet in bets]  # Use structured DB with jersey numbers
+            # Use use_live_data=False to check if we have saved data first
+            # If data exists (achieved_value, game_status), use it; otherwise fetch from ESPN
+            historical_parlays = [bet.to_dict_structured(use_live_data=False) for bet in bets]  # Use structured DB with jersey numbers
             app.logger.info(f"Loaded {len(historical_parlays)} historical parlays")
             for parlay in historical_parlays:
                 app.logger.info(f"Parlay: {parlay.get('name')}, type: {parlay.get('type')}, legs: {len(parlay.get('legs', []))}")
