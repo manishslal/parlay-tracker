@@ -13,7 +13,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Import database models
-from models import db, User, Bet, bet_users
+from models import db, User, Bet, BetLeg, bet_users
 
 # Data directory for JSON fixtures
 DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
@@ -205,7 +205,7 @@ def save_bet_to_db(user_id, bet_data):
 def has_complete_final_data(bet_data):
     """Check if a bet has complete final data for all legs
     
-    Returns True if all legs have final_value OR current stats saved.
+    Returns True if all legs have final_value OR current stats saved (not None).
     This indicates the bet doesn't need ESPN API fetching anymore.
     """
     legs = bet_data.get('legs', [])
@@ -213,8 +213,8 @@ def has_complete_final_data(bet_data):
         return False
     
     for leg in legs:
-        # Check if leg has final data stored
-        has_final = 'final_value' in leg or 'current' in leg
+        # Check if leg has final data stored (not just the key, but actual data)
+        has_final = leg.get('final_value') is not None or leg.get('current') is not None
         if not has_final:
             return False
     
@@ -225,7 +225,7 @@ def save_final_results_to_bet(bet, processed_data):
     """Save final game results to bet data when games are completed
     
     This preserves final scores and outcomes so we don't lose data when ESPN
-    removes old games from their API.
+    removes old games from their API. Saves to both JSON bet_data and BetLeg table.
     """
     try:
         bet_data = bet.get_bet_data()
@@ -240,6 +240,9 @@ def save_final_results_to_bet(bet, processed_data):
         if not matching_parlay:
             return False
         
+        # Get BetLeg objects for this bet
+        bet_legs = bet.bet_legs_rel.order_by(BetLeg.leg_order).all()
+        
         # Update each leg with final results
         updated = False
         for i, leg in enumerate(bet_data.get('legs', [])):
@@ -248,7 +251,7 @@ def save_final_results_to_bet(bet, processed_data):
                 processed_leg = matching_parlay['legs'][i]
                 
                 # Save final stats if game is complete
-                if processed_leg.get('game_status') == 'STATUS_FINAL':
+                if processed_leg.get('gameStatus') == 'STATUS_FINAL':
                     # Store final score
                     if 'score' not in leg:
                         leg['score'] = processed_leg.get('score', {})
@@ -263,6 +266,25 @@ def save_final_results_to_bet(bet, processed_data):
                     if 'result' not in leg and 'status' in processed_leg:
                         leg['result'] = processed_leg['status']
                         updated = True
+                    
+                    # Also save to BetLeg table for future queries
+                    if i < len(bet_legs):
+                        bet_leg = bet_legs[i]
+                        if processed_leg.get('current') is not None and bet_leg.achieved_value is None:
+                            bet_leg.achieved_value = processed_leg['current']
+                            updated = True
+                            app.logger.info(f"Saved achieved_value={processed_leg['current']} for leg {i}: {bet_leg.player_name or bet_leg.team}")
+                        
+                        # Save game status
+                        if bet_leg.game_status != 'STATUS_FINAL':
+                            bet_leg.game_status = 'STATUS_FINAL'
+                            updated = True
+                        
+                        # Save final scores
+                        if processed_leg.get('homeScore') is not None:
+                            bet_leg.home_score = processed_leg['homeScore']
+                            bet_leg.away_score = processed_leg['awayScore']
+                            updated = True
         
         # Save back to database if updated
         if updated:
@@ -1424,7 +1446,9 @@ def historical():
                 is_active=False,
                 is_archived=False
             ).all()
-            historical_parlays = [bet.to_dict_structured() for bet in bets]  # Use structured DB with jersey numbers
+            # Use use_live_data=True to force ESPN fetch for bets without saved final data
+            # This ensures newly moved historical bets get their final stats populated
+            historical_parlays = [bet.to_dict_structured(use_live_data=True) for bet in bets]  # Use structured DB with jersey numbers
             app.logger.info(f"Loaded {len(historical_parlays)} historical parlays")
             for parlay in historical_parlays:
                 app.logger.info(f"Parlay: {parlay.get('name')}, type: {parlay.get('type')}, legs: {len(parlay.get('legs', []))}")
