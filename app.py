@@ -285,6 +285,31 @@ def save_final_results_to_bet(bet, processed_data):
                             bet_leg.home_score = processed_leg['homeScore']
                             bet_leg.away_score = processed_leg['awayScore']
                             updated = True
+                        
+                        # Calculate and save leg status (won/lost) based on bet type
+                        if bet_leg.status == 'pending':
+                            leg_status = 'lost'  # Default to lost
+                            stat_type = bet_leg.bet_type.lower()
+                            
+                            if stat_type == 'moneyline':
+                                # Moneyline: won if score_diff > 0
+                                leg_status = 'won' if bet_leg.achieved_value and bet_leg.achieved_value > 0 else 'lost'
+                            elif stat_type == 'spread':
+                                # Spread: won if (score_diff + spread) > 0
+                                if bet_leg.achieved_value is not None and bet_leg.target_value is not None:
+                                    leg_status = 'won' if (bet_leg.achieved_value + bet_leg.target_value) > 0 else 'lost'
+                            else:
+                                # Player props: won if achieved_value >= target_value
+                                if bet_leg.achieved_value is not None and bet_leg.target_value is not None:
+                                    # Check for over/under
+                                    if bet_leg.bet_line_type == 'under':
+                                        leg_status = 'won' if bet_leg.achieved_value < bet_leg.target_value else 'lost'
+                                    else:  # 'over' or None (default to over)
+                                        leg_status = 'won' if bet_leg.achieved_value >= bet_leg.target_value else 'lost'
+                            
+                            bet_leg.status = leg_status
+                            updated = True
+                            app.logger.info(f"Set status={leg_status} for leg {i}: {bet_leg.player_name or bet_leg.team}")
         
         # Save back to database if updated
         if updated:
