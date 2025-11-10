@@ -101,9 +101,14 @@ Each leg object in the `legs` array must contain:
 
 ### 4. **stat** (string, required)
 - **Purpose**: Type of statistic being bet on
+- **⚠️ CRITICAL**: Must be lowercase for live data to work correctly
 - **Common Values**:
-  - Player Stats: `"passing_yards"`, `"rushing_yards"`, `"receiving_yards"`, `"receptions"`, `"anytime_touchdown"`
+  - Player Stats: `"passing_yards"`, `"rushing_yards"`, `"receiving_yards"`, `"rushing_receiving_yards"`, `"receptions"`, `"anytime_touchdown"`
   - Team Stats: `"moneyline"`, `"spread"`, `"total_points"`, `"total_points_over"`, `"total_points_under"`
+- **Invalid Values** (will break live updates):
+  - ❌ `"SPREAD"` (uppercase)
+  - ❌ `"PLAYER_PROP"` (generic)
+  - ❌ `"MONEYLINE"` (uppercase)
 - **Displays**: Leg description in table
 - **Example**: `"stat": "receiving_yards"`
 
@@ -141,6 +146,15 @@ Each leg object in the `legs` array must contain:
 - **Example**: `"position": "WR"`
 - **⚠️ Note**: While not strictly required, adds clarity to the UI
 
+### 9. **sport** (string, required for multi-sport support)
+- **Purpose**: Identifies which sport API to use for fetching game data
+- **Format**: Uppercase sport code
+- **Valid Values**: `"NFL"`, `"NBA"`, `"MLB"`, `"NHL"`, `"NCAAF"`, `"NCAAB"`
+- **Default**: `"NFL"` (if omitted)
+- **Used For**: ESPN API routing, game data fetching
+- **Example**: `"sport": "NBA"`
+- **⚠️ Important**: Required for non-NFL games to fetch live data correctly
+
 ---
 
 ## 🔍 Validation Checklist
@@ -162,11 +176,12 @@ Before submitting the bet insertion script, verify:
 - [ ] `away` team name matches ESPN's full team name
 - [ ] `home` team name matches ESPN's full team name
 - [ ] `game_date` is in `YYYY-MM-DD` format and matches the game date
-- [ ] `stat` is a valid stat type
+- [ ] `stat` is **lowercase** and specific (not generic like "PLAYER_PROP")
 - [ ] `target` is a number (can be decimal for half-points)
 - [ ] `team` is present and matches `away` or `home`
 - [ ] `player` is present if it's a player prop bet
 - [ ] `position` is included for all player prop bets
+- [ ] `sport` is included for non-NFL games (NBA, MLB, NHL, etc.)
 
 ### Special Cases
 - [ ] **Same Game Parlay**: All legs have the same `away`, `home`, and `game_date`
@@ -178,38 +193,88 @@ Before submitting the bet insertion script, verify:
 
 ## 🚨 Common Mistakes to Avoid
 
-### 1. Missing `bet_date`
+### 1. **CRITICAL**: Uppercase `stat` values
+- **Symptom**: Status shows "Not Started", current value is 0, live data doesn't update
+- **Why**: Backend calculations only work with lowercase stat names
+- **Fix**: Change `"SPREAD"` → `"spread"`, `"MONEYLINE"` → `"moneyline"`, `"PLAYER_PROP"` → specific stat like `"rushing_receiving_yards"`
+- **Example Fix**:
+  ```python
+  # ❌ WRONG - Won't fetch live data
+  "stat": "SPREAD"
+  
+  # ✅ CORRECT - Will fetch live data
+  "stat": "spread"
+  ```
+
+### 2. Generic stat types (e.g., "PLAYER_PROP")
+- **Symptom**: Bet type shows as "PLAYER PROP" instead of actual stat name
+- **Why**: Frontend needs specific stat to display correctly
+- **Fix**: Use specific stat names: `"rushing_yards"`, `"receiving_yards"`, `"rushing_receiving_yards"`, `"passing_yards"`, etc.
+- **Example Fix**:
+  ```python
+  # ❌ WRONG
+  "stat": "PLAYER_PROP"
+  
+  # ✅ CORRECT
+  "stat": "rushing_receiving_yards"
+  ```
+
+### 3. Missing `sport` for non-NFL games
+- **Symptom**: NBA/MLB/NHL games show 0-0 scores, no live data updates
+- **Why**: System defaults to NFL API if sport is not specified
+- **Fix**: Add `"sport": "NBA"` (or MLB/NHL/NCAAF/NCAAB) to each leg
+- **Example Fix**:
+  ```python
+  # For NBA game
+  {
+      "away": "Oklahoma City Thunder",
+      "home": "Memphis Grizzlies",
+      "sport": "NBA",  # ✅ Required for non-NFL
+      "stat": "moneyline",
+      "target": 0
+  }
+  ```
+
+### 4. Wrong home/away team order
+- **Symptom**: Spread calculations are inverted, scores don't match
+- **Why**: ESPN API has specific home/away designations
+- **Fix**: Verify home/away teams match ESPN's game page exactly
+- **How to Check**: Look at ESPN scoreboard - away team is always listed first
+
+### 5. Missing `bet_date`
 - **Symptom**: Date shows as "N/A" in header
 - **Fix**: Add `"bet_date": "YYYY-MM-DD"` at bet level
 
-### 2. Missing `betting_site`
+### 6. Missing `betting_site`
 - **Symptom**: Logo doesn't display, site shows "N/A"
 - **Fix**: Add `"betting_site": "FanDuel"` (or DraftKings/Dabble)
 
-### 3. Wrong player team
+### 7. Wrong player team
 - **Symptom**: Stats don't update during game
 - **Fix**: Verify player's team matches ESPN roster
 
-### 4. Missing `position`
+### 8. Missing `position`
 - **Symptom**: Position badge doesn't show
 - **Fix**: Add `"position": "WR"` (or QB/RB/TE/etc.)
 
-### 5. Inconsistent team names
-- **Symptom**: Scoreboard doesn't appear
-- **Fix**: Use full ESPN team names (e.g., "Las Vegas Raiders", not "Raiders")
+### 9. Inconsistent team names
+- **Symptom**: Scoreboard doesn't appear, team names show as abbreviations
+- **Fix**: Use full ESPN team names (e.g., "Las Vegas Raiders", not "Raiders" or "LV")
+- **Note**: System now auto-updates team names from ESPN, but correct initial names help matching
 
-### 6. Wrong `game_date`
+### 10. Wrong `game_date`
 - **Symptom**: Game data doesn't load
 - **Fix**: Verify the actual game date in `YYYY-MM-DD` format
 
-### 7. Missing `type` field
+### 11. Missing `type` field
 - **Symptom**: Scoreboard display issues, wrong formatting
 - **Fix**: Add `"type": "Same Game Parlay"` or `"Parlay"`
 
 ---
 
-## 📝 Example Template
+## 📝 Example Templates
 
+### NFL Player Prop Parlay
 ```python
 bet_data = {
     # Bet-level fields
@@ -229,9 +294,10 @@ bet_data = {
             "away": "Las Vegas Raiders",       # Full team name
             "home": "Denver Broncos",          # Full team name
             "game_date": "2025-11-06",         # YYYY-MM-DD format
-            "stat": "receiving_yards",         # Stat type
+            "stat": "receiving_yards",         # ⚠️ LOWERCASE stat name
             "target": 46.5,                    # Target value
             "team": "Las Vegas Raiders",       # Player's team
+            "sport": "NFL",                    # Sport code (optional for NFL)
             
             # Required for player props
             "player": "Tre Tucker",            # Player name
@@ -242,27 +308,91 @@ bet_data = {
 }
 ```
 
+### NFL Spread Bet
+```python
+{
+    "away": "Buffalo Bills",
+    "home": "Miami Dolphins",
+    "game_date": "2025-11-03",
+    "stat": "spread",                    # ⚠️ lowercase "spread" not "SPREAD"
+    "target": -3.5,                      # Spread value (negative for favorites)
+    "team": "Buffalo Bills",             # Team being bet on
+    "sport": "NFL"
+}
+```
+
+### NBA Moneyline Bet
+```python
+{
+    "away": "Oklahoma City Thunder",
+    "home": "Memphis Grizzlies",
+    "game_date": "2025-11-03",
+    "stat": "moneyline",                 # ⚠️ lowercase "moneyline" not "MONEYLINE"
+    "target": 0,                         # Always 0 for moneyline
+    "team": "Oklahoma City Thunder",     # Team being bet on
+    "sport": "NBA"                       # ⚠️ REQUIRED for non-NFL games
+}
+```
+
+### Combined Stats (Rush + Rec Yards)
+```python
+{
+    "away": "Detroit Lions",
+    "home": "Washington Commanders",
+    "game_date": "2025-11-03",
+    "stat": "rushing_receiving_yards",   # ⚠️ Specific stat, not "PLAYER_PROP"
+    "target": 100.5,
+    "team": "Detroit Lions",
+    "player": "Jahmyr Gibbs",
+    "position": "RB",
+    "sport": "NFL"
+}
+```
+
 ---
 
 ## 🎯 Testing Checklist
 
-After adding a bet, verify:
+After adding a bet, verify on the frontend:
 
+### Display Tests
 - [ ] **Bet ID displays** correctly in footer (not "N/A")
 - [ ] **Date displays** correctly in header (not "N/A")
 - [ ] **Betting site logo** appears in footer
 - [ ] **Scoreboard appears** at top (if game is today/live)
 - [ ] **All player positions** show correctly
-- [ ] **Team names** match in scoreboard and leg rows
-- [ ] **Stats update** during live games
+- [ ] **Team names** show full names (e.g., "Grizzlies" not "MEM", "Commanders" not "WSH")
+- [ ] **Bet type** shows specific stat name (e.g., "Rush + Rec Yds" not "PLAYER PROP")
+
+### Live Data Tests (for active games)
+- [ ] **Status updates** from "Not Started" → "In Progress" → "Hit"/"Miss"
+- [ ] **Scores display** correctly for all games (not 0-0)
+- [ ] **Current values** populate and update during game
 - [ ] **Progress bars** display correctly for each leg
+- [ ] **Score differentials** show for spread/moneyline bets
+- [ ] **Multi-sport games** (NBA, MLB, NHL) fetch data correctly
+
+### Backend Verification
+```python
+# Test query to verify bet data
+python3 -c "
+from app import db, Bet, BetLeg
+bet = Bet.query.filter_by(bet_id='YOUR_BET_ID').first()
+for leg in bet.bet_legs:
+    print(f'Leg: {leg.player or leg.team}')
+    print(f'  Stat: {leg.bet_type} (should be lowercase)')
+    print(f'  Sport: {leg.sport or \"NFL\"}')
+    print(f'  Away: {leg.away_team}, Home: {leg.home_team}')
+"
+```
 
 ---
 
 ## 📚 Quick Reference: Team Name Format
 
-Always use ESPN's full team names:
+Always use ESPN's full team names for database insertion. The system will auto-update display names from ESPN API, but correct initial names help with game matching:
 
+### NFL Teams
 | Correct ✅ | Incorrect ❌ |
 |-----------|-------------|
 | Las Vegas Raiders | Raiders, LV Raiders |
@@ -273,6 +403,34 @@ Always use ESPN's full team names:
 | Los Angeles Chargers | LA Chargers, Chargers |
 | New York Giants | NY Giants, Giants |
 | New York Jets | NY Jets, Jets |
+| Buffalo Bills | Bills |
+| Miami Dolphins | Dolphins |
+| Detroit Lions | Lions |
+| Washington Commanders | Commanders, Football Team, Redskins |
+
+### NBA Teams
+| Correct ✅ | Incorrect ❌ |
+|-----------|-------------|
+| Oklahoma City Thunder | Thunder, OKC |
+| Memphis Grizzlies | Grizzlies, MEM |
+| Los Angeles Lakers | Lakers, LAL |
+| Los Angeles Clippers | Clippers, LAC |
+| Golden State Warriors | Warriors, GSW |
+| New York Knicks | Knicks, NYK |
+
+### MLB Teams
+| Correct ✅ | Incorrect ❌ |
+|-----------|-------------|
+| New York Yankees | Yankees, NYY |
+| Los Angeles Dodgers | Dodgers, LAD |
+| Boston Red Sox | Red Sox, BOS |
+
+### NHL Teams
+| Correct ✅ | Incorrect ❌ |
+|-----------|-------------|
+| Vegas Golden Knights | Golden Knights, VGK |
+| Tampa Bay Lightning | Lightning, TBL |
+| Toronto Maple Leafs | Maple Leafs, TOR |
 
 ---
 
@@ -281,13 +439,52 @@ Always use ESPN's full team names:
 1. **Gather bet information** from betting slip
 2. **Identify betting site** (FanDuel/DraftKings/Dabble)
 3. **Extract bet-level data** (ID, name, type, date, wager, odds, returns)
-4. **Extract each leg's data** (teams, game date, player, position, stat, target)
-5. **Verify player teams** using current rosters
-6. **Run through validation checklist** above
-7. **Add users** (primary bettor + viewers using `add_user()` method)
-8. **Test on Render** to verify all displays correctly
+4. **Extract each leg's data** (teams, game date, player, position, stat, target, sport)
+5. **Verify home/away teams** match ESPN's game page exactly
+6. **Verify player teams** using current rosters
+7. **Convert all stat types to lowercase** (spread, moneyline, rushing_yards, etc.)
+8. **Use specific stat names** instead of generic types (rushing_receiving_yards, not PLAYER_PROP)
+9. **Add sport field** for non-NFL games (NBA, MLB, NHL, NCAAF, NCAAB)
+10. **Run through validation checklist** above
+11. **Add users** (primary bettor + viewers using `add_user()` method)
+12. **Test locally** if possible, then push to production
+13. **Test on Render** with `use_live_data=true` parameter to verify:
+    - Live scores populate correctly
+    - Status updates from "Not Started" to "In Progress"
+    - Current values calculate correctly
+    - Team names display as full names (not abbreviations)
+    - Bet types display specific stat names
+
+## 🐛 Debugging Tips
+
+If a bet isn't displaying live data correctly:
+
+1. **Check stat field is lowercase**: `"spread"` not `"SPREAD"`
+2. **Check sport field for non-NFL**: Add `"sport": "NBA"` for basketball games
+3. **Verify home/away teams**: Check ESPN game page for correct designation
+4. **Check game_date format**: Must be `YYYY-MM-DD`
+5. **Use API with use_live_data=true**: 
+   ```
+   https://parlays-tracker.onrender.com/api/parlays?user=USERNAME&use_live_data=true
+   ```
+6. **Check backend logs** on Render for API errors
+
+## 📊 Key Stat Type Mappings
+
+| Database Value | Frontend Display | Use Case |
+|---------------|------------------|----------|
+| `spread` | "Spread" | Team spread bets |
+| `moneyline` | "Moneyline" | Team win/loss bets |
+| `rushing_receiving_yards` | "Rush + Rec Yds" | Combined RB/WR stats |
+| `receiving_yards` | "Rec Yds" | Receiving yards only |
+| `rushing_yards` | "Rush Yds" | Rushing yards only |
+| `passing_yards` | "Pass Yds" | QB passing yards |
+| `receptions` | "Receptions" | Number of catches |
+| `anytime_touchdown` | "Anytime TD" | Touchdown scorer |
+
+**⚠️ Never use**: `SPREAD`, `MONEYLINE`, `PLAYER_PROP` (uppercase or generic values)
 
 ---
 
-**Last Updated**: November 6, 2025  
-**Version**: 1.0
+**Last Updated**: November 9, 2025  
+**Version**: 2.0 - Updated with multi-sport support and critical fixes from JTahiliani bet additions
