@@ -67,6 +67,23 @@ def populate_scores():
                 continue
             
             bets_processed += 1
+            has_scores_to_update = False
+            
+            for i, json_leg in enumerate(legs):
+                # Get scores from JSON
+                home_score = json_leg.get('homeScore')
+                away_score = json_leg.get('awayScore')
+                
+                # Skip if no scores in JSON
+                if home_score is None and away_score is None:
+                    continue
+                
+                has_scores_to_update = True
+                break
+            
+            if not has_scores_to_update:
+                continue
+                
             print(f"Processing Bet {bet_id} ({len(legs)} legs)...")
             
             for i, json_leg in enumerate(legs):

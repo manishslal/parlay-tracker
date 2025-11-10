@@ -1,0 +1,98 @@
+❌ ERROR: DATABASE_URL environment variable not set
+Team update completed at Sun Nov  9 09:45:59 EST 2025
+/Users/manishslal/Desktop/Scrapper/update_team_records.py:150: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  time_since_update = datetime.utcnow() - last_update
+/Users/manishslal/Desktop/Scrapper/update_team_records.py:140: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  info['last_stats_update'] = datetime.utcnow()
+/Users/manishslal/Desktop/Scrapper/update_team_records.py:243: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  datetime.utcnow(),
+🔄 Starting team data update at 2025-11-09 09:49:13
+================================================================================
+Found 62 teams to check
+
+  ✅ Atlanta Hawks                  (ATL) 5-5     
+  ✅ Boston Celtics                 (BOS) 4-6     
+  ✅ Brooklyn Nets                  (BKN) 1-8     
+  ✅ Charlotte Hornets              (CHA) 3-6     
+  ✅ Chicago Bulls                  (CHI) 6-3     
+  ✅ Cleveland Cavaliers            (CLE) 7-3     
+  ✅ Dallas Mavericks               (DAL) 3-7     
+  ✅ Denver Nuggets                 (DEN) 7-2     
+  ✅ Detroit Pistons                (DET) 7-2     
+  ✅ Golden State Warriors          (GS ) 5-5     
+  ✅ Houston Rockets                (HOU) 5-3     
+  ✅ Indiana Pacers                 (IND) 1-8     
+  ✅ LA Clippers                    (LAC) 3-6     
+  ✅ Los Angeles Lakers             (LAL) 7-3     
+  ✅ Memphis Grizzlies              (MEM) 4-6     
+  ✅ Miami Heat                     (MIA) 6-4     
+  ✅ Milwaukee Bucks                (MIL) 6-3     
+  ✅ Minnesota Timberwolves         (MIN) 5-4     
+  ✅ New Orleans Pelicans           (NO ) 2-7     
+  ✅ New York Knicks                (NY ) 5-3     
+  ✅ Oklahoma City Thunder          (OKC) 9-1     
+  ✅ Orlando Magic                  (ORL) 4-5     
+  ✅ Philadelphia 76ers             (PHI) 6-3     
+  ✅ Phoenix Suns                   (PHX) 5-5     
+  ✅ Portland Trail Blazers         (POR) 5-4     
+  ✅ Sacramento Kings               (SAC) 3-6     
+  ✅ San Antonio Spurs              (SA ) 7-2     
+  ✅ Toronto Raptors                (TOR) 5-5     
+  ✅ Utah Jazz                      (UTAH) 3-6     
+  ✅ Washington Wizards             (WSH) 1-9     
+  ✅ Arizona Cardinals              (ARI) 3-5     
+  ✅ Atlanta Falcons                (ATL) 3-5     
+  ✅ Baltimore Ravens               (BAL) 3-5     
+  ✅ Buffalo Bills                  (BUF) 6-2     
+  ✅ Carolina Panthers              (CAR) 5-4     
+  ✅ Chicago Bears                  (CHI) 5-3     
+  ✅ Cincinnati Bengals             (CIN) 3-6     
+  ✅ Cleveland Browns               (CLE) 2-6     
+  ✅ Dallas Cowboys                 (DAL) 3-5-1   
+  ✅ Denver Broncos                 (DEN) 8-2     
+  ✅ Detroit Lions                  (DET) 5-3     
+  ✅ Green Bay Packers              (GB ) 5-2-1   
+  ✅ Houston Texans                 (HOU) 3-5     
+  ✅ Indianapolis Colts             (IND) 7-2     
+  ✅ Jacksonville Jaguars           (JAX) 5-3     
+  ✅ Kansas City Chiefs             (KC ) 5-4     
+  ✅ Las Vegas Raiders              (LV ) 2-7     
+  ✅ Los Angeles Chargers           (LAC) 6-3     
+  ✅ Los Angeles Rams               (LAR) 6-2     
+  ✅ Miami Dolphins                 (MIA) 2-7     
+  ✅ Minnesota Vikings              (MIN) 4-4     
+  ✅ New England Patriots           (NE ) 7-2     
+  ✅ New Orleans Saints             (NO ) 1-8     
+  ✅ New York Giants                (NYG) 2-7     
+  ✅ New York Jets                  (NYJ) 1-7     
+  ✅ Philadelphia Eagles            (PHI) 6-2     
+  ✅ Pittsburgh Steelers            (PIT) 5-3     
+  ✅ San Francisco 49ers            (SF ) 6-3     
+  ✅ Seattle Seahawks               (SEA) 6-2     
+  ✅ Tampa Bay Buccaneers           (TB ) 6-2     
+  ✅ Tennessee Titans               (TEN) 1-8     
+  ✅ Washington Commanders          (WSH) 3-6     
+
+================================================================================
+UPDATE SUMMARY
+================================================================================
+Total teams: 62
+✅ Updated: 62
+⏭️  Skipped (recently updated): 0
+❌ Failed: 0
+
+Recent updates:
+--------------------------------------------------------------------------------
+  Oklahoma City Thunder          (NBA) 9-1      | Next: 2025-11-09
+  Denver Nuggets                 (NBA) 7-2      | Next: 2025-11-09
+  Los Angeles Lakers             (NBA) 7-3      | Next: 2025-11-09
+  San Antonio Spurs              (NBA) 7-2      | Next: 2025-11-09
+  Detroit Pistons                (NBA) 7-2      | Next: 2025-11-10
+  Cleveland Cavaliers            (NBA) 7-3      | Next: 2025-11-09
+  Chicago Bulls                  (NBA) 6-3      | Next: 2025-11-09
+  Philadelphia 76ers             (NBA) 6-3      | Next: 2025-11-09
+  Miami Heat                     (NBA) 6-4      | Next: 2025-11-09
+  Milwaukee Bucks                (NBA) 6-3      | Next: 2025-11-09
+
+✅ Update completed at 2025-11-09 09:50:40
+Team update completed at Sun Nov  9 09:50:40 EST 2025

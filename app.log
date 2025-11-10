@@ -1,0 +1,11 @@
+[STARTUP] Data directory (/Users/manishslal/Desktop/Scrapper/data) contains: ['Live_Bets.json', 'Todays_Bets.json', 'sample_Bets.json', '.DS_Store', 'backup_20251101_110041', 'backup_20251101_011047', 'backup_20251101_105405', 'backup_20251101_105653', 'Historical_Bets.json', 'backup_20251101_105729', 'Todays_Bets.json.backup']
+[STARTUP]   Live_Bets.json: 2 bytes
+[STARTUP]   Todays_Bets.json: 2 bytes
+[STARTUP]   sample_Bets.json: 2736 bytes
+[STARTUP]   .DS_Store: 6148 bytes
+[STARTUP]   Historical_Bets.json: 2 bytes
+[STARTUP]   Todays_Bets.json.backup: 6969 bytes
+ * Serving Flask app 'app'
+ * Debug mode: off
+Address already in use
+Port 5001 is in use by another program. Either identify and stop that program, or start the server with a different port.

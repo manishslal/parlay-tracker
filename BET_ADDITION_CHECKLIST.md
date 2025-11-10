@@ -486,5 +486,40 @@ If a bet isn't displaying live data correctly:
 
 ---
 
-**Last Updated**: November 9, 2025  
-**Version**: 2.0 - Updated with multi-sport support and critical fixes from JTahiliani bet additions
+## 🚨 Critical Issues Fixed (November 10, 2025)
+
+### Issue 1: Completed Bets Stuck in Live View
+- **Symptom**: Bets with finished games remain in "Live Bets" instead of moving to "Historical Bets"
+- **Root Cause**: 
+  1. `auto_move_completed_bets()` was using `get_bet_data()` which returns empty legs array
+  2. Team matching failed because database stores abbreviations (BUF, MIA) but API returns full names
+- **Fix Applied**:
+  - Changed to use `to_dict_structured(use_live_data=True)` to properly build legs from BetLeg table
+  - Added team abbreviations (`away_abbr`, `home_abbr`) to game data structure
+  - Updated matching logic to compare both full names and abbreviations
+- **Prevention**: Always use team CODES (abbreviations) in database, not full names
+
+### Issue 2: Team Code Storage
+- **Best Practice**: Store team abbreviations in `away_team` and `home_team` fields
+  - ✅ CORRECT: `"away_team": "PHI"`, `"home_team": "GB"`
+  - ❌ WRONG: `"away_team": "Philadelphia Eagles"`, `"home_team": "Green Bay Packers"`
+- **Why**: Enables flexible matching between database codes and ESPN API full names
+- **Implementation**: The `fetch_game_details_from_espn()` function now returns both formats for matching
+
+### Issue 3: Empty Legs Array in bet_data JSON
+- **Symptom**: Newer bets have `"legs": []` in bet_data JSON column
+- **Why**: Legs are now stored in BetLeg table, not in JSON
+- **Solution**: Always use `to_dict_structured()` method instead of `get_bet_data()` when working with legs
+- **Code Example**:
+  ```python
+  # ❌ WRONG - Returns empty legs array
+  bet_data = bet.get_bet_data()
+  
+  # ✅ CORRECT - Builds legs from BetLeg table
+  bet_data = bet.to_dict_structured(use_live_data=True)
+  ```
+
+---
+
+**Last Updated**: November 10, 2025  
+**Version**: 2.1 - Added critical fixes for auto-move functionality and team code handling
