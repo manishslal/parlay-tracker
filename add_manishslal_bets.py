@@ -326,9 +326,8 @@ def add_manishslal_bets():
             db.session.add(bet)
             db.session.flush()  # Get bet.id
             
-            # Add users (primary bettor + viewer)
-            bet.add_user(manish, is_primary=True)
-            bet.add_user(etoteja, is_primary=False)
+            # Add secondary bettor
+            bet.add_secondary_bettor(etoteja.id)
             
             # Add legs
             for i, leg_data in enumerate(bet_data['legs'], 1):

@@ -2,12 +2,14 @@
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import UserMixin
 from datetime import datetime
+from sqlalchemy.dialects import postgresql
 import bcrypt
 import json
 
 db = SQLAlchemy()
 
-# Association table for many-to-many relationship between users and bets
+# OLD: Association table for many-to-many relationship (DEPRECATED - keeping for rollback)
+# Migration to array columns completed. This table can be dropped after verification.
 bet_users = db.Table('bet_users',
     db.Column('bet_id', db.Integer, db.ForeignKey('bets.id'), primary_key=True),
     db.Column('user_id', db.Integer, db.ForeignKey('users.id'), primary_key=True),
@@ -27,11 +29,8 @@ class User(UserMixin, db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     is_active = db.Column(db.Boolean, default=True)
     
-    # Old one-to-many relationship (kept for backward compatibility during migration)
+    # Relationship to bets owned by this user
     bets = db.relationship('Bet', backref='owner', lazy='dynamic', foreign_keys='Bet.user_id')
-    
-    # New many-to-many relationship for shared bets
-    shared_bets = db.relationship('Bet', secondary=bet_users, backref='users', lazy='dynamic')
     
     def set_password(self, password):
         """Hash and set password"""
@@ -42,18 +41,19 @@ class User(UserMixin, db.Model):
         return bcrypt.checkpw(password.encode('utf-8'), self.password_hash.encode('utf-8'))
     
     def get_all_bets(self):
-        """Get all bets visible to this user (owned + shared)"""
+        """Get all bets visible to this user (owned + shared + watched)"""
         from sqlalchemy import or_
-        return Bet.query.join(bet_users, bet_users.c.bet_id == Bet.id).filter(
-            bet_users.c.user_id == self.id
+        return Bet.query.filter(
+            or_(
+                Bet.user_id == self.id,  # Primary bettor
+                Bet.secondary_bettors.any(self.id),  # Secondary bettor
+                Bet.watchers.any(self.id)  # Watcher
+            )
         )
     
     def get_primary_bets(self):
         """Get bets where this user is the primary bettor"""
-        return Bet.query.join(bet_users, bet_users.c.bet_id == Bet.id).filter(
-            bet_users.c.user_id == self.id,
-            bet_users.c.is_primary_bettor == True
-        )
+        return Bet.query.filter(Bet.user_id == self.id)
     
     def to_dict(self):
         """Convert user to dictionary (excluding sensitive data)"""
@@ -248,6 +248,10 @@ class Bet(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False, index=True)
     
+    # Bet sharing - V2 system using arrays
+    secondary_bettors = db.Column(postgresql.ARRAY(db.Integer), default=list)
+    watchers = db.Column(postgresql.ARRAY(db.Integer), default=list)
+    
     # Bet identification (nullable because some old bets don't have IDs)
     bet_id = db.Column(db.String(100), nullable=True, index=True)
     
@@ -360,16 +364,63 @@ class Bet(db.Model):
     
     def get_primary_bettor(self):
         """Get the username of the primary bettor"""
-        result = db.session.execute(
-            db.select(User.username).join(
-                bet_users, bet_users.c.user_id == User.id
-            ).where(
-                bet_users.c.bet_id == self.id,
-                bet_users.c.is_primary_bettor == True
-            )
-        ).fetchone()
-        
-        return result[0] if result else None
+        # Use user_id (primary bettor) to get username
+        user = User.query.get(self.user_id)
+        return user.username if user else None
+    
+    def add_secondary_bettor(self, user_id):
+        """Add a user as a secondary bettor (can place this bet)"""
+        if self.secondary_bettors is None:
+            self.secondary_bettors = []
+        if user_id not in self.secondary_bettors and user_id != self.user_id:
+            self.secondary_bettors = self.secondary_bettors + [user_id]
+            db.session.commit()
+            return True
+        return False
+    
+    def add_watcher(self, user_id):
+        """Add a user as a watcher (can only view this bet)"""
+        if self.watchers is None:
+            self.watchers = []
+        if user_id not in self.watchers and user_id != self.user_id and (self.secondary_bettors is None or user_id not in self.secondary_bettors):
+            self.watchers = self.watchers + [user_id]
+            db.session.commit()
+            return True
+        return False
+    
+    def remove_secondary_bettor(self, user_id):
+        """Remove a user from secondary bettors"""
+        if self.secondary_bettors and user_id in self.secondary_bettors:
+            self.secondary_bettors = [uid for uid in self.secondary_bettors if uid != user_id]
+            db.session.commit()
+            return True
+        return False
+    
+    def remove_watcher(self, user_id):
+        """Remove a user from watchers"""
+        if self.watchers and user_id in self.watchers:
+            self.watchers = [uid for uid in self.watchers if uid != user_id]
+            db.session.commit()
+            return True
+        return False
+    
+    def user_can_view(self, user_id):
+        """Check if a user can view this bet"""
+        if user_id == self.user_id:
+            return True
+        if self.secondary_bettors and user_id in self.secondary_bettors:
+            return True
+        if self.watchers and user_id in self.watchers:
+            return True
+        return False
+    
+    def user_can_edit(self, user_id):
+        """Check if a user can edit/place this bet"""
+        if user_id == self.user_id:
+            return True
+        if self.secondary_bettors and user_id in self.secondary_bettors:
+            return True
+        return False
     
     def to_dict(self):
         """Convert bet to dictionary for API responses"""
@@ -449,6 +500,21 @@ class Bet(db.Model):
                     # Default: show away team as opponent
                     opponent = bet_leg.away_team
             
+            # Calculate current value based on bet type
+            current_value = None
+            if not use_live_data:
+                # For historical bets, calculate current from scores if available
+                if bet_leg.bet_type in ['spread', 'moneyline'] and bet_leg.home_score is not None and bet_leg.away_score is not None:
+                    # Calculate score differential for the bet team
+                    bet_team_name = bet_leg.player_name or player_team or ''
+                    is_home_bet = False
+                    if bet_leg.home_team and bet_team_name:
+                        is_home_bet = (bet_team_name in bet_leg.home_team) or (bet_leg.home_team in bet_team_name)
+                    current_value = float(bet_leg.home_score - bet_leg.away_score) if is_home_bet else float(bet_leg.away_score - bet_leg.home_score)
+                elif bet_leg.achieved_value is not None:
+                    # For player props and other bets, use achieved_value
+                    current_value = float(bet_leg.achieved_value)
+            
             leg_dict = {
                 'player': bet_leg.player_name,
                 'team': player_team,
@@ -457,8 +523,8 @@ class Bet(db.Model):
                 'stat': bet_leg.bet_type,
                 'target': float(bet_leg.target_value) if bet_leg.target_value else 0,
                 # For live bets, set current to None to force ESPN API fetch
-                # For historical bets, use achieved_value from database
-                'current': None if use_live_data else (float(bet_leg.achieved_value) if bet_leg.achieved_value else None),
+                # For historical bets, use calculated current_value
+                'current': current_value,
                 'status': bet_leg.status or 'pending',
                 'gameId': bet_leg.game_id or '',
                 'homeTeam': bet_leg.home_team,

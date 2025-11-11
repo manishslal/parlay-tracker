@@ -85,12 +85,9 @@ def add_nov10_sgp():
             
             print(f"\n✅ Created Bet ID {bet.id} in database")
             
-            # Add users to the bet
-            bet.add_user(manishslal, is_primary=True)
-            print(f"   Added manishslal as primary bettor")
-            
-            bet.add_user(etoteja, is_primary=False)
-            print(f"   Added etoteja as viewer")
+            # Add secondary bettor
+            bet.add_secondary_bettor(etoteja.id)
+            print(f"   Added etoteja as secondary bettor")
             
             # Define all legs - CRITICAL: Use team CODES (PHI, GB), not full names!
             legs = [

@@ -35,11 +35,12 @@ Use this checklist every time you add a new bet to ensure all required fields ar
 - **Valid Values**:
   - `"FanDuel"` - Shows FanDuel logo
   - `"DraftKings"` - Shows DraftKings logo
+  - `"Bet365"` - Shows Bet365 logo
   - `"Dabble"` - Shows Dabble logo
 - **Auto-Detection**: Can be inferred from bet_id:
   - If bet_id starts with `"O/"` → FanDuel
   - If bet_id starts with `"DK"` → DraftKings
-- **Displays**: Footer logo and site name
+- **Displays**: Footer logo and site name (logo changes based on dark/light mode)
 - **Example**: `"betting_site": "FanDuel"`
 
 ### 5. **bet_date** (string, required, YYYY-MM-DD format)
@@ -165,7 +166,7 @@ Before submitting the bet insertion script, verify:
 - [ ] `bet_id` is present and matches betting site format
 - [ ] `name` is descriptive and identifies the bet
 - [ ] `type` is one of: `"Same Game Parlay"`, `"Parlay"`, or `"Single Bet"`
-- [ ] `betting_site` is one of: `"FanDuel"`, `"DraftKings"`, or `"Dabble"`
+- [ ] `betting_site` is one of: `"FanDuel"`, `"DraftKings"`, `"Bet365"`, or `"Dabble"`
 - [ ] `bet_date` is in `YYYY-MM-DD` format
 - [ ] `wager` is a string with decimal (e.g., `"10.00"`)
 - [ ] `odds` includes + or - prefix (e.g., `"+442"`)
@@ -247,7 +248,7 @@ Before submitting the bet insertion script, verify:
 
 ### 6. Missing `betting_site`
 - **Symptom**: Logo doesn't display, site shows "N/A"
-- **Fix**: Add `"betting_site": "FanDuel"` (or DraftKings/Dabble)
+- **Fix**: Add `"betting_site": "FanDuel"` (or DraftKings/Bet365/Dabble)
 
 ### 7. Wrong player team
 - **Symptom**: Stats don't update during game
@@ -281,7 +282,7 @@ bet_data = {
     "bet_id": "O/0240915/0000068",           # Required: Unique identifier
     "name": "Player Name Parlay",             # Required: Display name
     "type": "Same Game Parlay",               # Required: Bet type
-    "betting_site": "FanDuel",                # Required: FanDuel/DraftKings/Dabble
+    "betting_site": "FanDuel",                # Required: FanDuel/DraftKings/Bet365/Dabble
     "bet_date": "2025-11-06",                 # Required: YYYY-MM-DD format
     "wager": "10.00",                         # Required: Amount wagered
     "odds": "+442",                           # Required: American odds
@@ -437,7 +438,7 @@ Always use ESPN's full team names for database insertion. The system will auto-u
 ## 🔄 Workflow Summary
 
 1. **Gather bet information** from betting slip
-2. **Identify betting site** (FanDuel/DraftKings/Dabble)
+2. **Identify betting site** (FanDuel/DraftKings/Bet365/Dabble)
 3. **Extract bet-level data** (ID, name, type, date, wager, odds, returns)
 4. **Extract each leg's data** (teams, game date, player, position, stat, target, sport)
 5. **Verify home/away teams** match ESPN's game page exactly
@@ -446,7 +447,11 @@ Always use ESPN's full team names for database insertion. The system will auto-u
 8. **Use specific stat names** instead of generic types (rushing_receiving_yards, not PLAYER_PROP)
 9. **Add sport field** for non-NFL games (NBA, MLB, NHL, NCAAF, NCAAB)
 10. **Run through validation checklist** above
-11. **Add users** (primary bettor + viewers using `add_user()` method)
+11. **Add bet sharing** (NEW V2 system):
+    - Primary bettor is set via `Bet(user_id=primary_user.id)`
+    - Add secondary bettors: `bet.add_secondary_bettor(user_id)` (can edit/place bet)
+    - Add watchers: `bet.add_watcher(user_id)` (can only view bet)
+    - ⚠️ OLD METHOD DEPRECATED: Don't use `add_user()` anymore
 12. **Test locally** if possible, then push to production
 13. **Test on Render** with `use_live_data=true` parameter to verify:
     - Live scores populate correctly
@@ -486,7 +491,73 @@ If a bet isn't displaying live data correctly:
 
 ---
 
-## 🚨 Critical Issues Fixed (November 10, 2025)
+## � Bet Sharing V2 System (Updated November 11, 2025)
+
+### Overview
+The bet sharing system was migrated from a `bet_users` many-to-many table to PostgreSQL array columns for better performance and simpler code.
+
+### Sharing Roles
+
+1. **Primary Bettor** (set via `user_id`)
+   - The main owner of the bet
+   - Can edit and view the bet
+   - Set when creating: `bet = Bet(user_id=primary_user.id)`
+   - Retrieved via: `bet.get_primary_bettor()` → returns username
+
+2. **Secondary Bettors** (stored in `secondary_bettors[]` array)
+   - Users who can also place/edit this bet
+   - Have full edit permissions like primary bettor
+   - Add: `bet.add_secondary_bettor(user_id)`
+   - Remove: `bet.remove_secondary_bettor(user_id)`
+   - Check: `bet.user_can_edit(user_id)` → returns True for primary + secondary
+
+3. **Watchers** (stored in `watchers[]` array)
+   - Users who can only view the bet (read-only)
+   - Cannot edit or place the bet
+   - Add: `bet.add_watcher(user_id)`
+   - Remove: `bet.remove_watcher(user_id)`
+   - Check: `bet.user_can_view(user_id)` → returns True for all three roles
+
+### Code Example
+```python
+# Create bet for primary bettor
+manishslal = User.query.filter_by(username='manishslal').first()
+etoteja = User.query.filter_by(username='etoteja').first()
+
+bet = Bet(user_id=manishslal.id)  # manishslal is primary bettor
+bet.set_bet_data(bet_data)
+
+db.session.add(bet)
+db.session.flush()  # Get bet.id
+
+# Add secondary bettor (can edit)
+bet.add_secondary_bettor(etoteja.id)
+
+# OR add watcher (view only)
+# bet.add_watcher(etoteja.id)
+
+# Add legs
+for leg_data in bet_data['legs']:
+    leg = BetLeg(...)
+    db.session.add(leg)
+
+db.session.commit()
+```
+
+### Frontend Visibility
+The backend automatically filters bets based on sharing:
+- `/live` endpoint shows all bets where `user_id == current_user` OR `current_user in secondary_bettors` OR `current_user in watchers`
+- No changes needed in frontend code - the `get_user_bets_query()` function handles filtering
+
+### Migration Notes
+- ✅ Migration completed November 11, 2025
+- ✅ All 107 shared bets preserved
+- ⚠️ OLD METHOD: `bet.add_user(user, is_primary=True/False)` is DEPRECATED
+- ⚠️ NEW METHOD: Use `bet.add_secondary_bettor()` or `bet.add_watcher()`
+
+---
+
+## �🚨 Critical Issues Fixed (November 10, 2025)
 
 ### Issue 1: Completed Bets Stuck in Live View
 - **Symptom**: Bets with finished games remain in "Live Bets" instead of moving to "Historical Bets"

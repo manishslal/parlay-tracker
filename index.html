@@ -45,6 +45,7 @@
       --draftkings: #4caf50;
       --fanduel: #2196f3;
       --dabble: #ffc107;
+      --bet365: #ffcc00;
     }
     
     /* Light mode colors */
@@ -3599,20 +3600,28 @@ async function logoutToken() {
                 // For spread: format target with +/- sign
                 if (p.stat === 'spread') {
                   targetDisplay = p.target > 0 ? `+${p.target}` : `${p.target}`;
-                  // Current shows Up/Down for live games, Win/Loss for final games
-                  if (gameData && gameData.statusTypeName === 'STATUS_FINAL') {
-                    currentDisplay = current === 1 ? 'Win' : 'Loss';
-                  } else if (gameData && gameData.statusTypeName !== 'STATUS_SCHEDULED') {
-                    // Show Up/Down during live game
+                  // Current shows score differential for all spread bets
+                  if (gameData && gameData.statusTypeName !== 'STATUS_SCHEDULED') {
+                    // Show score differential (up/down) for live and final games
                     if (scoreDiff > 0) {
-                      currentDisplay = `Up ${scoreDiff}`;
+                      currentDisplay = `+${scoreDiff}`;
                     } else if (scoreDiff < 0) {
-                      currentDisplay = `Down ${Math.abs(scoreDiff)}`;
+                      currentDisplay = `${scoreDiff}`;
                     } else {
-                      currentDisplay = 'Tied';
+                      currentDisplay = '0';
+                    }
+                  } else if (p.homeScore !== undefined && p.awayScore !== undefined) {
+                    // Historical/completed games with scores from database
+                    if (scoreDiff > 0) {
+                      currentDisplay = `+${scoreDiff}`;
+                    } else if (scoreDiff < 0) {
+                      currentDisplay = `${scoreDiff}`;
+                    } else {
+                      currentDisplay = '0';
                     }
                   } else {
-                    currentDisplay = current;
+                    // No game data yet
+                    currentDisplay = '-';
                   }
                 }
                 
@@ -3810,7 +3819,8 @@ async function logoutToken() {
         const logoMap = {
           'DraftKings': 'draftkings',
           'FanDuel': 'fanduel',
-          'Dabble': 'dabble'
+          'Dabble': 'dabble',
+          'Bet365': 'bet365'
         };
         
         const logoKey = logoMap[siteText];

@@ -114,8 +114,8 @@ from functools import wraps
 
 def get_user_bets_query(user, **filters):
     """
-    Get bets for a user using the many-to-many relationship.
-    This returns all bets the user has access to (owned + shared).
+    Get bets for a user using array containment.
+    This returns all bets the user has access to (owned + shared + watched).
     
     Args:
         user: User object
@@ -124,8 +124,15 @@ def get_user_bets_query(user, **filters):
     Returns:
         SQLAlchemy query object
     """
-    query = Bet.query.join(bet_users, bet_users.c.bet_id == Bet.id).filter(
-        bet_users.c.user_id == user.id
+    from sqlalchemy import or_
+    
+    # Query bets where user is primary, secondary bettor, or watcher
+    query = Bet.query.filter(
+        or_(
+            Bet.user_id == user.id,  # Primary bettor
+            Bet.secondary_bettors.contains([user.id]),  # Secondary bettor
+            Bet.watchers.contains([user.id])  # Watcher
+        )
     )
     
     # Apply additional filters
@@ -149,6 +156,13 @@ database_url = os.environ.get('DATABASE_URL', 'sqlite:///parlays.db')
 # Fix for Render PostgreSQL: Render uses postgres:// but SQLAlchemy needs postgresql://
 if database_url.startswith('postgres://'):
     database_url = database_url.replace('postgres://', 'postgresql://', 1)
+
+# Add SSL mode for PostgreSQL connections
+if database_url.startswith('postgresql://'):
+    if '?' in database_url:
+        database_url += '&sslmode=require'
+    else:
+        database_url += '?sslmode=require'
 
 app.config['SQLALCHEMY_DATABASE_URI'] = database_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
