@@ -3,10 +3,13 @@
 from flask import Flask, jsonify, send_from_directory, request, session, redirect, url_for
 from flask_cors import CORS
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
+from apscheduler.schedulers.background import BackgroundScheduler
+from apscheduler.triggers.interval import IntervalTrigger
 import requests
 import os
 from datetime import datetime
 import json
+import atexit
 
 # Load environment variables from .env file
 from dotenv import load_dotenv
@@ -182,6 +185,13 @@ login_manager.login_view = 'login_page'
 @login_manager.user_loader
 def load_user(user_id):
     return User.query.get(int(user_id))
+
+# Setup background scheduler for automated tasks
+scheduler = BackgroundScheduler()
+scheduler.start()
+
+# Shut down scheduler on app exit
+atexit.register(lambda: scheduler.shutdown())
 
 # Helper function to use database with JSON backup
 def get_user_bets_from_db(user_id, status_filter=None):
@@ -514,6 +524,136 @@ def auto_move_completed_bets(user_id):
             
     except Exception as e:
         app.logger.error(f"Error auto-moving completed bets: {e}")
+        db.session.rollback()
+
+def update_completed_bet_legs():
+    """Background job to automatically update bet legs when games become final.
+    
+    Finds all bets with status='completed' and checks their legs:
+    - If a leg's game_status changes to STATUS_FINAL for the first time
+    - Fetches final stats from ESPN
+    - Updates achieved_value, status (won/lost), and final scores in bet_legs table
+    
+    This runs periodically (every 5 minutes) to ensure completed bets get their final results.
+    """
+    try:
+        app.logger.info("[AUTO-UPDATE] Starting bet leg update check...")
+        
+        # Get all completed bets that might have pending leg updates
+        completed_bets = Bet.query.filter_by(status='completed').all()
+        
+        if not completed_bets:
+            app.logger.info("[AUTO-UPDATE] No completed bets found")
+            return
+        
+        app.logger.info(f"[AUTO-UPDATE] Checking {len(completed_bets)} completed bets")
+        
+        updated_bets = 0
+        updated_legs = 0
+        
+        for bet in completed_bets:
+            # Get bet legs from database
+            bet_legs = bet.bet_legs_rel.order_by(BetLeg.leg_order).all()
+            
+            # Check if any legs need updating (have STATUS_FINAL but no achieved_value or pending status)
+            needs_update = False
+            for leg in bet_legs:
+                if leg.game_status == 'STATUS_FINAL' and (leg.achieved_value is None or leg.status == 'pending'):
+                    needs_update = True
+                    break
+            
+            if not needs_update:
+                continue
+            
+            try:
+                # Get fresh data from ESPN for this bet
+                bet_data = bet.to_dict_structured(use_live_data=True)
+                processed_data = process_parlay_data([bet_data])
+                
+                if not processed_data:
+                    continue
+                
+                matching_parlay = processed_data[0]
+                
+                # Update each leg with final results
+                for i, bet_leg in enumerate(bet_legs):
+                    # Skip if already processed
+                    if bet_leg.achieved_value is not None and bet_leg.status != 'pending':
+                        continue
+                    
+                    # Get processed leg data
+                    if i >= len(matching_parlay.get('legs', [])):
+                        continue
+                    
+                    processed_leg = matching_parlay['legs'][i]
+                    
+                    # Only process if game is final
+                    if processed_leg.get('gameStatus') != 'STATUS_FINAL':
+                        continue
+                    
+                    leg_updated = False
+                    
+                    # Update achieved_value from current stats
+                    if processed_leg.get('current') is not None and bet_leg.achieved_value is None:
+                        bet_leg.achieved_value = processed_leg['current']
+                        leg_updated = True
+                        app.logger.info(f"[AUTO-UPDATE] Bet {bet.id} Leg {i+1}: achieved_value = {processed_leg['current']}")
+                    
+                    # Update game status
+                    if bet_leg.game_status != 'STATUS_FINAL':
+                        bet_leg.game_status = 'STATUS_FINAL'
+                        leg_updated = True
+                    
+                    # Update final scores
+                    if processed_leg.get('homeScore') is not None:
+                        bet_leg.home_score = processed_leg['homeScore']
+                        bet_leg.away_score = processed_leg['awayScore']
+                        leg_updated = True
+                    
+                    # Calculate and save leg status (won/lost) based on bet type
+                    if bet_leg.status == 'pending' and bet_leg.achieved_value is not None:
+                        leg_status = 'lost'  # Default to lost
+                        stat_type = bet_leg.bet_type.lower()
+                        
+                        if stat_type == 'moneyline':
+                            # Moneyline: won if score_diff > 0
+                            leg_status = 'won' if bet_leg.achieved_value > 0 else 'lost'
+                        elif stat_type == 'spread':
+                            # Spread: won if (score_diff + spread) > 0
+                            if bet_leg.target_value is not None:
+                                leg_status = 'won' if (bet_leg.achieved_value + bet_leg.target_value) > 0 else 'lost'
+                        else:
+                            # Player props: won if achieved_value >= target_value
+                            if bet_leg.target_value is not None:
+                                # Check for over/under
+                                if bet_leg.bet_line_type == 'under':
+                                    leg_status = 'won' if bet_leg.achieved_value < bet_leg.target_value else 'lost'
+                                else:  # 'over' or None (default to over)
+                                    leg_status = 'won' if bet_leg.achieved_value >= bet_leg.target_value else 'lost'
+                        
+                        bet_leg.status = leg_status
+                        leg_updated = True
+                        app.logger.info(f"[AUTO-UPDATE] Bet {bet.id} Leg {i+1}: status = {leg_status}")
+                    
+                    if leg_updated:
+                        updated_legs += 1
+                
+                if updated_legs > 0:
+                    updated_bets += 1
+                    
+            except Exception as e:
+                app.logger.error(f"[AUTO-UPDATE] Error updating bet {bet.id}: {e}")
+                continue
+        
+        # Commit all updates
+        if updated_legs > 0:
+            db.session.commit()
+            app.logger.info(f"[AUTO-UPDATE] ✓ Updated {updated_legs} legs across {updated_bets} bets")
+        else:
+            app.logger.info("[AUTO-UPDATE] No legs needed updating")
+            
+    except Exception as e:
+        app.logger.error(f"[AUTO-UPDATE] Error in update_completed_bet_legs: {e}")
         db.session.rollback()
 
 def backup_to_json(user_id=None):
@@ -2247,6 +2387,21 @@ if __name__ == "__main__":
         
         # Update team data on startup (runs in background)
         update_team_data_on_startup()
+        
+        # Schedule automated bet leg updates every 5 minutes
+        # This updates achieved_value and status for completed bets when games become final
+        def run_scheduled_update():
+            with app.app_context():
+                update_completed_bet_legs()
+        
+        scheduler.add_job(
+            func=run_scheduled_update,
+            trigger=IntervalTrigger(minutes=5),
+            id='update_bet_legs',
+            name='Update completed bet legs with final results',
+            replace_existing=True
+        )
+        app.logger.info("✓ Scheduled automated bet leg updates (every 5 minutes)")
     
     # Initialize and organize parlays before starting server
     # Note: This is legacy code for JSON files, will be phased out
