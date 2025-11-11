@@ -3589,10 +3589,17 @@ async function logoutToken() {
                     } else {
                       currentDisplay = 'Tied';
                     }
-                  } else if (!gameData && (areAllGamesFinal || areAllGamesScheduled === false)) {
-                    // Historical data without game info - use current value
-                    currentDisplay = current === 1 ? 'Win' : 'Loss';
+                  } else if (p.homeScore !== undefined && p.awayScore !== undefined) {
+                    // Historical/completed games with scores from database
+                    if (scoreDiff > 0) {
+                      currentDisplay = 'Win';
+                    } else if (scoreDiff < 0) {
+                      currentDisplay = 'Loss';
+                    } else {
+                      currentDisplay = 'Tied';
+                    }
                   } else {
+                    // No game data yet
                     currentDisplay = '-';
                   }
                 }
