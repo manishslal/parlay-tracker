@@ -364,9 +364,22 @@
           </div>
 
           <div class="form-group">
+            <label for="potential-payout">Potential Payout</label>
+            <input type="number" id="potential-payout" placeholder="110.00" step="0.01" min="0">
+            <div class="help-text">Auto-calculated from odds</div>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
             <label for="odds">Odds <span class="required">*</span></label>
             <input type="text" id="odds" placeholder="+250 or -110" required>
             <div class="help-text">Format: +250 or -110</div>
+          </div>
+
+          <div class="form-group">
+            <label for="bet-date">Bet Date <span class="required">*</span></label>
+            <input type="date" id="bet-date" required>
           </div>
         </div>
 
@@ -374,6 +387,18 @@
           <label for="bet-id">Bet ID (Optional)</label>
           <input type="text" id="bet-id" placeholder="From betting slip">
           <div class="help-text">Optional: Copy from your betting site</div>
+        </div>
+      </div>
+      
+      <!-- Secondary Bettors Section -->
+      <div class="form-section">
+        <h2>👥 Secondary Bettors (Optional)</h2>
+        <div class="form-group">
+          <label for="bettor-search-manual">Add Co-Bettors</label>
+          <input type="text" id="bettor-search-manual" placeholder="Type username or email to search..." autocomplete="off">
+          <div id="bettor-suggestions-manual" style="display: none; background: var(--bg); border: 2px solid var(--primary); border-top: none; border-radius: 0 0 6px 6px; max-height: 200px; overflow-y: auto; margin-top: -8px;"></div>
+          <div id="selected-bettors-manual" style="margin-top: 12px; display: flex; flex-wrap: wrap; gap: 8px;"></div>
+          <div class="help-text">Search and add other users who are part of this bet</div>
         </div>
       </div>
 
@@ -463,6 +488,182 @@
         ]
       }
     };
+
+    // Secondary bettors functionality
+    let selectedSecondaryBettors = [];
+    let allUsers = [];
+
+    // Set today's date as default
+    document.getElementById('bet-date').valueAsDate = new Date();
+
+    // Auto-calculation functions
+    function calculatePayoutFromOdds(wager, odds) {
+      if (!wager || !odds || wager <= 0) return null;
+      const oddsStr = odds.toString().trim();
+      
+      let profit = 0;
+      if (oddsStr.startsWith('+')) {
+        const oddsNum = parseInt(oddsStr.substring(1));
+        profit = wager * (oddsNum / 100);
+      } else if (oddsStr.startsWith('-')) {
+        const oddsNum = parseInt(oddsStr.substring(1));
+        profit = wager / (oddsNum / 100);
+      } else {
+        const oddsNum = parseInt(oddsStr);
+        if (oddsNum > 0) {
+          profit = wager * (oddsNum / 100);
+        } else {
+          profit = wager / (Math.abs(oddsNum) / 100);
+        }
+      }
+      
+      return Math.round((wager + profit) * 100) / 100;
+    }
+
+    function calculateOddsFromPayout(wager, payout) {
+      if (!wager || !payout || wager <= 0) return null;
+      const profit = payout - wager;
+      if (profit <= 0) return null;
+      
+      if (profit >= wager) {
+        return '+' + Math.round((profit / wager) * 100);
+      } else {
+        return '-' + Math.round((wager / profit) * 100);
+      }
+    }
+
+    // Set up auto-calculation listeners
+    const wagerInput = document.getElementById('wager');
+    const oddsInput = document.getElementById('odds');
+    const payoutInput = document.getElementById('potential-payout');
+
+    wagerInput.addEventListener('input', () => {
+      if (oddsInput.value && (!payoutInput.value || parseFloat(payoutInput.value) === 0)) {
+        const payout = calculatePayoutFromOdds(parseFloat(wagerInput.value), oddsInput.value);
+        if (payout) payoutInput.value = payout;
+      }
+    });
+
+    oddsInput.addEventListener('input', () => {
+      const w = parseFloat(wagerInput.value);
+      const o = oddsInput.value.trim();
+      if (w && o) {
+        const p = calculatePayoutFromOdds(w, o);
+        if (p) payoutInput.value = p;
+      }
+    });
+
+    payoutInput.addEventListener('input', () => {
+      const w = parseFloat(wagerInput.value);
+      const p = parseFloat(payoutInput.value);
+      if (w && p && p > w && !oddsInput.value) {
+        const o = calculateOddsFromPayout(w, p);
+        if (o) oddsInput.value = o;
+      }
+    });
+
+    // Fetch users for autocomplete
+    async function fetchAllUsers() {
+      try {
+        const response = await fetch('/api/users', {
+          credentials: 'include'
+        });
+        if (response.ok) {
+          const result = await response.json();
+          allUsers = result.users || [];
+        }
+      } catch (error) {
+        console.error('Failed to fetch users:', error);
+      }
+    }
+
+    // Secondary bettors autocomplete
+    const bettorSearchManual = document.getElementById('bettor-search-manual');
+    const bettorSuggestionsManual = document.getElementById('bettor-suggestions-manual');
+    const selectedBettorsManual = document.getElementById('selected-bettors-manual');
+
+    bettorSearchManual.addEventListener('input', () => {
+      const query = bettorSearchManual.value.toLowerCase().trim();
+      
+      if (query.length < 2) {
+        bettorSuggestionsManual.style.display = 'none';
+        return;
+      }
+      
+      const matches = allUsers.filter(user => 
+        user.username.toLowerCase().includes(query) || 
+        user.email.toLowerCase().includes(query)
+      ).filter(user => 
+        !selectedSecondaryBettors.find(b => b.id === user.id)
+      ).slice(0, 5);
+      
+      if (matches.length === 0) {
+        bettorSuggestionsManual.style.display = 'none';
+        return;
+      }
+      
+      bettorSuggestionsManual.innerHTML = matches.map(user => `
+        <div class="bettor-suggestion" data-user-id="${user.id}" data-username="${user.username}" style="padding: 10px; cursor: pointer; border-bottom: 1px solid rgba(255,204,0,0.2); transition: background 0.2s;">
+          <div style="font-weight: 600; color: var(--text);">${user.username}</div>
+          <div style="font-size: 12px; color: var(--text-secondary);">${user.email}</div>
+        </div>
+      `).join('');
+      
+      bettorSuggestionsManual.style.display = 'block';
+      
+      document.querySelectorAll('.bettor-suggestion').forEach(item => {
+        item.addEventListener('mouseenter', () => item.style.background = 'rgba(255,204,0,0.1)');
+        item.addEventListener('mouseleave', () => item.style.background = 'transparent');
+        item.addEventListener('click', () => {
+          const userId = parseInt(item.dataset.userId);
+          const username = item.dataset.username;
+          addSecondaryBettor(userId, username);
+          bettorSearchManual.value = '';
+          bettorSuggestionsManual.style.display = 'none';
+        });
+      });
+    });
+
+    function addSecondaryBettor(userId, username) {
+      if (selectedSecondaryBettors.find(b => b.id === userId)) {
+        return;
+      }
+      
+      selectedSecondaryBettors.push({ id: userId, username });
+      renderSelectedBettors();
+    }
+
+    function renderSelectedBettors() {
+      if (selectedSecondaryBettors.length === 0) {
+        selectedBettorsManual.innerHTML = '<p style="color: var(--text-secondary); font-size: 13px; font-style: italic;">No secondary bettors added</p>';
+        return;
+      }
+      
+      selectedBettorsManual.innerHTML = selectedSecondaryBettors.map(bettor => `
+        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 8px 12px; border-radius: 20px; display: inline-flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 500;">
+          <span>${bettor.username}</span>
+          <button class="remove-bettor" data-user-id="${bettor.id}" style="background: rgba(255,255,255,0.3); border: none; color: white; cursor: pointer; border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: bold;">×</button>
+        </div>
+      `).join('');
+      
+      document.querySelectorAll('.remove-bettor').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const userId = parseInt(btn.dataset.userId);
+          selectedSecondaryBettors = selectedSecondaryBettors.filter(b => b.id !== userId);
+          renderSelectedBettors();
+        });
+      });
+    }
+
+    document.addEventListener('click', (e) => {
+      if (!bettorSearchManual.contains(e.target) && !bettorSuggestionsManual.contains(e.target)) {
+        bettorSuggestionsManual.style.display = 'none';
+      }
+    });
+
+    // Fetch users on page load
+    fetchAllUsers();
+    renderSelectedBettors();
 
     function addLeg() {
       legCount++;
@@ -602,15 +803,20 @@
     async function submitBet(event) {
       event.preventDefault();
       
-      // Collect bet data
+      // Collect bet data with all required fields matching OCR structure
       const betData = {
+        bet_id: document.getElementById('bet-id').value || `manual_${Date.now()}`,
         name: document.getElementById('bet-name').value,
         type: document.getElementById('bet-type').value,
         betting_site: document.getElementById('betting-site').value,
+        bet_date: document.getElementById('bet-date').value,
         wager: parseFloat(document.getElementById('wager').value),
-        odds: document.getElementById('odds').value,
-        bet_id: document.getElementById('bet-id').value || null,
+        potential_winnings: parseFloat(document.getElementById('potential-payout').value) || 0,
+        final_odds: document.getElementById('odds').value,
+        secondary_bettor_ids: selectedSecondaryBettors.map(b => b.id),
         sport: '', // Will be set from first leg
+        status: 'pending',
+        source: 'manual',
         legs: []
       };
 
@@ -627,15 +833,27 @@
           betData.sport = sport;
         }
         
+        const statValue = legCard.querySelector('.leg-stat').value;
+        const statAdd = legCard.querySelector('.leg-stat-add').value;
+        const awayTeam = legCard.querySelector('.leg-away').value;
+        const homeTeam = legCard.querySelector('.leg-home').value;
+        
+        // Map to database structure
         const leg = {
           game_date: legCard.querySelector('.leg-date').value,
-          away: legCard.querySelector('.leg-away').value,
-          home: legCard.querySelector('.leg-home').value,
+          away_team: awayTeam,
+          home_team: homeTeam,
+          team: homeTeam, // Default to home team for player_team
           player: legCard.querySelector('.leg-player').value,
-          stat: legCard.querySelector('.leg-stat').value,
-          stat_add: legCard.querySelector('.leg-stat-add').value,
-          target: parseFloat(legCard.querySelector('.leg-target').value),
-          sport: sport
+          stat: statValue,
+          bet_type: statValue.includes('moneyline') || statValue.includes('spread') || statValue.includes('total') ? statValue : 'player_prop',
+          bet_line_type: statAdd, // 'over' or 'under'
+          line: parseFloat(legCard.querySelector('.leg-target').value),
+          sport: sport,
+          game_info: `${awayTeam} @ ${homeTeam}`,
+          odds: '-110', // Default odds for manual entry legs
+          status: 'pending',
+          leg_order: index
         };
         
         betData.legs.push(leg);

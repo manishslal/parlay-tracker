@@ -1574,13 +1574,25 @@
     </div>
     <div class="button-container">
       <button id="refresh-button">Refresh Stats</button>
-      <button id="upload-betslip-button" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">📷 Upload Bet Slip</button>
+      <div style="position: relative; display: inline-block;">
+        <button id="add-bet-button" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; font-weight: 600;">➕ Add Bet</button>
+        <div id="add-bet-dropdown" style="display: none; position: absolute; top: 100%; left: 0; background: white; border: 2px solid #667eea; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 1000; min-width: 200px; margin-top: 5px;">
+          <div id="upload-betslip-option" style="padding: 12px 16px; cursor: pointer; border-bottom: 1px solid #eee; transition: background 0.2s;">
+            <strong style="color: #667eea;">📷 Upload Bet Slip</strong>
+            <div style="font-size: 12px; color: #888; margin-top: 2px;">Upload screenshot (AI extract)</div>
+          </div>
+          <div id="manual-entry-option" style="padding: 12px 16px; cursor: pointer; transition: background 0.2s;">
+            <strong style="color: #667eea;">✏️ Manual Entry</strong>
+            <div style="font-size: 12px; color: #888; margin-top: 2px;">Enter bet details manually</div>
+          </div>
+        </div>
+      </div>
       <button id="clear-cache-button" style="display: none;">Clear Cache 🗑️</button>
     </div>
     <div id="status-message"></div>
     
-    <!-- Hidden file input for bet slip upload -->
-    <input type="file" id="betslip-file-input" accept="image/*" capture="environment" style="display: none;">
+    <!-- Hidden file input for bet slip upload (removed capture attribute) -->
+    <input type="file" id="betslip-file-input" accept="image/*" style="display: none;">
     
     <!-- Bet Slip OCR Modal -->
     <div id="ocr-modal" class="modal" style="display: none;">
@@ -4212,9 +4224,47 @@ async function logoutToken() {
     btn.addEventListener('click',update);
     
     // ========================================
+    // ADD BET DROPDOWN MENU
+    // ========================================
+    const addBetButton = document.getElementById('add-bet-button');
+    const addBetDropdown = document.getElementById('add-bet-dropdown');
+    const uploadBetslipOption = document.getElementById('upload-betslip-option');
+    const manualEntryOption = document.getElementById('manual-entry-option');
+    
+    // Toggle dropdown on button click
+    addBetButton.addEventListener('click', (e) => {
+      e.stopPropagation();
+      addBetDropdown.style.display = addBetDropdown.style.display === 'none' ? 'block' : 'none';
+    });
+    
+    // Close dropdown when clicking outside
+    document.addEventListener('click', (e) => {
+      if (!addBetButton.contains(e.target) && !addBetDropdown.contains(e.target)) {
+        addBetDropdown.style.display = 'none';
+      }
+    });
+    
+    // Hover effects for dropdown options
+    uploadBetslipOption.addEventListener('mouseenter', () => uploadBetslipOption.style.background = '#f0f0f0');
+    uploadBetslipOption.addEventListener('mouseleave', () => uploadBetslipOption.style.background = 'white');
+    manualEntryOption.addEventListener('mouseenter', () => manualEntryOption.style.background = '#f0f0f0');
+    manualEntryOption.addEventListener('mouseleave', () => manualEntryOption.style.background = 'white');
+    
+    // Upload Bet Slip option - opens file picker
+    uploadBetslipOption.addEventListener('click', () => {
+      addBetDropdown.style.display = 'none';
+      document.getElementById('betslip-file-input').click();
+    });
+    
+    // Manual Entry option - opens add bet modal from hamburger menu
+    manualEntryOption.addEventListener('click', () => {
+      addBetDropdown.style.display = 'none';
+      document.getElementById('add-bet-item').click(); // Trigger hamburger menu add bet
+    });
+    
+    // ========================================
     // BET SLIP OCR UPLOAD FUNCTIONALITY
     // ========================================
-    const uploadBtn = document.getElementById('upload-betslip-button');
     const fileInput = document.getElementById('betslip-file-input');
     const ocrModal = document.getElementById('ocr-modal');
     const closeOcrModal = document.getElementById('close-ocr-modal');
@@ -4230,11 +4280,6 @@ async function logoutToken() {
     let extractedBetData = null;
     let selectedSecondaryBettors = [];
     let allUsers = [];
-    
-    // Open file picker when upload button is clicked
-    uploadBtn.addEventListener('click', () => {
-      fileInput.click();
-    });
     
     // Handle file selection
     fileInput.addEventListener('change', async (e) => {
