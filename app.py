@@ -2501,9 +2501,6 @@ def upload_betslip():
         file_ext = image_file.filename.lower().split('.')[-1]
         mime_type = f"image/{file_ext if file_ext in ['png', 'jpeg', 'jpg', 'gif', 'webp'] else 'jpeg'}"
         
-        # Create OpenAI client
-        client = OpenAI(api_key=openai_key)
-        
         # Create detailed prompt for GPT-4 Vision
         prompt = """
 Analyze this bet slip image and extract ALL information in JSON format.
@@ -2583,10 +2580,15 @@ Example output format:
         
         app.logger.info(f"[OCR] Processing bet slip for user {current_user.username}")
         
-        # Call GPT-4 Vision API
-        response = client.chat.completions.create(
-            model="gpt-4o",  # Latest GPT-4 with vision
-            messages=[
+        # Call GPT-4 Vision API directly using requests (bypasses client init issues)
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {openai_key}"
+        }
+        
+        payload = {
+            "model": "gpt-4o",
+            "messages": [
                 {
                     "role": "user",
                     "content": [
@@ -2595,18 +2597,31 @@ Example output format:
                             "type": "image_url",
                             "image_url": {
                                 "url": f"data:{mime_type};base64,{image_data}",
-                                "detail": "high"  # High detail for better text extraction
+                                "detail": "high"
                             }
                         }
                     ]
                 }
             ],
-            max_tokens=2000,
-            temperature=0.1  # Low temperature for consistent extraction
+            "max_tokens": 2000,
+            "temperature": 0.1
+        }
+        
+        api_response = requests.post(
+            "https://api.openai.com/v1/chat/completions",
+            headers=headers,
+            json=payload,
+            timeout=30
         )
         
+        if api_response.status_code != 200:
+            error_detail = api_response.json().get('error', {})
+            raise Exception(f"OpenAI API error: {error_detail.get('message', api_response.text)}")
+        
+        response_data = api_response.json()
+        
         # Parse response
-        extracted_text = response.choices[0].message.content
+        extracted_text = response_data['choices'][0]['message']['content']
         app.logger.info(f"[OCR] GPT-4 response: {extracted_text[:200]}...")
         
         # Extract JSON from response (sometimes GPT adds markdown code blocks)
