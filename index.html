@@ -1765,7 +1765,14 @@
           // Not logged in, redirect to login page (only once)
           if (!isRedirecting) {
             isRedirecting = true;
-            window.location.href = '/login.html';
+            // Check if this is due to logout
+            const params = new URLSearchParams(window.location.search);
+            const loggedOut = params.get('logged_out');
+            if (loggedOut === 'true') {
+              window.location.replace('/login.html?message=logged_out');
+            } else {
+              window.location.replace('/login.html?message=auth_required');
+            }
           }
           throw new Error('Not authenticated');
         }
@@ -1796,7 +1803,9 @@
       } catch (error) {
         console.error('Auth check failed:', error);
         // On error, redirect to login to be safe
-        window.location.href = '/login.html';
+        if (!isRedirecting) {
+          window.location.replace('/login.html?message=auth_required');
+        }
         throw error;
       }
     })();
@@ -2619,8 +2628,13 @@ function showBetsPage() {
 let isLoggingOut = false;
 
 async function logoutToken() {
-  if (isLoggingOut) return; // Prevent double-clicks
+  if (isLoggingOut) {
+    console.log('Logout already in progress');
+    return; // Prevent double-clicks
+  }
   isLoggingOut = true;
+  
+  console.log('Starting logout process...');
   
   try {
     const response = await fetch('/auth/logout', {
@@ -2630,20 +2644,36 @@ async function logoutToken() {
         'Cache-Control': 'no-cache'
       }
     });
-    await response.json(); // Wait for response to complete
+    
+    console.log('Logout response status:', response.status);
+    
+    if (response.ok) {
+      await response.json(); // Wait for response to complete
+    }
+    
     // Delay to ensure session is cleared and cookie removed
     await new Promise(resolve => setTimeout(resolve, 250));
+    
     // Clear any cached data
     if ('caches' in window) {
-      caches.keys().then(names => names.forEach(name => caches.delete(name)));
+      caches.keys().then(names => {
+        names.forEach(name => caches.delete(name));
+        console.log('Cleared', names.length, 'caches');
+      });
     }
+    
+    console.log('Redirecting to login page...');
     // Use replace to prevent back button from showing authenticated page
-    window.location.replace('/login.html?t=' + Date.now());
+    window.location.replace('/login.html?message=logged_out&t=' + Date.now());
   } catch (error) {
     console.error('Logout error:', error);
     // Still redirect on error with cache busting
     await new Promise(resolve => setTimeout(resolve, 250));
-    window.location.replace('/login.html?t=' + Date.now());
+    console.log('Redirecting to login page after error...');
+    window.location.replace('/login.html?message=logged_out&t=' + Date.now());
+  } finally {
+    // Reset flag in case redirect fails
+    isLoggingOut = false;
   }
 }
 

@@ -226,6 +226,27 @@
         const spinner = document.getElementById('spinner');
         const errorMessage = document.getElementById('errorMessage');
 
+        // Check for message parameter and display appropriate message
+        const urlParams = new URLSearchParams(window.location.search);
+        const message = urlParams.get('message');
+        if (message === 'logged_out') {
+            errorMessage.textContent = 'You have been logged out successfully.';
+            errorMessage.style.background = 'rgba(76, 175, 80, 0.1)';
+            errorMessage.style.borderColor = '#4caf50';
+            errorMessage.style.color = '#4caf50';
+            errorMessage.classList.add('show');
+            // Clear message after 3 seconds
+            setTimeout(() => {
+                errorMessage.classList.remove('show');
+                errorMessage.style.background = '';
+                errorMessage.style.borderColor = '';
+                errorMessage.style.color = '';
+            }, 3000);
+        } else if (message === 'auth_required') {
+            errorMessage.textContent = 'Please log in to continue.';
+            errorMessage.classList.add('show');
+        }
+
         // Check if already logged in
         fetch('/auth/check', {
             credentials: 'include'
@@ -233,13 +254,17 @@
         .then(res => res.json())
         .then(data => {
             if (data.authenticated) {
-                window.location.href = '/';
+                window.location.replace('/');
             }
         })
         .catch(err => console.error('Auth check failed:', err));
 
         loginForm.addEventListener('submit', async (e) => {
             e.preventDefault();
+
+            // Small delay to allow browser autofill to complete
+            // Browsers may fill forms but not commit values immediately
+            await new Promise(resolve => setTimeout(resolve, 50));
 
             const username = document.getElementById('username').value;
             const password = document.getElementById('password').value;
