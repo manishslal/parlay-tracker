@@ -3022,11 +3022,14 @@ def upload_betslip():
     
     # Check if API key is configured
     openai_key = os.getenv('OPENAI_API_KEY')
-    if not openai_key or openai_key == 'your-openai-api-key-here':
+    if not openai_key or openai_key.strip() == '' or openai_key == 'your-openai-api-key-here':
+        app.logger.error(f"OpenAI API key check failed. Key exists: {bool(openai_key)}, Key value: {openai_key[:10] if openai_key else 'None'}...")
         return jsonify({
             'error': 'OpenAI API key not configured',
-            'message': 'Please add your OPENAI_API_KEY to the .env file'
+            'message': f'OpenAI API key issue. Key loaded: {bool(openai_key)}. Please check .env file and restart the server.'
         }), 500
+    
+    app.logger.info(f"OpenAI API key loaded successfully (first 10 chars: {openai_key[:10]}...)")
     
     if 'image' not in request.files:
         return jsonify({'error': 'No image provided'}), 400
