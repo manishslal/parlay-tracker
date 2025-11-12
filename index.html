@@ -2623,18 +2623,27 @@ async function logoutToken() {
   isLoggingOut = true;
   
   try {
-    await fetch('/auth/logout', {
+    const response = await fetch('/auth/logout', {
       method: 'POST',
-      credentials: 'include'
+      credentials: 'include',
+      headers: {
+        'Cache-Control': 'no-cache'
+      }
     });
-    // Small delay to ensure session is cleared before redirect
-    await new Promise(resolve => setTimeout(resolve, 100));
-    window.location.href = '/login.html';
+    await response.json(); // Wait for response to complete
+    // Delay to ensure session is cleared and cookie removed
+    await new Promise(resolve => setTimeout(resolve, 250));
+    // Clear any cached data
+    if ('caches' in window) {
+      caches.keys().then(names => names.forEach(name => caches.delete(name)));
+    }
+    // Use replace to prevent back button from showing authenticated page
+    window.location.replace('/login.html?t=' + Date.now());
   } catch (error) {
     console.error('Logout error:', error);
-    // Still redirect on error
-    await new Promise(resolve => setTimeout(resolve, 100));
-    window.location.href = '/login.html';
+    // Still redirect on error with cache busting
+    await new Promise(resolve => setTimeout(resolve, 250));
+    window.location.replace('/login.html?t=' + Date.now());
   }
 }
 

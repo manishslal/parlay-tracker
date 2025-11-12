@@ -262,9 +262,10 @@
                 const data = await response.json();
 
                 if (response.ok) {
-                    // Login successful - small delay to ensure cookie is set
-                    await new Promise(resolve => setTimeout(resolve, 100));
-                    window.location.href = '/';
+                    // Login successful - delay to ensure cookie is fully processed
+                    await new Promise(resolve => setTimeout(resolve, 250));
+                    // Use replace to avoid history issues and force fresh page load
+                    window.location.replace('/?t=' + Date.now());
                 } else {
                     // Show error message
                     errorMessage.textContent = data.error || 'Login failed. Please try again.';

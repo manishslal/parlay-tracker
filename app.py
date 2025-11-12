@@ -1960,10 +1960,15 @@ def login():
     session.permanent = True
     login_user(user, remember=True)
     
-    return jsonify({
+    response = jsonify({
         'message': 'Login successful',
         'user': user.to_dict()
-    }), 200
+    })
+    # Prevent caching of login response
+    response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+    response.headers['Pragma'] = 'no-cache'
+    response.headers['Expires'] = '0'
+    return response, 200
 
 
 @app.route('/auth/logout', methods=['POST'])
@@ -1971,18 +1976,31 @@ def login():
 def logout():
     """Logout current user"""
     logout_user()
-    return jsonify({'message': 'Logout successful'}), 200
+    session.clear()  # Explicitly clear all session data
+    response = jsonify({'message': 'Logout successful'})
+    # Set headers to prevent caching
+    response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+    response.headers['Pragma'] = 'no-cache'
+    response.headers['Expires'] = '0'
+    return response, 200
 
 
 @app.route('/auth/check', methods=['GET'])
 def check_auth():
     """Check if user is authenticated"""
     if current_user.is_authenticated:
-        return jsonify({
+        response = jsonify({
             'authenticated': True,
             'user': current_user.to_dict()
-        }), 200
-    return jsonify({'authenticated': False}), 200
+        })
+    else:
+        response = jsonify({'authenticated': False})
+    
+    # Prevent caching of auth status
+    response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+    response.headers['Pragma'] = 'no-cache'
+    response.headers['Expires'] = '0'
+    return response, 200
 
 
 # ============================================================================
