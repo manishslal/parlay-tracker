@@ -3107,12 +3107,6 @@ def register_page():
     """Serve the register page (admin only)"""
     return send_from_directory('.', 'register.html')
 
-@app.route('/admin.html')
-@login_required
-def admin_page():
-    """Serve the admin tools page"""
-    return send_from_directory('.', 'admin.html')
-
 @app.route('/pwa-debug.html')
 def pwa_debug():
     """Serve PWA debug page"""
