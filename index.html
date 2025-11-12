@@ -509,7 +509,7 @@
     }
     
     .collapse-option {
-      padding: 0.6rem 1rem;
+      padding: 0.12rem 0.2rem;
       margin: 0.25rem 0;
       background: var(--section-bg);
       border: 1px solid var(--border);
@@ -2172,8 +2172,9 @@
     
     filterDropdownBtn.addEventListener('click', (e) => {
       e.stopPropagation();
-      // Close collapse menu if open
+      // Close collapse menu and add bet dropdown if open
       collapseMenu.classList.remove('active');
+      addBetDropdown.classList.remove('active');
       filterMainMenu.classList.toggle('active');
     });
     
@@ -2281,9 +2282,10 @@
     
     collapseDropdownBtn.addEventListener('click', (e) => {
       e.stopPropagation();
-      // Close filter menu and sub-panel if open
+      // Close filter menu, sub-panel, and add bet dropdown if open
       filterMainMenu.classList.remove('active');
       filterSubPanel.classList.remove('active');
+      addBetDropdown.classList.remove('active');
       collapseMenu.classList.toggle('active');
     });
     
@@ -2329,6 +2331,7 @@
       filterMainMenu.classList.remove('active');
       filterSubPanel.classList.remove('active');
       collapseMenu.classList.remove('active');
+      addBetDropdown.classList.remove('active');
       selectMenu.classList.toggle('active');
     });
     
@@ -4295,6 +4298,11 @@ async function logoutToken() {
     // Toggle dropdown on button click
     addBetButton.addEventListener('click', (e) => {
       e.stopPropagation();
+      // Close other menus
+      filterMainMenu.classList.remove('active');
+      filterSubPanel.classList.remove('active');
+      collapseMenu.classList.remove('active');
+      selectMenu.classList.remove('active');
       addBetDropdown.classList.toggle('active');
     });
     
