@@ -1,0 +1,39 @@
+name: Daily Deployment for Team Data Update
+
+on:
+  schedule:
+    # Run at 2:00 AM Pacific Time (10:00 UTC)
+    # Adjust timezone as needed: PST = UTC-8, PDT = UTC-7
+    - cron: '0 10 * * *'
+  workflow_dispatch: # Allow manual triggering
+
+jobs:
+  trigger-deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          
+      - name: Configure Git
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          
+      - name: Update timestamp to trigger deployment
+        run: |
+          # Update a timestamp file to trigger Render deployment
+          echo "Last auto-update: $(date -u)" > LAST_AUTO_UPDATE.txt
+          
+      - name: Commit and push if changes
+        run: |
+          git add LAST_AUTO_UPDATE.txt
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "chore: Daily auto-update trigger at $(date -u +'%Y-%m-%d %H:%M UTC')"
+            git push
+            echo "✅ Pushed commit - Render will auto-deploy and update team data on startup"
+          fi
