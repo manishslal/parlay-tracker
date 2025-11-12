@@ -308,10 +308,58 @@ def get_user_bets_from_db(user_id, status_filter=None):
 def save_bet_to_db(user_id, bet_data):
     """Save a bet to database with JSON backup and create BetLeg records"""
     try:
+        from models import Team
+        
         bet = Bet(user_id=user_id)
         bet.set_bet_data(bet_data)
         db.session.add(bet)
         db.session.flush()  # Get bet.id before creating legs
+        
+        # Build team lookup dictionaries for normalization
+        teams = Team.query.all()
+        team_lookup = {}
+        for sport in ['NFL', 'NBA']:
+            sport_teams = [t for t in teams if t.sport == sport]
+            abbr_to_nickname = {}
+            name_to_nickname = {}
+            
+            for team in sport_teams:
+                if team.nickname:
+                    if team.team_abbr:
+                        abbr_to_nickname[team.team_abbr.upper().strip()] = team.nickname
+                    if team.team_name:
+                        name_to_nickname[team.team_name.lower().strip()] = team.nickname
+                    if team.team_name_short:
+                        name_to_nickname[team.team_name_short.lower().strip()] = team.nickname
+            
+            team_lookup[sport] = {
+                'abbr_to_nickname': abbr_to_nickname,
+                'name_to_nickname': name_to_nickname
+            }
+        
+        # Helper to normalize team name to nickname
+        def normalize_team_name(team_str, sport):
+            if not team_str or not sport or sport not in team_lookup:
+                return team_str
+            
+            lookup = team_lookup[sport]
+            team_lower = team_str.lower().strip()
+            team_upper = team_str.upper().strip()
+            
+            # Check if it's an abbreviation
+            if team_upper in lookup['abbr_to_nickname']:
+                return lookup['abbr_to_nickname'][team_upper]
+            
+            # Check if it's a full name
+            if team_lower in lookup['name_to_nickname']:
+                return lookup['name_to_nickname'][team_lower]
+            
+            # Try partial matching
+            for full_name, nickname in lookup['name_to_nickname'].items():
+                if full_name in team_lower or team_lower in full_name:
+                    return nickname
+            
+            return team_str
         
         # Create BetLeg records for each leg in bet_legs table
         legs = bet_data.get('legs', [])
@@ -328,17 +376,25 @@ def save_bet_to_db(user_id, bet_data):
                 except (ValueError, AttributeError):
                     pass
             
+            # Get sport for this leg
+            sport = leg_data.get('sport', 'NFL')
+            
+            # Normalize team name to nickname for spread/moneyline bets
+            team_value = leg_data.get('team')
+            if team_value:
+                team_value = normalize_team_name(team_value, sport)
+            
             # Map leg data to BetLeg columns
             leg_status = leg_data.get('status', 'pending')
             bet_leg = BetLeg(
                 bet_id=bet.id,
-                player_name=leg_data.get('player') or leg_data.get('team') or 'Unknown',
-                player_team=leg_data.get('team'),
+                player_name=leg_data.get('player') or team_value or 'Unknown',
+                player_team=team_value,
                 home_team=leg_data.get('home_team', ''),
                 away_team=leg_data.get('away_team', ''),
                 game_date=game_date,
                 game_time=game_time,
-                sport=leg_data.get('sport', 'NFL'),
+                sport=sport,
                 bet_type=leg_data.get('bet_type', 'player_prop'),  # Maps to bet_legs.bet_type
                 bet_line_type=leg_data.get('bet_line_type'),  # Maps to bet_legs.bet_line_type
                 target_value=leg_data.get('line'),
