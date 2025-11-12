@@ -724,8 +724,25 @@ def normalize_bet_leg_team_names():
             
             sport_lookup = lookups[sport]
             team_lower = team_str.lower().strip()
+            team_upper = team_str.upper().strip()
             
-            # Check if it's already a nickname
+            # CRITICAL FIX: Check if this is a nickname/name/abbr from the WRONG sport
+            # If so, we need to convert it to the correct sport's team
+            # Example: "Timberwolves" (NBA) on NFL leg should become "Vikings" (NFL) - both MIN
+            wrong_sport = 'NBA' if sport == 'NFL' else 'NFL'
+            if wrong_sport in lookups:
+                wrong_sport_lookup = lookups[wrong_sport]
+                
+                # Is this a nickname from the wrong sport?
+                if team_lower in wrong_sport_lookup['nickname_to_abbr']:
+                    # Get the abbreviation from wrong sport
+                    abbr = wrong_sport_lookup['nickname_to_abbr'][team_lower]
+                    # Look up the correct sport's team with same abbreviation
+                    if abbr.upper() in sport_lookup['abbr_to_nickname']:
+                        app.logger.info(f"[DATA-NORMALIZE] Converting {team_str} ({wrong_sport}) to {sport_lookup['abbr_to_nickname'][abbr.upper()]} ({sport}) via {abbr}")
+                        return sport_lookup['abbr_to_nickname'][abbr.upper()]
+            
+            # Check if it's already a nickname in the correct sport
             if team_lower in sport_lookup['nickname_to_abbr']:
                 return team_str  # Already normalized
             
@@ -734,7 +751,6 @@ def normalize_bet_leg_team_names():
                 return sport_lookup['name_to_nickname'][team_lower]
             
             # Check if it's an abbreviation
-            team_upper = team_str.upper().strip()
             if team_upper in sport_lookup['abbr_to_nickname']:
                 return sport_lookup['abbr_to_nickname'][team_upper]
             
