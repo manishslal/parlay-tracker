@@ -2114,6 +2114,182 @@ def admin_compute_returns():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+@app.route('/admin/fix_pending_legs', methods=['POST'])
+@login_required
+def admin_fix_pending_legs():
+    """Admin endpoint to manually fix all pending bet legs by querying ESPN API.
+    
+    For all legs with status='pending':
+    - Fetches game data from ESPN API
+    - Updates game_id (espn_game_id) if missing
+    - Updates achieved_value if blank
+    - Updates status (won/lost) based on achieved_value vs target_value
+    - Updates is_hit (True/False) based on status
+    
+    Returns JSON summary of what was fixed.
+    """
+    try:
+        app.logger.info("[MANUAL FIX] Starting manual fix for all pending legs...")
+        
+        # Get all pending legs across all bets
+        pending_legs = BetLeg.query.filter_by(status='pending').all()
+        
+        if not pending_legs:
+            return jsonify({
+                'success': True,
+                'message': 'No pending legs found',
+                'stats': {
+                    'total_pending': 0,
+                    'fixed': 0,
+                    'skipped': 0,
+                    'errors': 0
+                }
+            })
+        
+        app.logger.info(f"[MANUAL FIX] Found {len(pending_legs)} pending legs")
+        
+        stats = {
+            'total_pending': len(pending_legs),
+            'fixed': 0,
+            'skipped': 0,
+            'errors': 0,
+            'game_id_added': 0,
+            'achieved_value_added': 0,
+            'status_updated': 0
+        }
+        
+        details = []
+        
+        for leg in pending_legs:
+            try:
+                leg_info = {
+                    'leg_id': leg.id,
+                    'bet_id': leg.bet_id,
+                    'player': leg.player_name,
+                    'game': f"{leg.away_team} @ {leg.home_team}",
+                    'game_date': str(leg.game_date) if leg.game_date else None,
+                    'changes': []
+                }
+                
+                # Skip if missing critical data
+                if not leg.game_date or not leg.away_team or not leg.home_team:
+                    app.logger.warning(f"[MANUAL FIX] Leg {leg.id}: Missing game_date/teams, skipping")
+                    stats['skipped'] += 1
+                    leg_info['changes'].append('Skipped - missing game_date or teams')
+                    details.append(leg_info)
+                    continue
+                
+                # Fetch game data from ESPN
+                game_date_str = leg.game_date.strftime('%Y-%m-%d')
+                sport = leg.sport or 'NFL'
+                
+                app.logger.info(f"[MANUAL FIX] Leg {leg.id}: Fetching {sport} game {leg.away_team} @ {leg.home_team} on {game_date_str}")
+                
+                game_data = fetch_game_details_from_espn(
+                    game_date=game_date_str,
+                    away_team=leg.away_team,
+                    home_team=leg.home_team,
+                    sport=sport
+                )
+                
+                if not game_data:
+                    app.logger.warning(f"[MANUAL FIX] Leg {leg.id}: No game data found from ESPN")
+                    stats['skipped'] += 1
+                    leg_info['changes'].append('Skipped - game not found on ESPN')
+                    details.append(leg_info)
+                    continue
+                
+                leg_updated = False
+                
+                # 1. Update game_id if missing
+                if not leg.espn_game_id and game_data.get('espn_game_id'):
+                    leg.espn_game_id = game_data['espn_game_id']
+                    leg.game_status = game_data.get('statusTypeName', 'STATUS_SCHEDULED')
+                    leg_updated = True
+                    stats['game_id_added'] += 1
+                    leg_info['changes'].append(f"Added game_id: {game_data['espn_game_id']}")
+                    app.logger.info(f"[MANUAL FIX] Leg {leg.id}: Added game_id {game_data['espn_game_id']}")
+                
+                # 2. Update achieved_value if blank and game is final
+                if leg.achieved_value is None and game_data.get('statusTypeName') == 'STATUS_FINAL':
+                    # Create a bet dict structure that calculate_bet_value expects
+                    bet_dict = {
+                        'player': leg.player_name,
+                        'team': leg.player_team or leg.home_team,
+                        'stat': leg.stat_type or '',
+                        'target': leg.target_value,
+                        'game_date': game_date_str,
+                        'away': leg.away_team,
+                        'home': leg.home_team
+                    }
+                    
+                    # Use the existing calculate_bet_value function
+                    achieved = calculate_bet_value(bet_dict, game_data)
+                    
+                    if achieved is not None:
+                        leg.achieved_value = achieved
+                        leg_updated = True
+                        stats['achieved_value_added'] += 1
+                        leg_info['changes'].append(f"Added achieved_value: {achieved}")
+                        app.logger.info(f"[MANUAL FIX] Leg {leg.id}: Added achieved_value {achieved}")
+                
+                # 3. Update status and is_hit if we have achieved_value and target_value
+                if leg.achieved_value is not None and leg.target_value is not None and leg.is_hit is None:
+                    leg_status = 'lost'  # Default
+                    stat_type = (leg.bet_type or '').lower()
+                    
+                    if stat_type == 'moneyline':
+                        leg_status = 'won' if leg.achieved_value > 0 else 'lost'
+                    elif stat_type == 'spread':
+                        leg_status = 'won' if (leg.achieved_value + leg.target_value) > 0 else 'lost'
+                    else:
+                        # Player props
+                        if leg.bet_line_type == 'under':
+                            leg_status = 'won' if leg.achieved_value < leg.target_value else 'lost'
+                        else:
+                            leg_status = 'won' if leg.achieved_value >= leg.target_value else 'lost'
+                    
+                    leg.status = leg_status
+                    leg.is_hit = True if leg_status == 'won' else False
+                    leg_updated = True
+                    stats['status_updated'] += 1
+                    leg_info['changes'].append(f"Updated status: {leg_status}, is_hit: {leg.is_hit}")
+                    app.logger.info(f"[MANUAL FIX] Leg {leg.id}: Updated status={leg_status}, is_hit={leg.is_hit}")
+                
+                if leg_updated:
+                    stats['fixed'] += 1
+                    details.append(leg_info)
+                else:
+                    stats['skipped'] += 1
+                    leg_info['changes'].append('No changes needed')
+                    details.append(leg_info)
+                    
+            except Exception as e:
+                app.logger.error(f"[MANUAL FIX] Error processing leg {leg.id}: {e}")
+                stats['errors'] += 1
+                leg_info['changes'].append(f"Error: {str(e)}")
+                details.append(leg_info)
+                continue
+        
+        # Commit all changes
+        db.session.commit()
+        app.logger.info(f"[MANUAL FIX] Complete: Fixed {stats['fixed']}/{stats['total_pending']} legs")
+        
+        return jsonify({
+            'success': True,
+            'message': f"Fixed {stats['fixed']} out of {stats['total_pending']} pending legs",
+            'stats': stats,
+            'details': details
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        app.logger.error(f"[MANUAL FIX] Fatal error: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
 @app.route('/admin/update_teams', methods=['POST'])
 @login_required
 def admin_update_teams():
@@ -2896,6 +3072,12 @@ def login_page():
 def register_page():
     """Serve the register page (admin only)"""
     return send_from_directory('.', 'register.html')
+
+@app.route('/admin.html')
+@login_required
+def admin_page():
+    """Serve the admin tools page"""
+    return send_from_directory('.', 'admin.html')
 
 @app.route('/pwa-debug.html')
 def pwa_debug():
