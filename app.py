@@ -2641,6 +2641,115 @@ Example output format:
         }), 500
 
 
+@app.route('/api/save-extracted-bet', methods=['POST'])
+@login_required
+def save_extracted_bet():
+    """Save bet data extracted from OCR to database"""
+    try:
+        ocr_data = request.json
+        if not ocr_data:
+            return jsonify({'error': 'No data provided'}), 400
+        
+        app.logger.info(f"[OCR-SAVE] Saving extracted bet for user {current_user.username}")
+        
+        # Convert OCR format to bet_data format
+        bet_data = convert_ocr_to_bet_format(ocr_data)
+        
+        # Save to database
+        saved_bet = save_bet_to_db(current_user.id, bet_data)
+        
+        app.logger.info(f"[OCR-SAVE] ✓ Saved bet {saved_bet['bet_id']} with {len(saved_bet.get('legs', []))} legs")
+        
+        return jsonify({
+            'success': True,
+            'bet': saved_bet,
+            'message': f'Bet saved successfully! {len(saved_bet.get("legs", []))} legs added.'
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        app.logger.error(f"[OCR-SAVE] Error saving extracted bet: {e}")
+        return jsonify({
+            'error': 'Failed to save bet',
+            'details': str(e)
+        }), 500
+
+
+def convert_ocr_to_bet_format(ocr_data):
+    """Convert OCR extracted data to the format expected by save_bet_to_db()
+    
+    OCR format:
+    {
+      "bet_site": "DraftKings",
+      "bet_type": "parlay",
+      "total_odds": "+450",
+      "wager_amount": 25.00,
+      "potential_payout": 137.50,
+      "bet_date": "2024-11-12",
+      "legs": [...]
+    }
+    
+    Bet format:
+    {
+      "bet_id": "ocr_12345",
+      "type": "parlay",
+      "betting_site": "DraftKings",
+      "bet_date": "2024-11-12",
+      "stake": 25.00,
+      "potential_return": 137.50,
+      "american_odds": "+450",
+      "legs": [...]
+    }
+    """
+    import uuid
+    from datetime import datetime
+    
+    # Generate unique bet ID
+    bet_id = f"ocr_{uuid.uuid4().hex[:8]}"
+    
+    # Convert legs
+    converted_legs = []
+    for i, leg in enumerate(ocr_data.get('legs', [])):
+        converted_leg = {
+            'sport': leg.get('sport', 'NFL'),
+            'player': leg.get('player_name'),
+            'team': leg.get('team_name'),
+            'home_team': leg.get('home_team'),
+            'away_team': leg.get('away_team'),
+            'game_info': leg.get('game_info'),
+            'game_date': leg.get('game_date'),
+            'type': leg.get('bet_type', 'player_prop'),
+            'stat': leg.get('stat_type'),
+            'line': leg.get('target_value'),
+            'over_under': leg.get('bet_line_type'),  # "over" or "under"
+            'odds': leg.get('odds', '-110'),
+            'status': 'pending',  # New bets start as pending
+            'leg_order': i
+        }
+        
+        # Clean up None values
+        converted_leg = {k: v for k, v in converted_leg.items() if v is not None}
+        
+        converted_legs.append(converted_leg)
+    
+    # Build bet data
+    bet_data = {
+        'bet_id': bet_id,
+        'type': ocr_data.get('bet_type', 'parlay'),
+        'betting_site': ocr_data.get('bet_site', 'Unknown'),
+        'bet_date': ocr_data.get('bet_date') or datetime.now().strftime('%Y-%m-%d'),
+        'stake': ocr_data.get('wager_amount', 0),
+        'potential_return': ocr_data.get('potential_payout', 0),
+        'american_odds': ocr_data.get('total_odds'),
+        'legs': converted_legs,
+        'status': 'pending',  # New bet starts as pending
+        'source': 'ocr',  # Mark as OCR-sourced for tracking
+        'notes': f'Uploaded via OCR on {datetime.now().strftime("%Y-%m-%d %H:%M")}'
+    }
+    
+    return bet_data
+
+
 @app.route('/')
 def index():
     """Serve the main app page - must be public for PWA to work"""

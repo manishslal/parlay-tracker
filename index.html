@@ -4320,13 +4320,45 @@ async function logoutToken() {
         return;
       }
       
-      // TODO: We'll implement the save functionality in Step 5
-      // For now, just show a message
-      alert('Save functionality will be implemented next! The extracted data is:\n\n' + JSON.stringify(extractedBetData, null, 2));
-      
-      // Close modal
-      ocrModal.style.display = 'none';
-      extractedBetData = null;
+      try {
+        // Disable button and show loading state
+        confirmSaveBtn.disabled = true;
+        confirmSaveBtn.textContent = 'Saving...';
+        
+        // Send to save endpoint
+        const response = await fetch(`${API_BASE}/api/save-extracted-bet`, {
+          method: 'POST',
+          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(extractedBetData)
+        });
+        
+        const result = await response.json();
+        
+        if (!response.ok || !result.success) {
+          throw new Error(result.error || result.details || 'Failed to save bet');
+        }
+        
+        // Success!
+        alert(`✅ ${result.message}\n\nBet ID: ${result.bet.bet_id}`);
+        
+        // Close modal
+        ocrModal.style.display = 'none';
+        extractedBetData = null;
+        
+        // Refresh the bets list
+        update();
+        
+      } catch (error) {
+        console.error('Save error:', error);
+        alert(`❌ Failed to save bet: ${error.message}`);
+        
+        // Re-enable button
+        confirmSaveBtn.disabled = false;
+        confirmSaveBtn.textContent = '✓ Confirm & Save Bet';
+      }
     });
     
     // Move completed games button
