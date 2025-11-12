@@ -559,7 +559,8 @@
       margin-bottom: 1.5rem;
     }
     
-    #refresh-button {
+    #refresh-button,
+    #add-bet-button {
       display: inline-block;
       margin: 0;
       padding: 0.75rem 1.5rem;
@@ -1580,15 +1581,13 @@
     <div class="button-container">
       <button id="refresh-button">Refresh Stats</button>
       <div style="position: relative; display: inline-block;">
-        <button id="add-bet-button" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; font-weight: 600;">➕ Add Bet</button>
-        <div id="add-bet-dropdown" style="display: none; position: absolute; top: 100%; left: 0; background: white; border: 2px solid #667eea; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 1000; min-width: 200px; margin-top: 5px;">
-          <div id="upload-betslip-option" style="padding: 12px 16px; cursor: pointer; border-bottom: 1px solid #eee; transition: background 0.2s;">
-            <strong style="color: #667eea;">📷 Upload Bet Slip</strong>
-            <div style="font-size: 12px; color: #888; margin-top: 2px;">Upload screenshot (AI extract)</div>
+        <button id="add-bet-button">➕ Add Bet</button>
+        <div id="add-bet-dropdown" class="filter-sub-panel">
+          <div id="upload-betslip-option" class="collapse-option" style="display: flex; align-items: center; gap: 0.5rem;">
+            <span>📷 Upload Bet Slip</span>
           </div>
-          <div id="manual-entry-option" style="padding: 12px 16px; cursor: pointer; transition: background 0.2s;">
-            <strong style="color: #667eea;">✏️ Manual Entry</strong>
-            <div style="font-size: 12px; color: #888; margin-top: 2px;">Enter bet details manually</div>
+          <div id="manual-entry-option" class="collapse-option" style="display: flex; align-items: center; gap: 0.5rem;">
+            <span>✏️ Manual Entry</span>
           </div>
         </div>
       </div>
@@ -4259,31 +4258,25 @@ async function logoutToken() {
     // Toggle dropdown on button click
     addBetButton.addEventListener('click', (e) => {
       e.stopPropagation();
-      addBetDropdown.style.display = addBetDropdown.style.display === 'none' ? 'block' : 'none';
+      addBetDropdown.classList.toggle('active');
     });
     
     // Close dropdown when clicking outside
     document.addEventListener('click', (e) => {
       if (!addBetButton.contains(e.target) && !addBetDropdown.contains(e.target)) {
-        addBetDropdown.style.display = 'none';
+        addBetDropdown.classList.remove('active');
       }
     });
     
-    // Hover effects for dropdown options
-    uploadBetslipOption.addEventListener('mouseenter', () => uploadBetslipOption.style.background = '#f0f0f0');
-    uploadBetslipOption.addEventListener('mouseleave', () => uploadBetslipOption.style.background = 'white');
-    manualEntryOption.addEventListener('mouseenter', () => manualEntryOption.style.background = '#f0f0f0');
-    manualEntryOption.addEventListener('mouseleave', () => manualEntryOption.style.background = 'white');
-    
     // Upload Bet Slip option - opens file picker
     uploadBetslipOption.addEventListener('click', () => {
-      addBetDropdown.style.display = 'none';
+      addBetDropdown.classList.remove('active');
       document.getElementById('betslip-file-input').click();
     });
     
     // Manual Entry option - opens add bet modal from hamburger menu
     manualEntryOption.addEventListener('click', () => {
-      addBetDropdown.style.display = 'none';
+      addBetDropdown.classList.remove('active');
       document.getElementById('add-bet-item').click(); // Trigger hamburger menu add bet
     });
     
