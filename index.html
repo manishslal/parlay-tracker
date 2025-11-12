@@ -1532,6 +1532,11 @@
       <span class="menu-item-text">Add New Bet</span>
     </div>
     
+    <div class="menu-item" id="admin-item" style="display:none;">
+      <span class="menu-item-icon">⚙️</span>
+      <span class="menu-item-text">Admin Tools</span>
+    </div>
+    
     <div class="menu-item" id="theme-toggle">
       <span class="menu-item-icon">🌙</span>
       <span class="menu-item-text" id="theme-text">Light Mode</span>
@@ -2663,6 +2668,26 @@ async function logoutToken() {
   const addBetItem = document.getElementById('add-bet-item');
   addBetItem.addEventListener('click', function() {
     window.location.href = '/add-bet.html';
+  });
+})();
+
+// Check if user is admin and show admin menu
+(function setupAdmin(){
+  fetch('/api/current_user', {
+    credentials: 'include'
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.success && data.user.is_admin) {
+      const adminItem = document.getElementById('admin-item');
+      adminItem.style.display = 'flex';
+      adminItem.addEventListener('click', function() {
+        window.location.href = '/admin.html';
+      });
+    }
+  })
+  .catch(error => {
+    console.error('Error checking admin status:', error);
   });
 })();
 

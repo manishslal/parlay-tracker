@@ -186,6 +186,17 @@ login_manager.login_view = 'login_page'
 def load_user(user_id):
     return User.query.get(int(user_id))
 
+def admin_required(f):
+    """Decorator to require admin role for routes"""
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not current_user.is_authenticated:
+            return jsonify({'error': 'Authentication required'}), 401
+        if not current_user.is_admin():
+            return jsonify({'error': 'Admin access required'}), 403
+        return f(*args, **kwargs)
+    return decorated_function
+
 # Setup background scheduler for automated tasks
 scheduler = BackgroundScheduler()
 scheduler.start()
@@ -2101,6 +2112,7 @@ def stats():
 
 @app.route('/admin/compute_returns', methods=['POST'])
 @login_required
+@admin_required
 def admin_compute_returns():
     """Admin endpoint to compute (and optionally force) returns.
     POST JSON body: {"force": true|false}
@@ -2116,6 +2128,7 @@ def admin_compute_returns():
 
 @app.route('/admin/fix_pending_legs', methods=['POST'])
 @login_required
+@admin_required
 def admin_fix_pending_legs():
     """Admin endpoint to manually fix all pending bet legs by querying ESPN API.
     
@@ -2292,6 +2305,7 @@ def admin_fix_pending_legs():
 
 @app.route('/admin/update_teams', methods=['POST'])
 @login_required
+@admin_required
 def admin_update_teams():
     """Admin endpoint to manually trigger team data update.
     Forces update regardless of last update time.
@@ -2334,6 +2348,7 @@ def admin_update_teams():
 
 @app.route('/admin/move_completed', methods=['POST'])
 @login_required
+@admin_required
 def admin_move_completed():
     """Admin endpoint to move completed games from pending/live to completed status.
     Checks ESPN API to see which games are STATUS_FINAL and updates their status.
@@ -2455,6 +2470,7 @@ def admin_move_completed():
 
 @app.route('/admin/export_files', methods=['GET'])
 @login_required
+@admin_required
 def admin_export_files():
     """Admin endpoint to export all user bets as JSON.
     Returns all three categories (Live, Pending, Historical) in one response.
@@ -2702,6 +2718,24 @@ def bulk_unarchive_bets():
         app.logger.error(f"Error bulk unarchiving bets: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
+
+@app.route('/api/current_user', methods=['GET'])
+@login_required
+def get_current_user():
+    """Get current user info including admin status"""
+    try:
+        return jsonify({
+            'success': True,
+            'user': {
+                'id': current_user.id,
+                'username': current_user.username,
+                'email': current_user.email,
+                'is_admin': current_user.is_admin()
+            }
+        })
+    except Exception as e:
+        app.logger.error(f"Error fetching current user: {e}")
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/api/users', methods=['GET'])
 @login_required
@@ -3083,6 +3117,13 @@ def admin_page():
 def pwa_debug():
     """Serve PWA debug page"""
     return send_from_directory('.', 'pwa-debug.html')
+
+@app.route('/admin.html')
+@login_required
+@admin_required
+def admin_page():
+    """Serve admin tools page (admin only)"""
+    return send_from_directory('.', 'admin.html')
 
 # PWA Support - These routes must be public for PWA to work
 @app.route('/manifest.json')
