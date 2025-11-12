@@ -656,6 +656,192 @@ def update_completed_bet_legs():
         app.logger.error(f"[AUTO-UPDATE] Error in update_completed_bet_legs: {e}")
         db.session.rollback()
 
+def normalize_bet_leg_team_names():
+    """Normalize team names in bet_legs table on startup.
+    
+    Updates all bet_legs to use consistent team naming:
+    - home_team: Uses nickname (e.g., "Lions", "Thunder") 
+    - away_team: Uses nickname (e.g., "Bills", "Lakers")
+    - player_team: Uses abbreviation (e.g., "DET", "OKC")
+    
+    Also updates status and is_hit for completed bets with pending legs.
+    """
+    try:
+        from models import Team
+        
+        app.logger.info("[DATA-NORMALIZE] Starting team name normalization...")
+        
+        # Build lookup dictionaries from teams table
+        teams = Team.query.all()
+        
+        # Map: full name -> nickname (e.g., "Detroit Lions" -> "Lions")
+        name_to_nickname = {}
+        # Map: abbreviation -> nickname (e.g., "DET" -> "Lions")
+        abbr_to_nickname = {}
+        # Map: full name -> abbreviation (e.g., "Detroit Lions" -> "DET")
+        name_to_abbr = {}
+        # Map: nickname -> abbreviation (e.g., "Lions" -> "DET")
+        nickname_to_abbr = {}
+        
+        for team in teams:
+            if team.nickname:
+                # Full name mappings
+                if team.team_name:
+                    name_to_nickname[team.team_name.lower().strip()] = team.nickname
+                    name_to_abbr[team.team_name.lower().strip()] = team.team_abbr
+                
+                # Abbreviation mappings
+                if team.team_abbr:
+                    abbr_to_nickname[team.team_abbr.upper().strip()] = team.nickname
+                    nickname_to_abbr[team.nickname.lower().strip()] = team.team_abbr
+                
+                # Short name mappings (if different from nickname)
+                if team.team_name_short and team.team_name_short != team.nickname:
+                    name_to_nickname[team.team_name_short.lower().strip()] = team.nickname
+                    name_to_abbr[team.team_name_short.lower().strip()] = team.team_abbr
+        
+        app.logger.info(f"[DATA-NORMALIZE] Built lookup tables: {len(name_to_nickname)} teams")
+        
+        # Helper function to normalize team name to nickname
+        def to_nickname(team_str):
+            if not team_str:
+                return team_str
+            
+            team_lower = team_str.lower().strip()
+            
+            # Check if it's already a nickname
+            if team_lower in nickname_to_abbr:
+                return team_str  # Already normalized
+            
+            # Check if it's a full name
+            if team_lower in name_to_nickname:
+                return name_to_nickname[team_lower]
+            
+            # Check if it's an abbreviation
+            team_upper = team_str.upper().strip()
+            if team_upper in abbr_to_nickname:
+                return abbr_to_nickname[team_upper]
+            
+            # Try partial matching (e.g., "Los Angeles Lakers" contains "Lakers")
+            for full_name, nickname in name_to_nickname.items():
+                if full_name in team_lower or team_lower in full_name:
+                    return nickname
+            
+            # No match found, return original
+            return team_str
+        
+        # Helper function to normalize team name to abbreviation
+        def to_abbr(team_str):
+            if not team_str:
+                return team_str
+            
+            team_lower = team_str.lower().strip()
+            team_upper = team_str.upper().strip()
+            
+            # Check if it's already an abbreviation
+            if team_upper in abbr_to_nickname:
+                return team_upper  # Already normalized
+            
+            # Check if it's a nickname
+            if team_lower in nickname_to_abbr:
+                return nickname_to_abbr[team_lower]
+            
+            # Check if it's a full name
+            if team_lower in name_to_abbr:
+                return name_to_abbr[team_lower]
+            
+            # Try partial matching
+            for full_name, abbr in name_to_abbr.items():
+                if full_name in team_lower or team_lower in full_name:
+                    return abbr
+            
+            # No match found, return original
+            return team_str
+        
+        # Get all bet legs
+        all_legs = BetLeg.query.all()
+        app.logger.info(f"[DATA-NORMALIZE] Processing {len(all_legs)} bet legs...")
+        
+        updated_home = 0
+        updated_away = 0
+        updated_player_team = 0
+        updated_status = 0
+        
+        for leg in all_legs:
+            leg_updated = False
+            
+            # 1. Normalize home_team to nickname
+            if leg.home_team:
+                normalized_home = to_nickname(leg.home_team)
+                if normalized_home != leg.home_team:
+                    leg.home_team = normalized_home
+                    leg_updated = True
+                    updated_home += 1
+            
+            # 2. Normalize away_team to nickname
+            if leg.away_team:
+                normalized_away = to_nickname(leg.away_team)
+                if normalized_away != leg.away_team:
+                    leg.away_team = normalized_away
+                    leg_updated = True
+                    updated_away += 1
+            
+            # 3. Normalize player_team to abbreviation
+            if leg.player_team:
+                normalized_team = to_abbr(leg.player_team)
+                if normalized_team != leg.player_team:
+                    leg.player_team = normalized_team
+                    leg_updated = True
+                    updated_player_team += 1
+            
+            # 4. Update status and is_hit for completed bets with pending legs
+            if leg.status == 'pending' or leg.is_hit is None:
+                # Check if this leg's bet is completed (is_active=False)
+                bet = leg.bet
+                if bet and not bet.is_active and bet.status == 'completed':
+                    # Only update if we have final game data
+                    if leg.game_status == 'STATUS_FINAL' and leg.achieved_value is not None and leg.target_value is not None:
+                        # Calculate won/lost based on bet type
+                        stat_type = leg.bet_type.lower()
+                        leg_status = 'lost'  # Default
+                        
+                        if stat_type == 'moneyline':
+                            leg_status = 'won' if leg.achieved_value > 0 else 'lost'
+                        elif stat_type == 'spread':
+                            leg_status = 'won' if (leg.achieved_value + leg.target_value) > 0 else 'lost'
+                        else:
+                            # Player props
+                            if leg.bet_line_type == 'under':
+                                leg_status = 'won' if leg.achieved_value < leg.target_value else 'lost'
+                            else:
+                                leg_status = 'won' if leg.achieved_value >= leg.target_value else 'lost'
+                        
+                        if leg.status != leg_status:
+                            leg.status = leg_status
+                            leg_updated = True
+                            updated_status += 1
+                        
+                        # Update is_hit (1 for won, 0 for lost)
+                        is_hit_value = 1 if leg_status == 'won' else 0
+                        if leg.is_hit != is_hit_value:
+                            leg.is_hit = is_hit_value
+                            leg_updated = True
+        
+        # Commit all changes
+        if updated_home > 0 or updated_away > 0 or updated_player_team > 0 or updated_status > 0:
+            db.session.commit()
+            app.logger.info(f"[DATA-NORMALIZE] ✓ Normalized team names:")
+            app.logger.info(f"  - home_team: {updated_home} legs updated to nicknames")
+            app.logger.info(f"  - away_team: {updated_away} legs updated to nicknames")
+            app.logger.info(f"  - player_team: {updated_player_team} legs updated to abbreviations")
+            app.logger.info(f"  - status/is_hit: {updated_status} legs updated for completed bets")
+        else:
+            app.logger.info("[DATA-NORMALIZE] No normalization needed - all data already consistent")
+    
+    except Exception as e:
+        app.logger.error(f"[DATA-NORMALIZE] Error normalizing team names: {e}")
+        db.session.rollback()
+
 def backup_to_json(user_id=None):
     """Backup database bets to JSON files (for specific user or all)"""
     try:
@@ -2387,6 +2573,9 @@ if __name__ == "__main__":
         
         # Update team data on startup (runs in background)
         update_team_data_on_startup()
+        
+        # Normalize team names in bet_legs table
+        normalize_bet_leg_team_names()
         
         # Schedule automated bet leg updates every 5 minutes
         # This updates achieved_value and status for completed bets when games become final
