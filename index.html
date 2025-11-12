@@ -1462,6 +1462,63 @@
         font-size: 0.8rem;
       }
     }
+    
+    /* OCR Modal Styles */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.7);
+      z-index: 10000;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    
+    .modal-content {
+      background: var(--surface);
+      padding: 30px;
+      border-radius: 16px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+      position: relative;
+      width: 100%;
+      max-width: 800px;
+    }
+    
+    .close-modal {
+      position: absolute;
+      top: 15px;
+      right: 20px;
+      font-size: 32px;
+      color: var(--text);
+      cursor: pointer;
+      font-weight: bold;
+      line-height: 1;
+      z-index: 1;
+    }
+    
+    .close-modal:hover {
+      color: var(--error);
+    }
+    
+    /* Loading Spinner */
+    .loading-spinner {
+      border: 4px solid var(--progress-bg);
+      border-top: 4px solid #667eea;
+      border-radius: 50%;
+      width: 60px;
+      height: 60px;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 20px;
+    }
+    
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
   </style>
 </head>
 <body>
@@ -1517,9 +1574,53 @@
     </div>
     <div class="button-container">
       <button id="refresh-button">Refresh Stats</button>
+      <button id="upload-betslip-button" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">📷 Upload Bet Slip</button>
       <button id="clear-cache-button" style="display: none;">Clear Cache 🗑️</button>
     </div>
     <div id="status-message"></div>
+    
+    <!-- Hidden file input for bet slip upload -->
+    <input type="file" id="betslip-file-input" accept="image/*" capture="environment" style="display: none;">
+    
+    <!-- Bet Slip OCR Modal -->
+    <div id="ocr-modal" class="modal" style="display: none;">
+      <div class="modal-content" style="max-width: 800px; max-height: 90vh; overflow-y: auto;">
+        <span class="close-modal" id="close-ocr-modal">&times;</span>
+        <h2>Review Extracted Bet</h2>
+        
+        <div id="ocr-loading" style="display: none; text-align: center; padding: 40px;">
+          <div class="loading-spinner"></div>
+          <p>Processing bet slip with AI...</p>
+        </div>
+        
+        <div id="ocr-error" style="display: none; padding: 20px; background: #fee; border: 1px solid #c00; border-radius: 8px; margin: 20px 0;">
+          <strong>Error:</strong> <span id="ocr-error-message"></span>
+        </div>
+        
+        <div id="ocr-results" style="display: none;">
+          <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+            <h3 style="margin-top: 0;">Bet Details</h3>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+              <div><strong>Site:</strong> <span id="extracted-site"></span></div>
+              <div><strong>Type:</strong> <span id="extracted-type"></span></div>
+              <div><strong>Odds:</strong> <span id="extracted-odds"></span></div>
+              <div><strong>Wager:</strong> $<span id="extracted-wager"></span></div>
+              <div><strong>Potential Payout:</strong> $<span id="extracted-payout"></span></div>
+              <div><strong>Date:</strong> <span id="extracted-date"></span></div>
+            </div>
+          </div>
+          
+          <h3>Bet Legs (<span id="leg-count"></span>)</h3>
+          <div id="extracted-legs-list" style="max-height: 400px; overflow-y: auto;"></div>
+          
+          <div style="margin-top: 20px; text-align: center; padding: 15px; background: #fff3cd; border-radius: 8px;">
+            <p style="margin: 0 0 15px 0;"><strong>⚠️ Please review all details carefully before saving!</strong></p>
+            <button id="confirm-save-bet" style="background: #28a745; color: white; padding: 12px 30px; font-size: 16px; border: none; border-radius: 8px; cursor: pointer; margin-right: 10px;">✓ Confirm & Save Bet</button>
+            <button id="cancel-ocr" style="background: #6c757d; color: white; padding: 12px 30px; font-size: 16px; border: none; border-radius: 8px; cursor: pointer;">✗ Cancel</button>
+          </div>
+        </div>
+      </div>
+    </div>
     
     <!-- New Toolbar -->
     <div class="toolbar">
@@ -4070,6 +4171,163 @@ async function logoutToken() {
     }
 
     btn.addEventListener('click',update);
+    
+    // ========================================
+    // BET SLIP OCR UPLOAD FUNCTIONALITY
+    // ========================================
+    const uploadBtn = document.getElementById('upload-betslip-button');
+    const fileInput = document.getElementById('betslip-file-input');
+    const ocrModal = document.getElementById('ocr-modal');
+    const closeOcrModal = document.getElementById('close-ocr-modal');
+    const cancelOcr = document.getElementById('cancel-ocr');
+    const ocrLoading = document.getElementById('ocr-loading');
+    const ocrError = document.getElementById('ocr-error');
+    const ocrResults = document.getElementById('ocr-results');
+    const confirmSaveBtn = document.getElementById('confirm-save-bet');
+    
+    let extractedBetData = null;
+    
+    // Open file picker when upload button is clicked
+    uploadBtn.addEventListener('click', () => {
+      fileInput.click();
+    });
+    
+    // Handle file selection
+    fileInput.addEventListener('change', async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      
+      // Show modal with loading state
+      ocrModal.style.display = 'flex';
+      ocrLoading.style.display = 'block';
+      ocrError.style.display = 'none';
+      ocrResults.style.display = 'none';
+      
+      try {
+        // Create FormData and upload
+        const formData = new FormData();
+        formData.append('image', file);
+        
+        const response = await fetch(`${API_BASE}/api/upload-betslip`, {
+          method: 'POST',
+          credentials: 'include',
+          body: formData
+        });
+        
+        const result = await response.json();
+        
+        if (!response.ok || !result.success) {
+          throw new Error(result.error || result.details || 'Failed to process bet slip');
+        }
+        
+        // Success - display extracted data
+        extractedBetData = result.data;
+        displayExtractedBet(result.data);
+        
+        ocrLoading.style.display = 'none';
+        ocrResults.style.display = 'block';
+        
+      } catch (error) {
+        console.error('OCR error:', error);
+        ocrLoading.style.display = 'none';
+        ocrError.style.display = 'block';
+        document.getElementById('ocr-error-message').textContent = error.message;
+      }
+      
+      // Reset file input
+      fileInput.value = '';
+    });
+    
+    // Display extracted bet data
+    function displayExtractedBet(data) {
+      // Bet details
+      document.getElementById('extracted-site').textContent = data.bet_site || 'Unknown';
+      document.getElementById('extracted-type').textContent = data.bet_type || 'Unknown';
+      document.getElementById('extracted-odds').textContent = data.total_odds || 'N/A';
+      document.getElementById('extracted-wager').textContent = data.wager_amount || '0';
+      document.getElementById('extracted-payout').textContent = data.potential_payout || '0';
+      document.getElementById('extracted-date').textContent = data.bet_date || new Date().toISOString().split('T')[0];
+      document.getElementById('leg-count').textContent = data.legs?.length || 0;
+      
+      // Bet legs
+      const legsList = document.getElementById('extracted-legs-list');
+      legsList.innerHTML = '';
+      
+      if (data.legs && data.legs.length > 0) {
+        data.legs.forEach((leg, index) => {
+          const legDiv = document.createElement('div');
+          legDiv.style.cssText = 'padding: 15px; margin-bottom: 10px; background: white; border: 1px solid #ddd; border-radius: 8px;';
+          
+          let legDescription = '';
+          if (leg.player_name) {
+            // Player prop
+            legDescription = `<strong>${leg.player_name}</strong> (${leg.team_name || 'N/A'})`;
+            legDescription += `<br>${leg.stat_type || 'N/A'} ${leg.bet_line_type || ''} ${leg.target_value || ''}`;
+          } else if (leg.bet_type === 'spread') {
+            // Spread
+            legDescription = `<strong>${leg.team_name}</strong> ${leg.target_value > 0 ? '+' : ''}${leg.target_value}`;
+          } else if (leg.bet_type === 'moneyline') {
+            // Moneyline
+            legDescription = `<strong>${leg.team_name}</strong> ML`;
+          } else if (leg.bet_type === 'total') {
+            // Total
+            legDescription = `${leg.bet_line_type || ''} ${leg.target_value || ''} points`;
+          }
+          
+          legDiv.innerHTML = `
+            <div style="display: flex; justify-content: space-between; align-items: start;">
+              <div style="flex: 1;">
+                <div style="font-size: 12px; color: #666; margin-bottom: 5px;">
+                  ${leg.sport || 'NFL'} • ${leg.game_info || ''}
+                  ${leg.game_date ? `<br>${new Date(leg.game_date).toLocaleString()}` : ''}
+                </div>
+                <div>${legDescription}</div>
+              </div>
+              <div style="text-align: right; font-weight: bold; color: #667eea;">
+                ${leg.odds || ''}
+              </div>
+            </div>
+          `;
+          
+          legsList.appendChild(legDiv);
+        });
+      }
+    }
+    
+    // Close modal handlers
+    closeOcrModal.addEventListener('click', () => {
+      ocrModal.style.display = 'none';
+      extractedBetData = null;
+    });
+    
+    cancelOcr.addEventListener('click', () => {
+      ocrModal.style.display = 'none';
+      extractedBetData = null;
+    });
+    
+    // Click outside modal to close
+    ocrModal.addEventListener('click', (e) => {
+      if (e.target === ocrModal) {
+        ocrModal.style.display = 'none';
+        extractedBetData = null;
+      }
+    });
+    
+    // Confirm and save bet
+    confirmSaveBtn.addEventListener('click', async () => {
+      if (!extractedBetData) {
+        alert('No bet data to save');
+        return;
+      }
+      
+      // TODO: We'll implement the save functionality in Step 5
+      // For now, just show a message
+      alert('Save functionality will be implemented next! The extracted data is:\n\n' + JSON.stringify(extractedBetData, null, 2));
+      
+      // Close modal
+      ocrModal.style.display = 'none';
+      extractedBetData = null;
+    });
     
     // Move completed games button
     const moveBtn = document.getElementById('move-completed-button');

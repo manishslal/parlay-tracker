@@ -2466,6 +2466,181 @@ def bulk_unarchive_bets():
         return jsonify({'error': str(e)}), 500
 
 
+# ========================================
+# BET SLIP OCR API (GPT-4 Vision)
+# ========================================
+
+@app.route('/api/upload-betslip', methods=['POST'])
+@login_required
+def upload_betslip():
+    """Extract bet information from uploaded bet slip image using GPT-4 Vision"""
+    import base64
+    from openai import OpenAI
+    
+    # Check if API key is configured
+    openai_key = os.getenv('OPENAI_API_KEY')
+    if not openai_key or openai_key == 'your-openai-api-key-here':
+        return jsonify({
+            'error': 'OpenAI API key not configured',
+            'message': 'Please add your OPENAI_API_KEY to the .env file'
+        }), 500
+    
+    if 'image' not in request.files:
+        return jsonify({'error': 'No image provided'}), 400
+    
+    image_file = request.files['image']
+    
+    if image_file.filename == '':
+        return jsonify({'error': 'No image selected'}), 400
+    
+    try:
+        # Read and encode image
+        image_data = base64.b64encode(image_file.read()).decode('utf-8')
+        
+        # Determine image type
+        file_ext = image_file.filename.lower().split('.')[-1]
+        mime_type = f"image/{file_ext if file_ext in ['png', 'jpeg', 'jpg', 'gif', 'webp'] else 'jpeg'}"
+        
+        # Create OpenAI client
+        client = OpenAI(api_key=openai_key)
+        
+        # Create detailed prompt for GPT-4 Vision
+        prompt = """
+Analyze this bet slip image and extract ALL information in JSON format.
+
+Extract:
+- bet_site: Name of betting platform (DraftKings, FanDuel, BetMGM, Caesars, etc.)
+- bet_type: "parlay" or "single"
+- total_odds: American odds format (e.g., +450, -110)
+- wager_amount: Dollar amount wagered (number only, no $ symbol)
+- potential_payout: Potential total payout/winnings (number only)
+- bet_date: Date of bet in YYYY-MM-DD format (if visible, otherwise today's date)
+- legs: Array of individual bets, each containing:
+  - sport: NFL, NBA, MLB, NHL, NCAAF, NCAAB, etc.
+  - player_name: Full player name (for player props) or null
+  - team_name: Full team name or abbreviation
+  - home_team: Home team name/abbreviation
+  - away_team: Away team name/abbreviation
+  - bet_type: "player_prop", "moneyline", "spread", "total", "team_total"
+  - stat_type: For props (e.g., "Passing Yards", "Receiving Yards", "Points", "Rebounds")
+  - bet_line_type: "over" or "under" (for props/totals), null for spreads/moneyline
+  - target_value: The line (e.g., 250.5 for yards, 6.5 for spread, 45.5 for totals)
+  - odds: Individual leg odds in American format (e.g., -110, +150)
+  - game_info: "Away Team @ Home Team" format
+  - game_date: Date/time of game if visible (YYYY-MM-DD HH:MM format)
+
+IMPORTANT RULES:
+1. For player props: Include player_name, stat_type (yards/points/etc), bet_line_type (over/under), target_value
+2. For spreads: Use bet_type="spread", target_value=spread amount (positive for underdog, negative for favorite)
+3. For moneyline: Use bet_type="moneyline", team_name=team you're betting on
+4. For totals: Use bet_type="total", bet_line_type="over" or "under", target_value=total points line
+5. All odds should be in American format with + or - prefix
+6. wager_amount and potential_payout should be numbers without $ symbols
+7. If a field is not visible or unclear, use null
+
+Return ONLY valid JSON. No additional text or explanation.
+
+Example output format:
+{
+  "bet_site": "DraftKings",
+  "bet_type": "parlay",
+  "total_odds": "+450",
+  "wager_amount": 25.00,
+  "potential_payout": 137.50,
+  "bet_date": "2024-11-12",
+  "legs": [
+    {
+      "sport": "NFL",
+      "player_name": "Justin Jefferson",
+      "team_name": "Vikings",
+      "home_team": "Bears",
+      "away_team": "Vikings",
+      "bet_type": "player_prop",
+      "stat_type": "Receiving Yards",
+      "bet_line_type": "over",
+      "target_value": 75.5,
+      "odds": "-110",
+      "game_info": "Vikings @ Bears",
+      "game_date": "2024-11-12 13:00"
+    },
+    {
+      "sport": "NFL",
+      "player_name": null,
+      "team_name": "Lions",
+      "home_team": "Packers",
+      "away_team": "Lions",
+      "bet_type": "spread",
+      "stat_type": null,
+      "bet_line_type": null,
+      "target_value": -3.5,
+      "odds": "-110",
+      "game_info": "Lions @ Packers",
+      "game_date": "2024-11-12 16:00"
+    }
+  ]
+}
+"""
+        
+        app.logger.info(f"[OCR] Processing bet slip for user {current_user.username}")
+        
+        # Call GPT-4 Vision API
+        response = client.chat.completions.create(
+            model="gpt-4o",  # Latest GPT-4 with vision
+            messages=[
+                {
+                    "role": "user",
+                    "content": [
+                        {"type": "text", "text": prompt},
+                        {
+                            "type": "image_url",
+                            "image_url": {
+                                "url": f"data:{mime_type};base64,{image_data}",
+                                "detail": "high"  # High detail for better text extraction
+                            }
+                        }
+                    ]
+                }
+            ],
+            max_tokens=2000,
+            temperature=0.1  # Low temperature for consistent extraction
+        )
+        
+        # Parse response
+        extracted_text = response.choices[0].message.content
+        app.logger.info(f"[OCR] GPT-4 response: {extracted_text[:200]}...")
+        
+        # Extract JSON from response (sometimes GPT adds markdown code blocks)
+        if '```json' in extracted_text:
+            extracted_text = extracted_text.split('```json')[1].split('```')[0].strip()
+        elif '```' in extracted_text:
+            extracted_text = extracted_text.split('```')[1].split('```')[0].strip()
+        
+        bet_data = json.loads(extracted_text)
+        
+        app.logger.info(f"[OCR] Successfully extracted bet data: {len(bet_data.get('legs', []))} legs")
+        
+        return jsonify({
+            'success': True,
+            'data': bet_data,
+            'message': 'Bet slip processed successfully. Please review and confirm.'
+        })
+        
+    except json.JSONDecodeError as e:
+        app.logger.error(f"[OCR] Failed to parse JSON: {e}")
+        app.logger.error(f"[OCR] Response text: {extracted_text if 'extracted_text' in locals() else 'N/A'}")
+        return jsonify({
+            'error': 'Failed to parse bet data from image',
+            'details': str(e),
+            'raw_response': extracted_text if 'extracted_text' in locals() else None
+        }), 500
+    except Exception as e:
+        app.logger.error(f"[OCR] Bet slip extraction error: {e}")
+        return jsonify({
+            'error': 'Failed to process bet slip',
+            'details': str(e)
+        }), 500
+
+
 @app.route('/')
 def index():
     """Serve the main app page - must be public for PWA to work"""
