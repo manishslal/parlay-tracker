@@ -821,8 +821,8 @@ def normalize_bet_leg_team_names():
                             leg_updated = True
                             updated_status += 1
                         
-                        # Update is_hit (1 for won, 0 for lost)
-                        is_hit_value = 1 if leg_status == 'won' else 0
+                        # Update is_hit (True for won, False for lost)
+                        is_hit_value = True if leg_status == 'won' else False
                         if leg.is_hit != is_hit_value:
                             leg.is_hit = is_hit_value
                             leg_updated = True
