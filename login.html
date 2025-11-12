@@ -229,12 +229,15 @@
         // Check for message parameter and display appropriate message
         const urlParams = new URLSearchParams(window.location.search);
         const message = urlParams.get('message');
-        if (message === 'logged_out') {
+        const isLoggedOut = message === 'logged_out';
+        
+        if (isLoggedOut) {
             errorMessage.textContent = 'You have been logged out successfully.';
             errorMessage.style.background = 'rgba(76, 175, 80, 0.1)';
             errorMessage.style.borderColor = '#4caf50';
             errorMessage.style.color = '#4caf50';
             errorMessage.classList.add('show');
+            console.log('User logged out - skipping auth check');
             // Clear message after 3 seconds
             setTimeout(() => {
                 errorMessage.classList.remove('show');
@@ -247,17 +250,25 @@
             errorMessage.classList.add('show');
         }
 
-        // Check if already logged in
-        fetch('/auth/check', {
-            credentials: 'include'
-        })
-        .then(res => res.json())
-        .then(data => {
-            if (data.authenticated) {
-                window.location.replace('/');
-            }
-        })
-        .catch(err => console.error('Auth check failed:', err));
+        // Only check if already logged in if NOT coming from logout
+        // This prevents race condition where cookie isn't cleared yet
+        if (!isLoggedOut) {
+            // Add small delay to ensure any logout operations are complete
+            setTimeout(() => {
+                fetch('/auth/check', {
+                    credentials: 'include',
+                    cache: 'no-cache'
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.authenticated) {
+                        console.log('Already authenticated, redirecting to app');
+                        window.location.replace('/');
+                    }
+                })
+                .catch(err => console.error('Auth check failed:', err));
+            }, 100);
+        }
 
         loginForm.addEventListener('submit', async (e) => {
             e.preventDefault();

@@ -1977,11 +1977,18 @@ def logout():
     """Logout current user"""
     logout_user()
     session.clear()  # Explicitly clear all session data
+    
     response = jsonify({'message': 'Logout successful'})
+    
     # Set headers to prevent caching
     response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
     response.headers['Pragma'] = 'no-cache'
     response.headers['Expires'] = '0'
+    
+    # Explicitly delete session and remember cookies
+    response.set_cookie('session', '', expires=0, path='/')
+    response.set_cookie('remember_token', '', expires=0, path='/')
+    
     return response, 200
 
 
