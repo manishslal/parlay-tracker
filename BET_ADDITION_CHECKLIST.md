@@ -147,14 +147,21 @@ Each leg object in the `legs` array must contain:
 - **Example**: `"position": "WR"`
 - **⚠️ Note**: While not strictly required, adds clarity to the UI
 
-### 9. **sport** (string, required for multi-sport support)
-- **Purpose**: Identifies which sport API to use for fetching game data
+### 9. **sport** (string, REQUIRED ⚠️)
+- **Purpose**: Identifies which sport API to use for fetching game data AND team name normalization
 - **Format**: Uppercase sport code
 - **Valid Values**: `"NFL"`, `"NBA"`, `"MLB"`, `"NHL"`, `"NCAAF"`, `"NCAAB"`
-- **Default**: `"NFL"` (if omitted)
-- **Used For**: ESPN API routing, game data fetching
+- **Default**: `"NFL"` (if omitted, but you MUST specify it!)
+- **Used For**: 
+  - ESPN API routing for live game data
+  - Team name normalization on startup (converts team abbreviations to nicknames)
+  - Matching the correct sport's teams in the database
 - **Example**: `"sport": "NBA"`
-- **⚠️ Important**: Required for non-NFL games to fetch live data correctly
+- **⚠️ CRITICAL**: 
+  - **MUST be populated for ALL new bets**
+  - Without this field, NBA bets may get NFL team names!
+  - Startup automation relies on this field to normalize team names correctly
+  - If missing or incorrect, `home_team`/`away_team` will use wrong sport's teams
 
 ---
 
@@ -220,21 +227,40 @@ Before submitting the bet insertion script, verify:
   "stat": "rushing_receiving_yards"
   ```
 
-### 3. Missing `sport` for non-NFL games
-- **Symptom**: NBA/MLB/NHL games show 0-0 scores, no live data updates
-- **Why**: System defaults to NFL API if sport is not specified
-- **Fix**: Add `"sport": "NBA"` (or MLB/NHL/NCAAF/NCAAB) to each leg
+### 3. **CRITICAL**: Missing or incorrect `sport` field
+- **Symptom**: 
+  - NBA/MLB/NHL games show 0-0 scores, no live data updates
+  - NFL bets have NBA team nicknames (e.g., "Pistons" instead of "Lions")
+  - Team name normalization uses wrong sport's teams
+- **Why**: 
+  - System defaults to NFL API if sport is not specified
+  - Startup automation uses `sport` to normalize team names to correct league
+  - Without `sport`, NBA team names can overwrite NFL teams (both have Detroit teams!)
+- **Fix**: **ALWAYS** add `"sport"` field to every leg with correct sport code
 - **Example Fix**:
   ```python
   # For NBA game
   {
       "away": "Oklahoma City Thunder",
       "home": "Memphis Grizzlies",
-      "sport": "NBA",  # ✅ Required for non-NFL
+      "sport": "NBA",  # ✅ REQUIRED - not optional!
       "stat": "moneyline",
       "target": 0
   }
+  
+  # For NFL game
+  {
+      "away": "Buffalo Bills",
+      "home": "Detroit Lions",
+      "sport": "NFL",  # ✅ REQUIRED - even for NFL!
+      "stat": "spread",
+      "target": -6.5
+  }
   ```
+- **⚠️ NEW REQUIREMENT**: As of Nov 2025, the `sport` field is **REQUIRED** for all new bets because:
+  1. The automated team name normalization runs on startup
+  2. It uses `sport` to match teams correctly (NFL vs NBA)
+  3. Without it, wrong sport's team names will be applied
 
 ### 4. Wrong home/away team order
 - **Symptom**: Spread calculations are inverted, scores don't match

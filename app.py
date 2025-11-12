@@ -664,94 +664,111 @@ def normalize_bet_leg_team_names():
     - away_team: Uses nickname (e.g., "Bills", "Lakers")
     - player_team: Uses abbreviation (e.g., "DET", "OKC")
     
+    SPORT-AWARE: Uses the sport column from bet_legs to match the correct sport's team
+    
     Also updates status and is_hit for completed bets with pending legs.
     """
     try:
         from models import Team
         
-        app.logger.info("[DATA-NORMALIZE] Starting team name normalization...")
+        app.logger.info("[DATA-NORMALIZE] Starting SPORT-AWARE team name normalization...")
         
-        # Build lookup dictionaries from teams table
+        # Build sport-specific lookup dictionaries from teams table
         teams = Team.query.all()
         
-        # Map: full name -> nickname (e.g., "Detroit Lions" -> "Lions")
-        name_to_nickname = {}
-        # Map: abbreviation -> nickname (e.g., "DET" -> "Lions")
-        abbr_to_nickname = {}
-        # Map: full name -> abbreviation (e.g., "Detroit Lions" -> "DET")
-        name_to_abbr = {}
-        # Map: nickname -> abbreviation (e.g., "Lions" -> "DET")
-        nickname_to_abbr = {}
+        # Separate lookups by sport: lookups[sport][lookup_type][key] = value
+        lookups = {'NFL': {}, 'NBA': {}}
         
-        for team in teams:
-            if team.nickname:
-                # Full name mappings
-                if team.team_name:
-                    name_to_nickname[team.team_name.lower().strip()] = team.nickname
-                    name_to_abbr[team.team_name.lower().strip()] = team.team_abbr
-                
-                # Abbreviation mappings
-                if team.team_abbr:
-                    abbr_to_nickname[team.team_abbr.upper().strip()] = team.nickname
-                    nickname_to_abbr[team.nickname.lower().strip()] = team.team_abbr
-                
-                # Short name mappings (if different from nickname)
-                if team.team_name_short and team.team_name_short != team.nickname:
-                    name_to_nickname[team.team_name_short.lower().strip()] = team.nickname
-                    name_to_abbr[team.team_name_short.lower().strip()] = team.team_abbr
+        for sport in ['NFL', 'NBA']:
+            sport_teams = [t for t in teams if t.sport == sport]
+            
+            # Map: full name -> nickname (e.g., "Detroit Lions" -> "Lions")
+            name_to_nickname = {}
+            # Map: abbreviation -> nickname (e.g., "DET" -> "Lions" for NFL, "Pistons" for NBA)
+            abbr_to_nickname = {}
+            # Map: full name -> abbreviation (e.g., "Detroit Lions" -> "DET")
+            name_to_abbr = {}
+            # Map: nickname -> abbreviation (e.g., "Lions" -> "DET" for NFL)
+            nickname_to_abbr = {}
+            
+            for team in sport_teams:
+                if team.nickname:
+                    # Full name mappings
+                    if team.team_name:
+                        name_to_nickname[team.team_name.lower().strip()] = team.nickname
+                        name_to_abbr[team.team_name.lower().strip()] = team.team_abbr
+                    
+                    # Abbreviation mappings
+                    if team.team_abbr:
+                        abbr_to_nickname[team.team_abbr.upper().strip()] = team.nickname
+                        nickname_to_abbr[team.nickname.lower().strip()] = team.team_abbr
+                    
+                    # Short name mappings (if different from nickname)
+                    if team.team_name_short and team.team_name_short != team.nickname:
+                        name_to_nickname[team.team_name_short.lower().strip()] = team.nickname
+                        name_to_abbr[team.team_name_short.lower().strip()] = team.team_abbr
+            
+            lookups[sport] = {
+                'name_to_nickname': name_to_nickname,
+                'abbr_to_nickname': abbr_to_nickname,
+                'name_to_abbr': name_to_abbr,
+                'nickname_to_abbr': nickname_to_abbr
+            }
         
-        app.logger.info(f"[DATA-NORMALIZE] Built lookup tables: {len(name_to_nickname)} teams")
+        app.logger.info(f"[DATA-NORMALIZE] Built sport-specific lookup tables: NFL={len(lookups['NFL']['name_to_nickname'])}, NBA={len(lookups['NBA']['name_to_nickname'])}")
         
-        # Helper function to normalize team name to nickname
-        def to_nickname(team_str):
-            if not team_str:
+        # Helper function to normalize team name to nickname (sport-aware)
+        def to_nickname(team_str, sport):
+            if not team_str or not sport or sport not in lookups:
                 return team_str
             
+            sport_lookup = lookups[sport]
             team_lower = team_str.lower().strip()
             
             # Check if it's already a nickname
-            if team_lower in nickname_to_abbr:
+            if team_lower in sport_lookup['nickname_to_abbr']:
                 return team_str  # Already normalized
             
             # Check if it's a full name
-            if team_lower in name_to_nickname:
-                return name_to_nickname[team_lower]
+            if team_lower in sport_lookup['name_to_nickname']:
+                return sport_lookup['name_to_nickname'][team_lower]
             
             # Check if it's an abbreviation
             team_upper = team_str.upper().strip()
-            if team_upper in abbr_to_nickname:
-                return abbr_to_nickname[team_upper]
+            if team_upper in sport_lookup['abbr_to_nickname']:
+                return sport_lookup['abbr_to_nickname'][team_upper]
             
             # Try partial matching (e.g., "Los Angeles Lakers" contains "Lakers")
-            for full_name, nickname in name_to_nickname.items():
+            for full_name, nickname in sport_lookup['name_to_nickname'].items():
                 if full_name in team_lower or team_lower in full_name:
                     return nickname
             
             # No match found, return original
             return team_str
         
-        # Helper function to normalize team name to abbreviation
-        def to_abbr(team_str):
-            if not team_str:
+        # Helper function to normalize team name to abbreviation (sport-aware)
+        def to_abbr(team_str, sport):
+            if not team_str or not sport or sport not in lookups:
                 return team_str
             
+            sport_lookup = lookups[sport]
             team_lower = team_str.lower().strip()
             team_upper = team_str.upper().strip()
             
             # Check if it's already an abbreviation
-            if team_upper in abbr_to_nickname:
+            if team_upper in sport_lookup['abbr_to_nickname']:
                 return team_upper  # Already normalized
             
             # Check if it's a nickname
-            if team_lower in nickname_to_abbr:
-                return nickname_to_abbr[team_lower]
+            if team_lower in sport_lookup['nickname_to_abbr']:
+                return sport_lookup['nickname_to_abbr'][team_lower]
             
             # Check if it's a full name
-            if team_lower in name_to_abbr:
-                return name_to_abbr[team_lower]
+            if team_lower in sport_lookup['name_to_abbr']:
+                return sport_lookup['name_to_abbr'][team_lower]
             
             # Try partial matching
-            for full_name, abbr in name_to_abbr.items():
+            for full_name, abbr in sport_lookup['name_to_abbr'].items():
                 if full_name in team_lower or team_lower in full_name:
                     return abbr
             
@@ -766,29 +783,37 @@ def normalize_bet_leg_team_names():
         updated_away = 0
         updated_player_team = 0
         updated_status = 0
+        updated_sport = 0
         
         for leg in all_legs:
             leg_updated = False
             
-            # 1. Normalize home_team to nickname
+            # Determine sport - default to NFL if not set
+            leg_sport = leg.sport if leg.sport else 'NFL'
+            if not leg.sport:
+                leg.sport = 'NFL'
+                leg_updated = True
+                updated_sport += 1
+            
+            # 1. Normalize home_team to nickname (sport-aware)
             if leg.home_team:
-                normalized_home = to_nickname(leg.home_team)
+                normalized_home = to_nickname(leg.home_team, leg_sport)
                 if normalized_home != leg.home_team:
                     leg.home_team = normalized_home
                     leg_updated = True
                     updated_home += 1
             
-            # 2. Normalize away_team to nickname
+            # 2. Normalize away_team to nickname (sport-aware)
             if leg.away_team:
-                normalized_away = to_nickname(leg.away_team)
+                normalized_away = to_nickname(leg.away_team, leg_sport)
                 if normalized_away != leg.away_team:
                     leg.away_team = normalized_away
                     leg_updated = True
                     updated_away += 1
             
-            # 3. Normalize player_team to abbreviation
+            # 3. Normalize player_team to abbreviation (sport-aware)
             if leg.player_team:
-                normalized_team = to_abbr(leg.player_team)
+                normalized_team = to_abbr(leg.player_team, leg_sport)
                 if normalized_team != leg.player_team:
                     leg.player_team = normalized_team
                     leg_updated = True
@@ -828,12 +853,13 @@ def normalize_bet_leg_team_names():
                             leg_updated = True
         
         # Commit all changes
-        if updated_home > 0 or updated_away > 0 or updated_player_team > 0 or updated_status > 0:
+        if updated_home > 0 or updated_away > 0 or updated_player_team > 0 or updated_status > 0 or updated_sport > 0:
             db.session.commit()
-            app.logger.info(f"[DATA-NORMALIZE] ✓ Normalized team names:")
-            app.logger.info(f"  - home_team: {updated_home} legs updated to nicknames")
-            app.logger.info(f"  - away_team: {updated_away} legs updated to nicknames")
-            app.logger.info(f"  - player_team: {updated_player_team} legs updated to abbreviations")
+            app.logger.info(f"[DATA-NORMALIZE] ✓ Sport-aware normalization complete:")
+            app.logger.info(f"  - sport: {updated_sport} legs defaulted to NFL")
+            app.logger.info(f"  - home_team: {updated_home} legs updated to sport-specific nicknames")
+            app.logger.info(f"  - away_team: {updated_away} legs updated to sport-specific nicknames")
+            app.logger.info(f"  - player_team: {updated_player_team} legs updated to sport-specific abbreviations")
             app.logger.info(f"  - status/is_hit: {updated_status} legs updated for completed bets")
         else:
             app.logger.info("[DATA-NORMALIZE] No normalization needed - all data already consistent")
