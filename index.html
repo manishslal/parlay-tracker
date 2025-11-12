@@ -1596,51 +1596,51 @@
     
     <!-- Bet Slip OCR Modal -->
     <div id="ocr-modal" class="modal" style="display: none;">
-      <div class="modal-content" style="max-width: 700px; max-height: 80vh; overflow-y: auto;">
-        <span class="close-modal" id="close-ocr-modal">&times;</span>
-        <h2 style="color: #2c3e50; margin-bottom: 20px;">📋 Review Extracted Bet</h2>
+      <div class="modal-content" style="max-width: 600px; max-height: 75vh; overflow-y: auto; padding: 1.5rem; background: var(--surface);">
+        <span class="close-modal" id="close-ocr-modal" style="color: var(--text);">&times;</span>
+        <h2 style="color: var(--text); margin-bottom: 1rem; font-size: 1.3rem;">📋 Review Extracted Bet</h2>
         
-        <div id="ocr-loading" style="display: none; text-align: center; padding: 40px;">
+        <div id="ocr-loading" style="display: none; text-align: center; padding: 2rem;">
           <div class="loading-spinner"></div>
-          <p style="font-size: 16px; color: #555; margin-top: 20px;">Processing bet slip with AI...</p>
+          <p style="font-size: 0.9rem; color: var(--text); margin-top: 1rem; opacity: 0.8;">Processing bet slip with AI...</p>
         </div>
         
-        <div id="ocr-error" style="display: none; padding: 20px; background: #ffe6e6; border: 2px solid #ff4444; border-radius: 8px; margin: 20px 0; color: #cc0000;">
-          <strong style="font-size: 18px;">❌ Error:</strong> <span id="ocr-error-message" style="display: block; margin-top: 8px; font-size: 14px;"></span>
+        <div id="ocr-error" style="display: none; padding: 1rem; background: rgba(244, 67, 54, 0.1); border: 2px solid #f44336; border-radius: 8px; margin: 1rem 0; color: #f44336;">
+          <strong style="font-size: 1rem;">❌ Error:</strong> <span id="ocr-error-message" style="display: block; margin-top: 0.5rem; font-size: 0.85rem;"></span>
         </div>
         
         <div id="ocr-results" style="display: none;">
           <!-- Editable Bet Details -->
-          <div style="background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%); padding: 20px; border-radius: 12px; margin-bottom: 24px; border: 2px solid #667eea;">
-            <h3 style="margin-top: 0; color: #2c3e50; font-size: 18px; margin-bottom: 16px;">📊 Bet Details (Editable)</h3>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+          <div style="background: var(--section-bg); padding: 1rem; border-radius: 8px; margin-bottom: 1rem; border: 1px solid var(--border);">
+            <h3 style="margin-top: 0; color: var(--text); font-size: 1rem; margin-bottom: 0.75rem; font-weight: 600;">📊 Bet Details</h3>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
               <div>
-                <label style="display: block; font-weight: 600; color: #555; margin-bottom: 4px; font-size: 13px;">Betting Site</label>
-                <input type="text" id="extracted-site" style="width: 100%; padding: 8px; border: 2px solid #ddd; border-radius: 6px; font-size: 14px;">
+                <label style="display: block; font-weight: 600; color: var(--text); margin-bottom: 0.25rem; font-size: 0.8rem;">Betting Site</label>
+                <input type="text" id="extracted-site" style="width: 100%; padding: 0.5rem; border: 1px solid var(--border); border-radius: 6px; font-size: 0.85rem; background: var(--bg); color: var(--text);">
               </div>
               <div>
-                <label style="display: block; font-weight: 600; color: #555; margin-bottom: 4px; font-size: 13px;">Bet Name (Optional)</label>
-                <input type="text" id="extracted-bet-name" placeholder="e.g., Sunday NFL Parlay" style="width: 100%; padding: 8px; border: 2px solid #ddd; border-radius: 6px; font-size: 14px;">
+                <label style="display: block; font-weight: 600; color: var(--text); margin-bottom: 0.25rem; font-size: 0.8rem;">Bet Name</label>
+                <input type="text" id="extracted-bet-name" placeholder="e.g., Sunday NFL Parlay" style="width: 100%; padding: 0.5rem; border: 1px solid var(--border); border-radius: 6px; font-size: 0.85rem; background: var(--bg); color: var(--text);">
               </div>
               <div>
-                <label style="display: block; font-weight: 600; color: #555; margin-bottom: 4px; font-size: 13px;">Odds</label>
-                <input type="text" id="extracted-odds" placeholder="+450 or -110" style="width: 100%; padding: 8px; border: 2px solid #ddd; border-radius: 6px; font-size: 14px;">
+                <label style="display: block; font-weight: 600; color: var(--text); margin-bottom: 0.25rem; font-size: 0.8rem;">Odds</label>
+                <input type="text" id="extracted-odds" placeholder="+450" style="width: 100%; padding: 0.5rem; border: 1px solid var(--border); border-radius: 6px; font-size: 0.85rem; background: var(--bg); color: var(--text);">
               </div>
               <div>
-                <label style="display: block; font-weight: 600; color: #555; margin-bottom: 4px; font-size: 13px;">Bet Date</label>
-                <input type="date" id="extracted-date" style="width: 100%; padding: 8px; border: 2px solid #ddd; border-radius: 6px; font-size: 14px;">
+                <label style="display: block; font-weight: 600; color: var(--text); margin-bottom: 0.25rem; font-size: 0.8rem;">Bet Date</label>
+                <input type="date" id="extracted-date" style="width: 100%; padding: 0.5rem; border: 1px solid var(--border); border-radius: 6px; font-size: 0.85rem; background: var(--bg); color: var(--text);">
               </div>
               <div>
-                <label style="display: block; font-weight: 600; color: #555; margin-bottom: 4px; font-size: 13px;">Wager Amount ($)</label>
-                <input type="number" id="extracted-wager" step="0.01" min="0" style="width: 100%; padding: 8px; border: 2px solid #ddd; border-radius: 6px; font-size: 14px;">
+                <label style="display: block; font-weight: 600; color: var(--text); margin-bottom: 0.25rem; font-size: 0.8rem;">Wager ($)</label>
+                <input type="number" id="extracted-wager" step="0.01" min="0" style="width: 100%; padding: 0.5rem; border: 1px solid var(--border); border-radius: 6px; font-size: 0.85rem; background: var(--bg); color: var(--text);">
               </div>
               <div>
-                <label style="display: block; font-weight: 600; color: #555; margin-bottom: 4px; font-size: 13px;">Potential Payout ($)</label>
-                <input type="number" id="extracted-payout" step="0.01" min="0" style="width: 100%; padding: 8px; border: 2px solid #ddd; border-radius: 6px; font-size: 14px;">
+                <label style="display: block; font-weight: 600; color: var(--text); margin-bottom: 0.25rem; font-size: 0.8rem;">Payout ($)</label>
+                <input type="number" id="extracted-payout" step="0.01" min="0" style="width: 100%; padding: 0.5rem; border: 1px solid var(--border); border-radius: 6px; font-size: 0.85rem; background: var(--bg); color: var(--text);">
               </div>
               <div style="grid-column: 1 / -1;">
-                <label style="display: block; font-weight: 600; color: #555; margin-bottom: 4px; font-size: 13px;">Type</label>
-                <select id="extracted-type" style="width: 100%; padding: 8px; border: 2px solid #ddd; border-radius: 6px; font-size: 14px;">
+                <label style="display: block; font-weight: 600; color: var(--text); margin-bottom: 0.25rem; font-size: 0.8rem;">Type</label>
+                <select id="extracted-type" style="width: 100%; padding: 0.5rem; border: 1px solid var(--border); border-radius: 6px; font-size: 0.85rem; background: var(--bg); color: var(--text);">
                   <option value="parlay">Parlay</option>
                   <option value="single">Single Bet</option>
                   <option value="teaser">Teaser</option>
@@ -1651,23 +1651,26 @@
           </div>
           
           <!-- Secondary Bettors Section -->
-          <div style="background: #f8f9fa; padding: 20px; border-radius: 12px; margin-bottom: 24px; border: 2px solid #e0e0e0;">
-            <h3 style="margin-top: 0; color: #2c3e50; font-size: 18px; margin-bottom: 12px;">👥 Secondary Bettors (Optional)</h3>
-            <p style="color: #666; font-size: 13px; margin-bottom: 12px;">Search and add other users who are also part of this bet:</p>
+          <div style="background: var(--section-bg); padding: 1rem; border-radius: 8px; margin-bottom: 1rem; border: 1px solid var(--border);">
+            <h3 style="margin-top: 0; color: var(--text); font-size: 1rem; margin-bottom: 0.5rem; font-weight: 600;">👥 Secondary Bettors</h3>
+            <p style="color: var(--text); opacity: 0.7; font-size: 0.75rem; margin-bottom: 0.75rem;">Add other users part of this bet:</p>
             <div style="position: relative;">
-              <input type="text" id="bettor-search" placeholder="Type username or email to search..." style="width: 100%; padding: 10px; border: 2px solid #ddd; border-radius: 6px; font-size: 14px;" autocomplete="off">
-              <div id="bettor-suggestions" style="display: none; position: absolute; top: 100%; left: 0; right: 0; background: white; border: 2px solid #667eea; border-top: none; border-radius: 0 0 6px 6px; max-height: 200px; overflow-y: auto; z-index: 1000; box-shadow: 0 4px 8px rgba(0,0,0,0.1);"></div>
+              <input type="text" id="bettor-search" placeholder="Search username..." style="width: 100%; padding: 0.5rem; border: 1px solid var(--border); border-radius: 6px; font-size: 0.85rem; background: var(--bg); color: var(--text);" autocomplete="off">
+              <div id="bettor-suggestions" style="display: none; position: absolute; top: 100%; left: 0; right: 0; background: var(--surface); border: 1px solid var(--border); border-top: none; border-radius: 0 0 6px 6px; max-height: 150px; overflow-y: auto; z-index: 1000; box-shadow: 0 4px 8px rgba(0,0,0,0.3);"></div>
             </div>
-            <div id="selected-bettors" style="margin-top: 12px; display: flex; flex-wrap: wrap; gap: 8px;"></div>
+            <div id="selected-bettors" style="margin-top: 0.75rem; display: flex; flex-wrap: wrap; gap: 0.5rem;"></div>
           </div>
           
-          <h3 style="color: #2c3e50; font-size: 18px; margin-bottom: 12px;">🎯 Bet Legs (<span id="leg-count" style="color: #667eea; font-weight: bold;"></span>)</h3>
-          <div id="extracted-legs-list" style="max-height: 400px; overflow-y: auto; padding: 4px;"></div>
+          <!-- Bet Legs Section -->
+          <div style="background: var(--section-bg); padding: 1rem; border-radius: 8px; margin-bottom: 1rem; border: 1px solid var(--border);">
+            <h3 style="margin-top: 0; color: var(--text); font-size: 1rem; margin-bottom: 0.75rem; font-weight: 600;">🎯 Bet Legs (<span id="leg-count" style="color: var(--primary); font-weight: bold;"></span>)</h3>
+            <div id="extracted-legs-list" style="max-height: 300px; overflow-y: auto;"></div>
+          </div>
           
-          <div style="margin-top: 24px; text-align: center; padding: 20px; background: linear-gradient(135deg, #fff3cd 0%, #ffe8a1 100%); border-radius: 12px; border: 2px solid #ffc107;">
-            <p style="margin: 0 0 16px 0; font-size: 15px; color: #856404;"><strong>⚠️ Please review all details carefully before saving!</strong></p>
-            <button id="confirm-save-bet" style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%); color: white; padding: 14px 32px; font-size: 16px; font-weight: 600; border: none; border-radius: 8px; cursor: pointer; margin-right: 12px; box-shadow: 0 4px 8px rgba(40,167,69,0.3); transition: transform 0.2s;">✓ Confirm & Save Bet</button>
-            <button id="cancel-ocr" style="background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%); color: white; padding: 14px 32px; font-size: 16px; font-weight: 600; border: none; border-radius: 8px; cursor: pointer; box-shadow: 0 4px 8px rgba(108,117,125,0.3); transition: transform 0.2s;">✗ Cancel</button>
+          <div style="margin-top: 1rem; text-align: center; padding: 1rem; background: var(--section-bg); border-radius: 8px; border: 1px solid var(--border);">
+            <p style="margin: 0 0 1rem 0; font-size: 0.85rem; color: var(--text); opacity: 0.8;"><strong>⚠️ Review before saving</strong></p>
+            <button id="confirm-save-bet" style="background: var(--primary); color: #000; padding: 0.75rem 1.5rem; font-size: 0.9rem; font-weight: 600; border: none; border-radius: 8px; cursor: pointer; margin-right: 0.75rem; transition: transform 0.2s;">✓ Save Bet</button>
+            <button id="cancel-ocr" style="background: var(--section-bg); color: var(--text); padding: 0.75rem 1.5rem; font-size: 0.9rem; font-weight: 600; border: 1px solid var(--border); border-radius: 8px; cursor: pointer; transition: transform 0.2s;">✗ Cancel</button>
           </div>
         </div>
       </div>
@@ -4375,10 +4378,36 @@ async function logoutToken() {
           body: formData
         });
         
-        const result = await response.json();
+        // Check if response is HTML (error page) instead of JSON
+        const contentType = response.headers.get('content-type');
+        if (contentType && contentType.includes('text/html')) {
+          // Server returned an HTML error page
+          const htmlText = await response.text();
+          console.error('Server returned HTML error page:', htmlText.substring(0, 200));
+          throw new Error(
+            `Server error (${response.status}): The server returned an error page. ` +
+            `This usually means: 1) The OpenAI API key is not configured on the server, ` +
+            `2) The server crashed while processing, or 3) You're not authenticated. ` +
+            `Please contact the administrator or try logging in again.`
+          );
+        }
+        
+        let result;
+        try {
+          result = await response.json();
+        } catch (jsonError) {
+          console.error('Failed to parse server response as JSON:', jsonError);
+          throw new Error(
+            `Invalid server response: Expected JSON but got something else. ` +
+            `Status: ${response.status}. This usually means the server encountered ` +
+            `an internal error. Please try again or contact support.`
+          );
+        }
         
         if (!response.ok || !result.success) {
-          throw new Error(result.error || result.details || 'Failed to process bet slip');
+          // Server returned a proper JSON error
+          const errorMsg = result.message || result.error || result.details || 'Failed to process bet slip';
+          throw new Error(`Bet slip processing failed: ${errorMsg}`);
         }
         
         // Success - display extracted data
@@ -4392,7 +4421,13 @@ async function logoutToken() {
         console.error('OCR error:', error);
         ocrLoading.style.display = 'none';
         ocrError.style.display = 'block';
-        document.getElementById('ocr-error-message').textContent = error.message;
+        
+        // Display user-friendly error message
+        let errorMessage = error.message;
+        if (errorMessage.includes('Failed to fetch')) {
+          errorMessage = 'Network error: Unable to reach the server. Please check your internet connection and try again.';
+        }
+        document.getElementById('ocr-error-message').textContent = errorMessage;
       }
       
       // Reset file input

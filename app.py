@@ -3192,14 +3192,34 @@ Example output format:
         app.logger.error(f"[OCR] Failed to parse JSON: {e}")
         app.logger.error(f"[OCR] Response text: {extracted_text if 'extracted_text' in locals() else 'N/A'}")
         return jsonify({
-            'error': 'Failed to parse bet data from image',
+            'success': False,
+            'error': 'AI response parsing failed',
+            'message': 'The AI processed your bet slip but returned data in an unexpected format. Please try again or contact support.',
             'details': str(e),
-            'raw_response': extracted_text if 'extracted_text' in locals() else None
+            'raw_response': extracted_text[:200] if 'extracted_text' in locals() else None
         }), 500
+    except requests.exceptions.Timeout:
+        app.logger.error("[OCR] OpenAI API request timed out")
+        return jsonify({
+            'success': False,
+            'error': 'Request timeout',
+            'message': 'The AI service took too long to respond. Please try again with a clearer image or a smaller bet slip.'
+        }), 504
+    except requests.exceptions.RequestException as e:
+        app.logger.error(f"[OCR] Network error: {e}")
+        return jsonify({
+            'success': False,
+            'error': 'Network error',
+            'message': f'Failed to connect to AI service: {str(e)}. Please check your internet connection and try again.'
+        }), 503
     except Exception as e:
         app.logger.error(f"[OCR] Bet slip extraction error: {e}")
+        import traceback
+        app.logger.error(f"[OCR] Traceback: {traceback.format_exc()}")
         return jsonify({
-            'error': 'Failed to process bet slip',
+            'success': False,
+            'error': 'Unexpected error',
+            'message': f'An unexpected error occurred while processing your bet slip: {str(e)}. Please try again or contact support.',
             'details': str(e)
         }), 500
 
