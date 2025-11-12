@@ -304,16 +304,45 @@ class Bet(db.Model):
         """
         self.bet_data = json.dumps(bet_dict)
         
-        # Extract commonly queried fields
+        # Extract commonly queried fields - maps to Bet table columns
         self.bet_id = bet_dict.get('bet_id', '')
-        self.bet_type = bet_dict.get('type', 'parlay')
+        self.bet_type = bet_dict.get('type', 'parlay')  # bet_dict['type'] -> bets.bet_type
         self.betting_site = bet_dict.get('betting_site', 'Unknown')
         self.bet_date = bet_dict.get('bet_date', '')
+        
+        # Extract structured financial data - maps to Bet table columns
+        self.wager = bet_dict.get('wager') or bet_dict.get('stake')  # Support both field names
+        self.potential_winnings = bet_dict.get('potential_winnings') or bet_dict.get('potential_return')
+        
+        # Handle final_odds (can be string like "+450" or integer)
+        final_odds_value = bet_dict.get('final_odds') or bet_dict.get('american_odds')
+        if final_odds_value:
+            # If it's a string like "+450" or "-110", try to parse the integer
+            if isinstance(final_odds_value, str):
+                try:
+                    # Remove + or - and parse
+                    odds_str = final_odds_value.strip()
+                    if odds_str.startswith('+') or odds_str.startswith('-'):
+                        self.final_odds = int(odds_str.replace('+', ''))
+                    else:
+                        self.final_odds = int(odds_str)
+                except (ValueError, AttributeError):
+                    self.final_odds = None
+            else:
+                self.final_odds = final_odds_value
+        
+        # Count legs for structured columns
+        legs = bet_dict.get('legs', [])
+        self.total_legs = len(legs)
+        if legs:
+            self.legs_won = sum(1 for leg in legs if leg.get('status') == 'won')
+            self.legs_lost = sum(1 for leg in legs if leg.get('status') == 'lost')
+            self.legs_pending = sum(1 for leg in legs if leg.get('status') == 'pending')
+            self.legs_live = sum(1 for leg in legs if leg.get('status') == 'live')
         
         # Only recalculate status if not preserving existing status
         if not preserve_status:
             # Determine status from legs if present
-            legs = bet_dict.get('legs', [])
             if legs:
                 if all(leg.get('status') == 'won' for leg in legs):
                     self.status = 'won'

@@ -210,11 +210,59 @@ def get_user_bets_from_db(user_id, status_filter=None):
         return []
 
 def save_bet_to_db(user_id, bet_data):
-    """Save a bet to database with JSON backup"""
+    """Save a bet to database with JSON backup and create BetLeg records"""
     try:
         bet = Bet(user_id=user_id)
         bet.set_bet_data(bet_data)
         db.session.add(bet)
+        db.session.flush()  # Get bet.id before creating legs
+        
+        # Create BetLeg records for each leg in bet_legs table
+        legs = bet_data.get('legs', [])
+        for leg_data in legs:
+            # Parse game_date if it's a string
+            game_date = None
+            game_time = None
+            if leg_data.get('game_date'):
+                try:
+                    from datetime import datetime as dt
+                    game_datetime = dt.fromisoformat(leg_data['game_date'].replace('Z', '+00:00'))
+                    game_date = game_datetime.date()
+                    game_time = game_datetime.time()
+                except (ValueError, AttributeError):
+                    pass
+            
+            # Map leg data to BetLeg columns
+            bet_leg = BetLeg(
+                bet_id=bet.id,
+                player_name=leg_data.get('player') or leg_data.get('team') or 'Unknown',
+                player_team=leg_data.get('team'),
+                home_team=leg_data.get('home_team', ''),
+                away_team=leg_data.get('away_team', ''),
+                game_date=game_date,
+                game_time=game_time,
+                sport=leg_data.get('sport', 'NFL'),
+                bet_type=leg_data.get('bet_type', 'player_prop'),  # Maps to bet_legs.bet_type
+                bet_line_type=leg_data.get('bet_line_type'),  # Maps to bet_legs.bet_line_type
+                target_value=leg_data.get('line'),
+                stat_type=leg_data.get('stat'),
+                status=leg_data.get('status', 'pending'),
+                leg_order=leg_data.get('leg_order', 0)
+            )
+            
+            # Parse and store odds
+            if leg_data.get('odds'):
+                try:
+                    odds_str = str(leg_data['odds']).strip()
+                    if odds_str.startswith('+') or odds_str.startswith('-'):
+                        bet_leg.final_leg_odds = int(odds_str.replace('+', ''))
+                    else:
+                        bet_leg.final_leg_odds = int(odds_str)
+                except (ValueError, AttributeError):
+                    pass
+            
+            db.session.add(bet_leg)
+        
         db.session.commit()
         
         # Also backup to JSON
@@ -2525,6 +2573,7 @@ def upload_betslip():
 Analyze this bet slip image and extract ALL information in JSON format.
 
 Extract:
+- bet_id: Bet slip ID or confirmation number from the screenshot (if visible, otherwise null)
 - bet_site: Name of betting platform (DraftKings, FanDuel, BetMGM, Caesars, etc.)
 - bet_type: "parlay" or "single"
 - total_odds: American odds format (e.g., +450, -110)
@@ -2558,6 +2607,7 @@ Return ONLY valid JSON. No additional text or explanation.
 
 Example output format:
 {
+  "bet_id": "DK-12345678",
   "bet_site": "DraftKings",
   "bet_type": "parlay",
   "total_odds": "+450",
@@ -2761,8 +2811,10 @@ def convert_ocr_to_bet_format(ocr_data):
     import uuid
     from datetime import datetime
     
-    # Generate unique bet ID
-    bet_id = f"ocr_{uuid.uuid4().hex[:8]}"
+    # Use bet_id from screenshot if available, otherwise generate unique ID
+    bet_id = ocr_data.get('bet_id')
+    if not bet_id or bet_id == 'null' or bet_id is None:
+        bet_id = f"ocr_{uuid.uuid4().hex[:8]}"
     
     # Convert legs
     converted_legs = []
@@ -2775,10 +2827,10 @@ def convert_ocr_to_bet_format(ocr_data):
             'away_team': leg.get('away_team'),
             'game_info': leg.get('game_info'),
             'game_date': leg.get('game_date'),
-            'type': leg.get('bet_type', 'player_prop'),
+            'bet_type': leg.get('bet_type', 'player_prop'),  # Maps to bet_legs.bet_type
             'stat': leg.get('stat_type'),
             'line': leg.get('target_value'),
-            'over_under': leg.get('bet_line_type'),  # "over" or "under"
+            'bet_line_type': leg.get('bet_line_type'),  # Maps to bet_legs.bet_line_type ('over'/'under')
             'odds': leg.get('odds', '-110'),
             'status': 'pending',  # New bets start as pending
             'leg_order': i
@@ -2798,16 +2850,16 @@ def convert_ocr_to_bet_format(ocr_data):
         site = ocr_data.get('bet_site', 'Unknown')
         bet_name = f"{num_legs}-Leg {bet_type} - {site}"
     
-    # Build bet data
+    # Build bet data with correct field names for database mapping
     bet_data = {
-        'bet_id': bet_id,
+        'bet_id': bet_id,  # Maps to bets.bet_id
         'name': bet_name,
-        'type': ocr_data.get('bet_type', 'parlay'),
-        'betting_site': ocr_data.get('bet_site', 'Unknown'),
-        'bet_date': ocr_data.get('bet_date') or datetime.now().strftime('%Y-%m-%d'),
-        'stake': ocr_data.get('wager_amount', 0),
-        'potential_return': ocr_data.get('potential_payout', 0),
-        'american_odds': ocr_data.get('total_odds'),
+        'type': ocr_data.get('bet_type', 'parlay'),  # Maps to bets.bet_type
+        'betting_site': ocr_data.get('bet_site', 'Unknown'),  # Maps to bets.betting_site
+        'bet_date': ocr_data.get('bet_date') or datetime.now().strftime('%Y-%m-%d'),  # Maps to bets.bet_date
+        'wager': ocr_data.get('wager_amount', 0),  # Maps to bets.wager
+        'potential_winnings': ocr_data.get('potential_payout', 0),  # Maps to bets.potential_winnings
+        'final_odds': ocr_data.get('total_odds'),  # Maps to bets.final_odds
         'legs': converted_legs,
         'status': 'pending',  # New bet starts as pending
         'source': 'ocr',  # Mark as OCR-sourced for tracking
