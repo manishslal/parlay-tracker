@@ -177,38 +177,58 @@ app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 CORS(app, supports_credentials=True)
 db.init_app(app)
 
-# Run database migrations on app startup (works with Gunicorn)
-with app.app_context():
-    try:
-        from sqlalchemy import inspect
-        inspector = inspect(db.engine)
-        columns = [col['name'] for col in inspector.get_columns('users')]
-        
-        if 'user_role' not in columns:
-            print("[MIGRATION] Adding user_role column...")
-            db.session.execute(
-                db.text("ALTER TABLE users ADD COLUMN user_role VARCHAR(20) DEFAULT 'user' NOT NULL")
-            )
-            db.session.commit()
-            print("[MIGRATION] ✓ user_role column added")
-            
-            # Set manishslal as admin
-            from models import User
-            manish_user = User.query.filter_by(username='manishslal').first()
-            if manish_user:
-                manish_user.user_role = 'admin'
-                db.session.commit()
-                print(f"[MIGRATION] ✓ Set {manish_user.username} as admin")
-            
-            print("[MIGRATION] ✓ Migration completed")
-        else:
-            print("[MIGRATION] ✓ user_role column already exists")
-    except Exception as e:
-        print(f"[MIGRATION] Migration check failed (expected on first deploy): {e}")
+# Database migration flag to ensure it only runs once
+_migration_completed = False
+
+def run_migrations_once():
+    """Run database migrations only once per app instance"""
+    global _migration_completed
+    if _migration_completed:
+        return
+    
+    with app.app_context():
         try:
-            db.session.rollback()
-        except:
-            pass
+            from sqlalchemy import inspect
+            inspector = inspect(db.engine)
+            columns = [col['name'] for col in inspector.get_columns('users')]
+            
+            if 'user_role' not in columns:
+                print("[MIGRATION] Adding user_role column...")
+                db.session.execute(
+                    db.text("ALTER TABLE users ADD COLUMN user_role VARCHAR(20) DEFAULT 'user' NOT NULL")
+                )
+                db.session.commit()
+                print("[MIGRATION] ✓ user_role column added")
+                
+                # Set manishslal as admin
+                from models import User
+                manish_user = User.query.filter_by(username='manishslal').first()
+                if manish_user:
+                    manish_user.user_role = 'admin'
+                    db.session.commit()
+                    print(f"[MIGRATION] ✓ Set {manish_user.username} as admin")
+                
+                print("[MIGRATION] ✓ Migration completed")
+            else:
+                print("[MIGRATION] ✓ user_role column already exists")
+            
+            _migration_completed = True
+        except Exception as e:
+            print(f"[MIGRATION] Migration check failed: {e}")
+            try:
+                db.session.rollback()
+            except:
+                pass
+
+# Use before_first_request to run migrations (deprecated in Flask 2.3+, but works)
+# Alternative: Run in a background thread or use Flask-Migrate
+try:
+    @app.before_first_request
+    def initialize_database():
+        run_migrations_once()
+except AttributeError:
+    # Flask 2.3+ removed before_first_request, run immediately but with flag protection
+    run_migrations_once()
 
 # Setup Flask-Login
 login_manager = LoginManager()
