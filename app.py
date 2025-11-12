@@ -172,6 +172,9 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-secret-key-change-in-production')
 app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+app.config['PERMANENT_SESSION_LIFETIME'] = 2592000  # 30 days in seconds
+app.config['SESSION_COOKIE_SECURE'] = False  # Set to True if using HTTPS only
+app.config['REMEMBER_COOKIE_DURATION'] = 2592000  # 30 days in seconds
 
 # Initialize extensions
 CORS(app, supports_credentials=True)
@@ -1953,7 +1956,10 @@ def login():
     if not user.is_active:
         return jsonify({'error': 'Account is disabled'}), 403
     
-    login_user(user)
+    # Mark session as permanent and login user with remember=True
+    session.permanent = True
+    login_user(user, remember=True)
+    
     return jsonify({
         'message': 'Login successful',
         'user': user.to_dict()
