@@ -177,6 +177,39 @@ app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 CORS(app, supports_credentials=True)
 db.init_app(app)
 
+# Run database migrations on app startup (works with Gunicorn)
+with app.app_context():
+    try:
+        from sqlalchemy import inspect
+        inspector = inspect(db.engine)
+        columns = [col['name'] for col in inspector.get_columns('users')]
+        
+        if 'user_role' not in columns:
+            print("[MIGRATION] Adding user_role column...")
+            db.session.execute(
+                db.text("ALTER TABLE users ADD COLUMN user_role VARCHAR(20) DEFAULT 'user' NOT NULL")
+            )
+            db.session.commit()
+            print("[MIGRATION] ✓ user_role column added")
+            
+            # Set manishslal as admin
+            from models import User
+            manish_user = User.query.filter_by(username='manishslal').first()
+            if manish_user:
+                manish_user.user_role = 'admin'
+                db.session.commit()
+                print(f"[MIGRATION] ✓ Set {manish_user.username} as admin")
+            
+            print("[MIGRATION] ✓ Migration completed")
+        else:
+            print("[MIGRATION] ✓ user_role column already exists")
+    except Exception as e:
+        print(f"[MIGRATION] Migration check failed (expected on first deploy): {e}")
+        try:
+            db.session.rollback()
+        except:
+            pass
+
 # Setup Flask-Login
 login_manager = LoginManager()
 login_manager.init_app(app)
@@ -196,6 +229,35 @@ def admin_required(f):
             return jsonify({'error': 'Admin access required'}), 403
         return f(*args, **kwargs)
     return decorated_function
+
+def auto_migrate_user_roles():
+    """Auto-migration: Add user_role column if it doesn't exist"""
+    try:
+        from sqlalchemy import inspect
+        inspector = inspect(db.engine)
+        columns = [col['name'] for col in inspector.get_columns('users')]
+        
+        if 'user_role' not in columns:
+            app.logger.info("Running auto-migration: Adding user_role column...")
+            db.session.execute(
+                db.text("ALTER TABLE users ADD COLUMN user_role VARCHAR(20) DEFAULT 'user' NOT NULL")
+            )
+            db.session.commit()
+            app.logger.info("✓ user_role column added")
+            
+            # Set manishslal as admin
+            manish_user = User.query.filter_by(username='manishslal').first()
+            if manish_user:
+                manish_user.user_role = 'admin'
+                db.session.commit()
+                app.logger.info(f"✓ Set {manish_user.username} as admin")
+            
+            app.logger.info("✓ Auto-migration completed")
+        else:
+            app.logger.info("✓ user_role column already exists")
+    except Exception as e:
+        app.logger.error(f"Auto-migration failed: {e}")
+        db.session.rollback()
 
 # Setup background scheduler for automated tasks
 scheduler = BackgroundScheduler()
@@ -3245,6 +3307,9 @@ if __name__ == "__main__":
     with app.app_context():
         db.create_all()
         app.logger.info("Database tables created/verified")
+        
+        # Run auto-migration for user_role column
+        auto_migrate_user_roles()
         
         # Update team data on startup (runs in background)
         update_team_data_on_startup()
