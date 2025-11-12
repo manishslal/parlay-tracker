@@ -2472,6 +2472,90 @@ def admin_fix_pending_legs():
             'error': str(e)
         }), 500
 
+@app.route('/admin/normalize_team_names', methods=['POST'])
+@login_required
+@admin_required
+def admin_normalize_team_names():
+    """Admin endpoint to normalize team names in existing spread/moneyline bets.
+    
+    Converts abbreviations (e.g., 'CHI') to nicknames (e.g., 'Bears')
+    for better display in the UI.
+    """
+    try:
+        from models import BetLeg, Team
+        
+        # Build team lookup
+        teams = Team.query.all()
+        team_lookup = {}
+        
+        for sport in ['NFL', 'NBA']:
+            sport_teams = [t for t in teams if t.sport == sport]
+            abbr_to_nickname = {}
+            name_to_nickname = {}
+            
+            for team in sport_teams:
+                if team.nickname:
+                    if team.team_abbr:
+                        abbr_to_nickname[team.team_abbr.upper().strip()] = team.nickname
+                    if team.team_name:
+                        name_to_nickname[team.team_name.lower().strip()] = team.nickname
+            
+            team_lookup[sport] = {
+                'abbr_to_nickname': abbr_to_nickname,
+                'name_to_nickname': name_to_nickname
+            }
+        
+        # Find all spread/moneyline legs
+        spread_legs = BetLeg.query.filter(
+            BetLeg.stat_type.in_(['spread', 'moneyline'])
+        ).all()
+        
+        if not spread_legs:
+            return jsonify({
+                'success': True,
+                'message': 'No spread/moneyline legs found',
+                'updated': 0
+            })
+        
+        # Normalize team names
+        updated = 0
+        updates = []
+        
+        for leg in spread_legs:
+            if leg.player_team:
+                sport = leg.sport or 'NFL'
+                if sport in team_lookup:
+                    lookup = team_lookup[sport]
+                    team_upper = leg.player_team.upper().strip()
+                    
+                    # Check if it's an abbreviation
+                    if team_upper in lookup['abbr_to_nickname']:
+                        old_value = leg.player_team
+                        new_value = lookup['abbr_to_nickname'][team_upper]
+                        
+                        if old_value != new_value:
+                            leg.player_team = new_value
+                            leg.player_name = new_value
+                            updated += 1
+                            updates.append(f"{old_value} → {new_value}")
+        
+        if updated > 0:
+            db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': f'Normalized {updated} team names',
+            'updated': updated,
+            'changes': updates[:10]  # Show first 10 changes
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
 @app.route('/admin/update_teams', methods=['POST'])
 @login_required
 @admin_required

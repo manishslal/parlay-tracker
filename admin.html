@@ -235,6 +235,26 @@
             </div>
         </div>
 
+        <!-- Normalize Team Names Section -->
+        <div class="admin-section">
+            <h2>🏈 Normalize Team Names</h2>
+            <p>
+                Fix spread/moneyline bets showing abbreviations (e.g., "CHI") instead of team nicknames (e.g., "Bears").
+                This will convert all existing bet legs to display team nicknames.
+            </p>
+            
+            <button class="btn" id="normalize-teams-btn" onclick="normalizeTeamNames()">
+                🔄 Normalize Team Names
+            </button>
+
+            <div id="normalize-status" class="status"></div>
+            
+            <div id="normalize-changes" style="display: none; margin-top: 20px;">
+                <h3 style="color: var(--primary); margin-bottom: 10px;">Changes Made:</h3>
+                <div id="normalize-list" class="details-list"></div>
+            </div>
+        </div>
+
         <!-- Compute Returns Section -->
         <div class="admin-section">
             <h2>💰 Compute Returns</h2>
@@ -324,6 +344,53 @@
             } finally {
                 btn.disabled = false;
                 btn.innerHTML = '🚀 Fix All Pending Legs';
+            }
+        }
+
+        async function normalizeTeamNames() {
+            const btn = document.getElementById('normalize-teams-btn');
+            const statusDiv = document.getElementById('normalize-status');
+            const changesDiv = document.getElementById('normalize-changes');
+            const changesList = document.getElementById('normalize-list');
+            
+            btn.disabled = true;
+            btn.innerHTML = '🔄 Normalizing... <span class="spinner"></span>';
+            statusDiv.style.display = 'block';
+            statusDiv.className = 'status info';
+            statusDiv.innerHTML = '⏳ Normalizing team names...';
+            
+            try {
+                const response = await fetch('/admin/normalize_team_names', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    credentials: 'include'
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    statusDiv.className = 'status success';
+                    statusDiv.innerHTML = `✅ ${data.message}`;
+                    
+                    // Show changes if any were made
+                    if (data.changes && data.changes.length > 0) {
+                        changesDiv.style.display = 'block';
+                        changesList.innerHTML = data.changes.map(change => 
+                            `<div class="detail-item">${change}</div>`
+                        ).join('');
+                    }
+                } else {
+                    statusDiv.className = 'status error';
+                    statusDiv.innerHTML = `❌ Error: ${data.error}`;
+                }
+            } catch (error) {
+                statusDiv.className = 'status error';
+                statusDiv.innerHTML = `❌ Error: ${error.message}`;
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '🔄 Normalize Team Names';
             }
         }
 
