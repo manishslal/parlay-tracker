@@ -233,6 +233,7 @@ def save_bet_to_db(user_id, bet_data):
                     pass
             
             # Map leg data to BetLeg columns
+            leg_status = leg_data.get('status', 'pending')
             bet_leg = BetLeg(
                 bet_id=bet.id,
                 player_name=leg_data.get('player') or leg_data.get('team') or 'Unknown',
@@ -246,9 +247,16 @@ def save_bet_to_db(user_id, bet_data):
                 bet_line_type=leg_data.get('bet_line_type'),  # Maps to bet_legs.bet_line_type
                 target_value=leg_data.get('line'),
                 stat_type=leg_data.get('stat'),
-                status=leg_data.get('status', 'pending'),
+                status=leg_status,
                 leg_order=leg_data.get('leg_order', 0)
             )
+            
+            # Set is_hit based on status (prevents automation from overwriting)
+            if leg_status == 'won':
+                bet_leg.is_hit = True
+            elif leg_status == 'lost':
+                bet_leg.is_hit = False
+            # Leave as None for 'pending' status
             
             # Parse and store odds
             if leg_data.get('odds'):
@@ -380,8 +388,9 @@ def save_final_results_to_bet(bet, processed_data):
                                         leg_status = 'won' if bet_leg.achieved_value >= bet_leg.target_value else 'lost'
                             
                             bet_leg.status = leg_status
+                            bet_leg.is_hit = True if leg_status == 'won' else False
                             updated = True
-                            app.logger.info(f"Set status={leg_status} for leg {i}: {bet_leg.player_name or bet_leg.team}")
+                            app.logger.info(f"Set status={leg_status}, is_hit={bet_leg.is_hit} for leg {i}: {bet_leg.player_name or bet_leg.team}")
         
         # Save back to database if updated
         if updated:
@@ -659,7 +668,8 @@ def update_completed_bet_legs():
                         leg_updated = True
                     
                     # Calculate and save leg status (won/lost) based on bet type
-                    if bet_leg.status == 'pending' and bet_leg.achieved_value is not None:
+                    # Only update if status is pending AND is_hit is None (not already determined)
+                    if bet_leg.status == 'pending' and bet_leg.is_hit is None and bet_leg.achieved_value is not None:
                         leg_status = 'lost'  # Default to lost
                         stat_type = bet_leg.bet_type.lower()
                         
@@ -680,8 +690,9 @@ def update_completed_bet_legs():
                                     leg_status = 'won' if bet_leg.achieved_value >= bet_leg.target_value else 'lost'
                         
                         bet_leg.status = leg_status
+                        bet_leg.is_hit = True if leg_status == 'won' else False
                         leg_updated = True
-                        app.logger.info(f"[AUTO-UPDATE] Bet {bet.id} Leg {i+1}: status = {leg_status}")
+                        app.logger.info(f"[AUTO-UPDATE] Bet {bet.id} Leg {i+1}: status = {leg_status}, is_hit = {bet_leg.is_hit}")
                     
                     if leg_updated:
                         updated_legs += 1
@@ -884,7 +895,9 @@ def normalize_bet_leg_team_names():
                     updated_player_team += 1
             
             # 4. Update status and is_hit for completed bets with pending legs
-            if leg.status == 'pending' or leg.is_hit is None:
+            # CRITICAL: Only update if BOTH status is pending AND is_hit is None
+            # This prevents overwriting manually set or previously calculated results
+            if leg.status == 'pending' and leg.is_hit is None:
                 # Check if this leg's bet is completed (is_active=False)
                 bet = leg.bet
                 if bet and not bet.is_active and bet.status == 'completed':
