@@ -1462,6 +1462,14 @@
       .menu-item-text {
         font-size: 0.8rem;
       }
+      
+      /* OCR Modal - Mobile specific */
+      .modal-content {
+        width: 98% !important;
+        max-width: 480px !important;
+        padding: 1rem !important;
+        max-height: 90vh !important;
+      }
     }
     
     /* OCR Modal Styles */
@@ -1481,19 +1489,22 @@
     
     .modal-content {
       background: var(--surface);
-      padding: 30px;
-      border-radius: 16px;
+      padding: 1.5rem;
+      border-radius: 12px;
       box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
       position: relative;
-      width: 100%;
-      max-width: 800px;
+      width: 95%;
+      max-width: 500px;
+      max-height: 85vh;
+      overflow-y: auto;
+      box-sizing: border-box;
     }
     
     .close-modal {
       position: absolute;
-      top: 15px;
-      right: 20px;
-      font-size: 32px;
+      top: 10px;
+      right: 15px;
+      font-size: 28px;
       color: var(--text);
       cursor: pointer;
       font-weight: bold;
@@ -1596,9 +1607,9 @@
     
     <!-- Bet Slip OCR Modal -->
     <div id="ocr-modal" class="modal" style="display: none;">
-      <div class="modal-content" style="max-width: 600px; max-height: 75vh; overflow-y: auto; padding: 1.5rem; background: var(--surface);">
-        <span class="close-modal" id="close-ocr-modal" style="color: var(--text);">&times;</span>
-        <h2 style="color: var(--text); margin-bottom: 1rem; font-size: 1.3rem;">📋 Review Extracted Bet</h2>
+      <div class="modal-content">
+        <span class="close-modal" id="close-ocr-modal" style="color: var(--text); top: 10px; right: 15px; font-size: 28px;">&times;</span>
+        <h2 style="color: var(--text); margin-bottom: 0.75rem; font-size: 1.1rem;">📋 Review Extracted Bet</h2>
         
         <div id="ocr-loading" style="display: none; text-align: center; padding: 2rem;">
           <div class="loading-spinner"></div>
@@ -1611,36 +1622,36 @@
         
         <div id="ocr-results" style="display: none;">
           <!-- Editable Bet Details -->
-          <div style="background: var(--section-bg); padding: 1rem; border-radius: 8px; margin-bottom: 1rem; border: 1px solid var(--border);">
-            <h3 style="margin-top: 0; color: var(--text); font-size: 1rem; margin-bottom: 0.75rem; font-weight: 600;">📊 Bet Details</h3>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+          <div style="background: var(--section-bg); padding: 0.75rem; border-radius: 6px; margin-bottom: 0.75rem; border: 1px solid var(--border);">
+            <h3 style="margin-top: 0; color: var(--text); font-size: 0.9rem; margin-bottom: 0.5rem; font-weight: 600;">📊 Bet Details</h3>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
               <div>
-                <label style="display: block; font-weight: 600; color: var(--text); margin-bottom: 0.25rem; font-size: 0.8rem;">Betting Site</label>
-                <input type="text" id="extracted-site" style="width: 100%; padding: 0.5rem; border: 1px solid var(--border); border-radius: 6px; font-size: 0.85rem; background: var(--bg); color: var(--text);">
+                <label style="display: block; font-weight: 600; color: var(--text); margin-bottom: 0.2rem; font-size: 0.75rem;">Betting Site</label>
+                <input type="text" id="extracted-site" style="width: 100%; padding: 0.4rem; border: 1px solid var(--border); border-radius: 4px; font-size: 0.8rem; background: var(--bg); color: var(--text); box-sizing: border-box;">
               </div>
               <div>
-                <label style="display: block; font-weight: 600; color: var(--text); margin-bottom: 0.25rem; font-size: 0.8rem;">Bet Name</label>
-                <input type="text" id="extracted-bet-name" placeholder="e.g., Sunday NFL Parlay" style="width: 100%; padding: 0.5rem; border: 1px solid var(--border); border-radius: 6px; font-size: 0.85rem; background: var(--bg); color: var(--text);">
+                <label style="display: block; font-weight: 600; color: var(--text); margin-bottom: 0.2rem; font-size: 0.75rem;">Bet Name</label>
+                <input type="text" id="extracted-bet-name" placeholder="e.g., Sunday NFL Parlay" style="width: 100%; padding: 0.4rem; border: 1px solid var(--border); border-radius: 4px; font-size: 0.8rem; background: var(--bg); color: var(--text); box-sizing: border-box;">
               </div>
               <div>
-                <label style="display: block; font-weight: 600; color: var(--text); margin-bottom: 0.25rem; font-size: 0.8rem;">Odds</label>
-                <input type="text" id="extracted-odds" placeholder="+450" style="width: 100%; padding: 0.5rem; border: 1px solid var(--border); border-radius: 6px; font-size: 0.85rem; background: var(--bg); color: var(--text);">
+                <label style="display: block; font-weight: 600; color: var(--text); margin-bottom: 0.2rem; font-size: 0.75rem;">Odds</label>
+                <input type="text" id="extracted-odds" placeholder="+450" style="width: 100%; padding: 0.4rem; border: 1px solid var(--border); border-radius: 4px; font-size: 0.8rem; background: var(--bg); color: var(--text); box-sizing: border-box;">
               </div>
               <div>
-                <label style="display: block; font-weight: 600; color: var(--text); margin-bottom: 0.25rem; font-size: 0.8rem;">Bet Date</label>
-                <input type="date" id="extracted-date" style="width: 100%; padding: 0.5rem; border: 1px solid var(--border); border-radius: 6px; font-size: 0.85rem; background: var(--bg); color: var(--text);">
+                <label style="display: block; font-weight: 600; color: var(--text); margin-bottom: 0.2rem; font-size: 0.75rem;">Bet Date</label>
+                <input type="date" id="extracted-date" style="width: 100%; padding: 0.4rem; border: 1px solid var(--border); border-radius: 4px; font-size: 0.8rem; background: var(--bg); color: var(--text); box-sizing: border-box;">
               </div>
               <div>
-                <label style="display: block; font-weight: 600; color: var(--text); margin-bottom: 0.25rem; font-size: 0.8rem;">Wager ($)</label>
-                <input type="number" id="extracted-wager" step="0.01" min="0" style="width: 100%; padding: 0.5rem; border: 1px solid var(--border); border-radius: 6px; font-size: 0.85rem; background: var(--bg); color: var(--text);">
+                <label style="display: block; font-weight: 600; color: var(--text); margin-bottom: 0.2rem; font-size: 0.75rem;">Wager ($)</label>
+                <input type="number" id="extracted-wager" step="0.01" min="0" style="width: 100%; padding: 0.4rem; border: 1px solid var(--border); border-radius: 4px; font-size: 0.8rem; background: var(--bg); color: var(--text); box-sizing: border-box;">
               </div>
               <div>
-                <label style="display: block; font-weight: 600; color: var(--text); margin-bottom: 0.25rem; font-size: 0.8rem;">Payout ($)</label>
-                <input type="number" id="extracted-payout" step="0.01" min="0" style="width: 100%; padding: 0.5rem; border: 1px solid var(--border); border-radius: 6px; font-size: 0.85rem; background: var(--bg); color: var(--text);">
+                <label style="display: block; font-weight: 600; color: var(--text); margin-bottom: 0.2rem; font-size: 0.75rem;">Payout ($)</label>
+                <input type="number" id="extracted-payout" step="0.01" min="0" style="width: 100%; padding: 0.4rem; border: 1px solid var(--border); border-radius: 4px; font-size: 0.8rem; background: var(--bg); color: var(--text); box-sizing: border-box;">
               </div>
               <div style="grid-column: 1 / -1;">
-                <label style="display: block; font-weight: 600; color: var(--text); margin-bottom: 0.25rem; font-size: 0.8rem;">Type</label>
-                <select id="extracted-type" style="width: 100%; padding: 0.5rem; border: 1px solid var(--border); border-radius: 6px; font-size: 0.85rem; background: var(--bg); color: var(--text);">
+                <label style="display: block; font-weight: 600; color: var(--text); margin-bottom: 0.2rem; font-size: 0.75rem;">Type</label>
+                <select id="extracted-type" style="width: 100%; padding: 0.4rem; border: 1px solid var(--border); border-radius: 4px; font-size: 0.8rem; background: var(--bg); color: var(--text); box-sizing: border-box;">
                   <option value="parlay">Parlay</option>
                   <option value="single">Single Bet</option>
                   <option value="teaser">Teaser</option>
@@ -1651,26 +1662,26 @@
           </div>
           
           <!-- Secondary Bettors Section -->
-          <div style="background: var(--section-bg); padding: 1rem; border-radius: 8px; margin-bottom: 1rem; border: 1px solid var(--border);">
-            <h3 style="margin-top: 0; color: var(--text); font-size: 1rem; margin-bottom: 0.5rem; font-weight: 600;">👥 Secondary Bettors</h3>
-            <p style="color: var(--text); opacity: 0.7; font-size: 0.75rem; margin-bottom: 0.75rem;">Add other users part of this bet:</p>
+          <div style="background: var(--section-bg); padding: 0.75rem; border-radius: 6px; margin-bottom: 0.75rem; border: 1px solid var(--border);">
+            <h3 style="margin-top: 0; color: var(--text); font-size: 0.9rem; margin-bottom: 0.4rem; font-weight: 600;">👥 Secondary Bettors</h3>
+            <p style="color: var(--text); opacity: 0.7; font-size: 0.7rem; margin-bottom: 0.5rem;">Add other users part of this bet:</p>
             <div style="position: relative;">
-              <input type="text" id="bettor-search" placeholder="Search username..." style="width: 100%; padding: 0.5rem; border: 1px solid var(--border); border-radius: 6px; font-size: 0.85rem; background: var(--bg); color: var(--text);" autocomplete="off">
-              <div id="bettor-suggestions" style="display: none; position: absolute; top: 100%; left: 0; right: 0; background: var(--surface); border: 1px solid var(--border); border-top: none; border-radius: 0 0 6px 6px; max-height: 150px; overflow-y: auto; z-index: 1000; box-shadow: 0 4px 8px rgba(0,0,0,0.3);"></div>
+              <input type="text" id="bettor-search" placeholder="Search username..." style="width: 100%; padding: 0.4rem; border: 1px solid var(--border); border-radius: 4px; font-size: 0.8rem; background: var(--bg); color: var(--text); box-sizing: border-box;" autocomplete="off">
+              <div id="bettor-suggestions" style="display: none; position: absolute; top: 100%; left: 0; right: 0; background: var(--surface); border: 1px solid var(--border); border-top: none; border-radius: 0 0 4px 4px; max-height: 120px; overflow-y: auto; z-index: 1000; box-shadow: 0 4px 8px rgba(0,0,0,0.3);"></div>
             </div>
-            <div id="selected-bettors" style="margin-top: 0.75rem; display: flex; flex-wrap: wrap; gap: 0.5rem;"></div>
+            <div id="selected-bettors" style="margin-top: 0.5rem; display: flex; flex-wrap: wrap; gap: 0.4rem;"></div>
           </div>
           
           <!-- Bet Legs Section -->
-          <div style="background: var(--section-bg); padding: 1rem; border-radius: 8px; margin-bottom: 1rem; border: 1px solid var(--border);">
-            <h3 style="margin-top: 0; color: var(--text); font-size: 1rem; margin-bottom: 0.75rem; font-weight: 600;">🎯 Bet Legs (<span id="leg-count" style="color: var(--primary); font-weight: bold;"></span>)</h3>
-            <div id="extracted-legs-list" style="max-height: 300px; overflow-y: auto;"></div>
+          <div style="background: var(--section-bg); padding: 0.75rem; border-radius: 6px; margin-bottom: 0.75rem; border: 1px solid var(--border);">
+            <h3 style="margin-top: 0; color: var(--text); font-size: 0.9rem; margin-bottom: 0.5rem; font-weight: 600;">🎯 Bet Legs (<span id="leg-count" style="color: var(--primary); font-weight: bold;"></span>)</h3>
+            <div id="extracted-legs-list" style="max-height: 250px; overflow-y: auto;"></div>
           </div>
           
-          <div style="margin-top: 1rem; text-align: center; padding: 1rem; background: var(--section-bg); border-radius: 8px; border: 1px solid var(--border);">
-            <p style="margin: 0 0 1rem 0; font-size: 0.85rem; color: var(--text); opacity: 0.8;"><strong>⚠️ Review before saving</strong></p>
-            <button id="confirm-save-bet" style="background: var(--primary); color: #000; padding: 0.75rem 1.5rem; font-size: 0.9rem; font-weight: 600; border: none; border-radius: 8px; cursor: pointer; margin-right: 0.75rem; transition: transform 0.2s;">✓ Save Bet</button>
-            <button id="cancel-ocr" style="background: var(--section-bg); color: var(--text); padding: 0.75rem 1.5rem; font-size: 0.9rem; font-weight: 600; border: 1px solid var(--border); border-radius: 8px; cursor: pointer; transition: transform 0.2s;">✗ Cancel</button>
+          <div style="margin-top: 0.75rem; text-align: center; padding: 0.75rem; background: var(--section-bg); border-radius: 6px; border: 1px solid var(--border);">
+            <p style="margin: 0 0 0.75rem 0; font-size: 0.75rem; color: var(--text); opacity: 0.8;"><strong>⚠️ Review before saving</strong></p>
+            <button id="confirm-save-bet" style="background: var(--primary); color: #000; padding: 0.6rem 1.2rem; font-size: 0.85rem; font-weight: 600; border: none; border-radius: 6px; cursor: pointer; margin-right: 0.5rem; transition: transform 0.2s;">✓ Save Bet</button>
+            <button id="cancel-ocr" style="background: var(--section-bg); color: var(--text); padding: 0.6rem 1.2rem; font-size: 0.85rem; font-weight: 600; border: 1px solid var(--border); border-radius: 6px; cursor: pointer; transition: transform 0.2s;">✗ Cancel</button>
           </div>
         </div>
       </div>
