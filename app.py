@@ -7,6 +7,7 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.interval import IntervalTrigger
 import requests
 import os
+import time
 from datetime import datetime
 import json
 import atexit
@@ -3049,16 +3050,23 @@ def upload_betslip():
         
         # Create detailed prompt for GPT-4 Vision
         prompt = """
-Analyze this bet slip image and extract ALL information in JSON format.
+You are a sports betting expert analyzing a bet slip screenshot. Extract ALL visible information and return it as valid JSON.
 
-Extract:
-- bet_id: Bet slip ID or confirmation number from the screenshot (if visible, otherwise null)
-- bet_site: Name of betting platform (DraftKings, FanDuel, BetMGM, Caesars, etc.)
-- bet_type: "parlay" or "single"
-- total_odds: American odds format (e.g., +450, -110)
-- wager_amount: Dollar amount wagered (number only, no $ symbol)
-- potential_payout: Potential total payout/winnings (number only)
-- bet_date: Date of bet in YYYY-MM-DD format (if visible, otherwise today's date)
+STEP 1 - Identify the bet slip:
+- Look for the betting platform logo/name (DraftKings, FanDuel, BetMGM, Caesars, etc.)
+- Find the bet ID or confirmation number (often at top or bottom)
+- Identify if this is a single bet or parlay (multiple legs)
+
+STEP 2 - Extract bet details:
+- bet_id: Confirmation/bet slip number (string, or null if not visible)
+- bet_site: Betting platform name (string)
+- bet_type: "parlay" or "single" (string)
+- total_odds: Total odds in American format like +450 or -110 (string)
+- wager_amount: Amount wagered in dollars (number, no $ symbol)
+- potential_payout: Total potential payout (number, no $ symbol)
+- bet_date: Today's date in YYYY-MM-DD format
+
+STEP 3 - Extract each bet leg with these fields:
 - legs: Array of individual bets, each containing:
   - sport: NFL, NBA, MLB, NHL, NCAAF, NCAAB, etc.
   - player_name: Full player name (for player props) or null
@@ -3073,14 +3081,44 @@ Extract:
   - game_info: "Away Team @ Home Team" format
   - game_date: Date/time of game if visible (YYYY-MM-DD HH:MM format)
 
-IMPORTANT RULES:
-1. For player props: Include player_name, stat_type (yards/points/etc), bet_line_type (over/under), target_value
-2. For spreads: Use bet_type="spread", target_value=spread amount (positive for underdog, negative for favorite)
-3. For moneyline: Use bet_type="moneyline", team_name=team you're betting on
-4. For totals: Use bet_type="total", bet_line_type="over" or "under", target_value=total points line
-5. All odds should be in American format with + or - prefix
-6. wager_amount and potential_payout should be numbers without $ symbols
-7. If a field is not visible or unclear, use null
+CRITICAL RULES:
+1. PLAYER PROPS - When you see a player name with a stat:
+   - player_name: "Patrick Mahomes" (full name)
+   - stat_type: "Passing Yards" or "Touchdowns" or "Receptions" etc.
+   - bet_line_type: "over" or "under"
+   - target_value: 250.5 (the number they need to beat)
+   - bet_type: "player_prop"
+
+2. SPREADS - When you see a team with +7.5 or -7.5:
+   - bet_type: "spread"
+   - team_name: "Chiefs" (team you're betting on)
+   - target_value: -7.5 (negative for favorite) or +7.5 (positive for underdog)
+   - player_name: null
+
+3. MONEYLINE - When you see a team with odds but no point spread:
+   - bet_type: "moneyline"
+   - team_name: "Chiefs" (team you're betting on to win)
+   - target_value: 0
+   - player_name: null
+
+4. TOTALS (Over/Under) - When you see "O 45.5" or "U 45.5":
+   - bet_type: "total"
+   - bet_line_type: "over" or "under"
+   - target_value: 45.5 (the total points line)
+   - player_name: null
+
+5. FORMAT REQUIREMENTS:
+   - All odds MUST have + or - prefix: "+450", "-110"
+   - Numbers should be numeric types (25.00, not "$25.00")
+   - Teams: Use full names or standard abbreviations ("Chiefs" or "KC")
+   - Dates: YYYY-MM-DD format only
+   - If something is unclear or not visible, use null
+
+6. COMMON MISTAKES TO AVOID:
+   - Don't confuse player props with team bets
+   - Don't forget the +/- on odds
+   - Don't include $ symbols in numbers
+   - Don't guess - use null if unsure
 
 Return ONLY valid JSON. No additional text or explanation.
 
@@ -3138,6 +3176,10 @@ Example output format:
             "model": "gpt-4o",
             "messages": [
                 {
+                    "role": "system",
+                    "content": "You are an expert at reading and extracting structured data from sports betting screenshots. Always return valid JSON with no additional text."
+                },
+                {
                     "role": "user",
                     "content": [
                         {"type": "text", "text": prompt},
@@ -3151,20 +3193,58 @@ Example output format:
                     ]
                 }
             ],
-            "max_tokens": 2000,
-            "temperature": 0.1
+            "max_tokens": 2500,  # Increased for complex parlays
+            "temperature": 0.0  # Most deterministic for data extraction
         }
         
-        api_response = requests.post(
-            "https://api.openai.com/v1/chat/completions",
-            headers=headers,
-            json=payload,
-            timeout=30
-        )
+        # Increase timeout for complex images and add retry logic
+        max_retries = 2
+        retry_count = 0
+        api_response = None
+        last_error = None
         
-        if api_response.status_code != 200:
-            error_detail = api_response.json().get('error', {})
-            raise Exception(f"OpenAI API error: {error_detail.get('message', api_response.text)}")
+        while retry_count <= max_retries:
+            try:
+                api_response = requests.post(
+                    "https://api.openai.com/v1/chat/completions",
+                    headers=headers,
+                    json=payload,
+                    timeout=60  # Increased from 30 to 60 seconds for complex bet slips
+                )
+                
+                if api_response.status_code == 200:
+                    break  # Success, exit retry loop
+                elif api_response.status_code == 429:  # Rate limit
+                    retry_count += 1
+                    if retry_count <= max_retries:
+                        app.logger.warning(f"[OCR] Rate limited, retrying ({retry_count}/{max_retries})...")
+                        time.sleep(2 ** retry_count)  # Exponential backoff
+                        continue
+                elif api_response.status_code >= 500:  # Server error
+                    retry_count += 1
+                    if retry_count <= max_retries:
+                        app.logger.warning(f"[OCR] Server error, retrying ({retry_count}/{max_retries})...")
+                        time.sleep(2)
+                        continue
+                
+                # Non-retryable error
+                error_detail = api_response.json().get('error', {})
+                raise Exception(f"OpenAI API error: {error_detail.get('message', api_response.text)}")
+                
+            except requests.exceptions.Timeout as e:
+                last_error = e
+                retry_count += 1
+                if retry_count <= max_retries:
+                    app.logger.warning(f"[OCR] Timeout, retrying ({retry_count}/{max_retries})...")
+                    continue
+                raise
+        
+        if api_response is None or api_response.status_code != 200:
+            if api_response:
+                error_detail = api_response.json().get('error', {})
+                raise Exception(f"OpenAI API error after {max_retries} retries: {error_detail.get('message', api_response.text)}")
+            else:
+                raise Exception(f"Failed to get response after {max_retries} retries")
         
         response_data = api_response.json()
         
@@ -3193,17 +3273,17 @@ Example output format:
         app.logger.error(f"[OCR] Response text: {extracted_text if 'extracted_text' in locals() else 'N/A'}")
         return jsonify({
             'success': False,
-            'error': 'AI response parsing failed',
-            'message': 'The AI processed your bet slip but returned data in an unexpected format. Please try again or contact support.',
+            'error': 'AI response format error',
+            'message': 'The AI could not properly read your bet slip. This usually means: 1) Image quality is too low, 2) Bet slip is partially cut off, 3) Text is too small/blurry. Try taking a clearer screenshot with better lighting and retry.',
             'details': str(e),
             'raw_response': extracted_text[:200] if 'extracted_text' in locals() else None
         }), 500
     except requests.exceptions.Timeout:
-        app.logger.error("[OCR] OpenAI API request timed out")
+        app.logger.error("[OCR] OpenAI API request timed out after 60 seconds")
         return jsonify({
             'success': False,
             'error': 'Request timeout',
-            'message': 'The AI service took too long to respond. Please try again with a clearer image or a smaller bet slip.'
+            'message': 'Processing took too long (>60 seconds). Tips: 1) Use a clearer screenshot, 2) Crop to just the bet slip, 3) Ensure good lighting, 4) Try again - sometimes it works on retry.'
         }), 504
     except requests.exceptions.RequestException as e:
         app.logger.error(f"[OCR] Network error: {e}")
