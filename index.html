@@ -1584,39 +1584,78 @@
     
     <!-- Bet Slip OCR Modal -->
     <div id="ocr-modal" class="modal" style="display: none;">
-      <div class="modal-content" style="max-width: 800px; max-height: 90vh; overflow-y: auto;">
+      <div class="modal-content" style="max-width: 900px; max-height: 90vh; overflow-y: auto;">
         <span class="close-modal" id="close-ocr-modal">&times;</span>
-        <h2>Review Extracted Bet</h2>
+        <h2 style="color: #2c3e50; margin-bottom: 20px;">📋 Review Extracted Bet</h2>
         
         <div id="ocr-loading" style="display: none; text-align: center; padding: 40px;">
           <div class="loading-spinner"></div>
-          <p>Processing bet slip with AI...</p>
+          <p style="font-size: 16px; color: #555; margin-top: 20px;">Processing bet slip with AI...</p>
         </div>
         
-        <div id="ocr-error" style="display: none; padding: 20px; background: #fee; border: 1px solid #c00; border-radius: 8px; margin: 20px 0;">
-          <strong>Error:</strong> <span id="ocr-error-message"></span>
+        <div id="ocr-error" style="display: none; padding: 20px; background: #ffe6e6; border: 2px solid #ff4444; border-radius: 8px; margin: 20px 0; color: #cc0000;">
+          <strong style="font-size: 18px;">❌ Error:</strong> <span id="ocr-error-message" style="display: block; margin-top: 8px; font-size: 14px;"></span>
         </div>
         
         <div id="ocr-results" style="display: none;">
-          <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
-            <h3 style="margin-top: 0;">Bet Details</h3>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-              <div><strong>Site:</strong> <span id="extracted-site"></span></div>
-              <div><strong>Type:</strong> <span id="extracted-type"></span></div>
-              <div><strong>Odds:</strong> <span id="extracted-odds"></span></div>
-              <div><strong>Wager:</strong> $<span id="extracted-wager"></span></div>
-              <div><strong>Potential Payout:</strong> $<span id="extracted-payout"></span></div>
-              <div><strong>Date:</strong> <span id="extracted-date"></span></div>
+          <!-- Editable Bet Details -->
+          <div style="background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%); padding: 20px; border-radius: 12px; margin-bottom: 24px; border: 2px solid #667eea;">
+            <h3 style="margin-top: 0; color: #2c3e50; font-size: 18px; margin-bottom: 16px;">📊 Bet Details (Editable)</h3>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+              <div>
+                <label style="display: block; font-weight: 600; color: #555; margin-bottom: 4px; font-size: 13px;">Betting Site</label>
+                <input type="text" id="extracted-site" style="width: 100%; padding: 8px; border: 2px solid #ddd; border-radius: 6px; font-size: 14px;">
+              </div>
+              <div>
+                <label style="display: block; font-weight: 600; color: #555; margin-bottom: 4px; font-size: 13px;">Bet Name (Optional)</label>
+                <input type="text" id="extracted-bet-name" placeholder="e.g., Sunday NFL Parlay" style="width: 100%; padding: 8px; border: 2px solid #ddd; border-radius: 6px; font-size: 14px;">
+              </div>
+              <div>
+                <label style="display: block; font-weight: 600; color: #555; margin-bottom: 4px; font-size: 13px;">Odds</label>
+                <input type="text" id="extracted-odds" placeholder="+450 or -110" style="width: 100%; padding: 8px; border: 2px solid #ddd; border-radius: 6px; font-size: 14px;">
+              </div>
+              <div>
+                <label style="display: block; font-weight: 600; color: #555; margin-bottom: 4px; font-size: 13px;">Bet Date</label>
+                <input type="date" id="extracted-date" style="width: 100%; padding: 8px; border: 2px solid #ddd; border-radius: 6px; font-size: 14px;">
+              </div>
+              <div>
+                <label style="display: block; font-weight: 600; color: #555; margin-bottom: 4px; font-size: 13px;">Wager Amount ($)</label>
+                <input type="number" id="extracted-wager" step="0.01" min="0" style="width: 100%; padding: 8px; border: 2px solid #ddd; border-radius: 6px; font-size: 14px;">
+              </div>
+              <div>
+                <label style="display: block; font-weight: 600; color: #555; margin-bottom: 4px; font-size: 13px;">Potential Payout ($)</label>
+                <input type="number" id="extracted-payout" step="0.01" min="0" style="width: 100%; padding: 8px; border: 2px solid #ddd; border-radius: 6px; font-size: 14px;">
+              </div>
+              <div style="grid-column: 1 / -1;">
+                <label style="display: block; font-weight: 600; color: #555; margin-bottom: 4px; font-size: 13px;">Type</label>
+                <select id="extracted-type" style="width: 100%; padding: 8px; border: 2px solid #ddd; border-radius: 6px; font-size: 14px;">
+                  <option value="parlay">Parlay</option>
+                  <option value="single">Single Bet</option>
+                  <option value="teaser">Teaser</option>
+                  <option value="round_robin">Round Robin</option>
+                </select>
+              </div>
             </div>
           </div>
           
-          <h3>Bet Legs (<span id="leg-count"></span>)</h3>
-          <div id="extracted-legs-list" style="max-height: 400px; overflow-y: auto;"></div>
+          <!-- Secondary Bettors Section -->
+          <div style="background: #f8f9fa; padding: 20px; border-radius: 12px; margin-bottom: 24px; border: 2px solid #e0e0e0;">
+            <h3 style="margin-top: 0; color: #2c3e50; font-size: 18px; margin-bottom: 12px;">👥 Secondary Bettors (Optional)</h3>
+            <p style="color: #666; font-size: 13px; margin-bottom: 12px;">Search and add other users who are also part of this bet:</p>
+            <div style="position: relative;">
+              <input type="text" id="bettor-search" placeholder="Type username or email to search..." style="width: 100%; padding: 10px; border: 2px solid #ddd; border-radius: 6px; font-size: 14px;" autocomplete="off">
+              <div id="bettor-suggestions" style="display: none; position: absolute; top: 100%; left: 0; right: 0; background: white; border: 2px solid #667eea; border-top: none; border-radius: 0 0 6px 6px; max-height: 200px; overflow-y: auto; z-index: 1000; box-shadow: 0 4px 8px rgba(0,0,0,0.1);"></div>
+            </div>
+            <div id="selected-bettors" style="margin-top: 12px; display: flex; flex-wrap: wrap; gap: 8px;"></div>
+          </div>
           
-          <div style="margin-top: 20px; text-align: center; padding: 15px; background: #fff3cd; border-radius: 8px;">
-            <p style="margin: 0 0 15px 0;"><strong>⚠️ Please review all details carefully before saving!</strong></p>
-            <button id="confirm-save-bet" style="background: #28a745; color: white; padding: 12px 30px; font-size: 16px; border: none; border-radius: 8px; cursor: pointer; margin-right: 10px;">✓ Confirm & Save Bet</button>
-            <button id="cancel-ocr" style="background: #6c757d; color: white; padding: 12px 30px; font-size: 16px; border: none; border-radius: 8px; cursor: pointer;">✗ Cancel</button>
+          <h3 style="color: #2c3e50; font-size: 18px; margin-bottom: 12px;">🎯 Bet Legs (<span id="leg-count" style="color: #667eea; font-weight: bold;"></span>)</h3>
+          <div id="extracted-legs-list" style="max-height: 400px; overflow-y: auto; padding: 4px;"></div>
+          
+          <div style="margin-top: 24px; text-align: center; padding: 20px; background: linear-gradient(135deg, #fff3cd 0%, #ffe8a1 100%); border-radius: 12px; border: 2px solid #ffc107;">
+            <p style="margin: 0 0 16px 0; font-size: 15px; color: #856404;"><strong>⚠️ Please review all details carefully before saving!</strong></p>
+            <button id="confirm-save-bet" style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%); color: white; padding: 14px 32px; font-size: 16px; font-weight: 600; border: none; border-radius: 8px; cursor: pointer; margin-right: 12px; box-shadow: 0 4px 8px rgba(40,167,69,0.3); transition: transform 0.2s;">✓ Confirm & Save Bet</button>
+            <button id="cancel-ocr" style="background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%); color: white; padding: 14px 32px; font-size: 16px; font-weight: 600; border: none; border-radius: 8px; cursor: pointer; box-shadow: 0 4px 8px rgba(108,117,125,0.3); transition: transform 0.2s;">✗ Cancel</button>
           </div>
         </div>
       </div>
@@ -4184,8 +4223,13 @@ async function logoutToken() {
     const ocrError = document.getElementById('ocr-error');
     const ocrResults = document.getElementById('ocr-results');
     const confirmSaveBtn = document.getElementById('confirm-save-bet');
+    const bettorSearch = document.getElementById('bettor-search');
+    const bettorSuggestions = document.getElementById('bettor-suggestions');
+    const selectedBettorsContainer = document.getElementById('selected-bettors');
     
     let extractedBetData = null;
+    let selectedSecondaryBettors = [];
+    let allUsers = [];
     
     // Open file picker when upload button is clicked
     uploadBtn.addEventListener('click', () => {
@@ -4202,6 +4246,15 @@ async function logoutToken() {
       ocrLoading.style.display = 'block';
       ocrError.style.display = 'none';
       ocrResults.style.display = 'none';
+      
+      // Fetch users for autocomplete if not already loaded
+      if (allUsers.length === 0) {
+        fetchAllUsers();
+      }
+      
+      // Reset secondary bettors
+      selectedSecondaryBettors = [];
+      renderSelectedBettors();
       
       try {
         // Create FormData and upload
@@ -4238,16 +4291,112 @@ async function logoutToken() {
       fileInput.value = '';
     });
     
+    // Calculate odds from wager and payout
+    function calculateOddsFromPayout(wager, payout) {
+      if (!wager || !payout || wager <= 0) return null;
+      const profit = payout - wager;
+      if (profit <= 0) return null;
+      
+      if (profit >= wager) {
+        // Underdog (+odds)
+        return '+' + Math.round((profit / wager) * 100);
+      } else {
+        // Favorite (-odds)
+        return '-' + Math.round((wager / profit) * 100);
+      }
+    }
+    
+    // Calculate payout from wager and odds
+    function calculatePayoutFromOdds(wager, odds) {
+      if (!wager || !odds || wager <= 0) return null;
+      const oddsStr = odds.toString().trim();
+      
+      let profit = 0;
+      if (oddsStr.startsWith('+')) {
+        // Underdog: profit = wager * (odds/100)
+        const oddsNum = parseInt(oddsStr.substring(1));
+        profit = wager * (oddsNum / 100);
+      } else if (oddsStr.startsWith('-')) {
+        // Favorite: profit = wager / (odds/100)
+        const oddsNum = parseInt(oddsStr.substring(1));
+        profit = wager / (oddsNum / 100);
+      } else {
+        // Try parsing as number
+        const oddsNum = parseInt(oddsStr);
+        if (oddsNum > 0) {
+          profit = wager * (oddsNum / 100);
+        } else {
+          profit = wager / (Math.abs(oddsNum) / 100);
+        }
+      }
+      
+      return Math.round((wager + profit) * 100) / 100;
+    }
+    
     // Display extracted bet data
     function displayExtractedBet(data) {
-      // Bet details
-      document.getElementById('extracted-site').textContent = data.bet_site || 'Unknown';
-      document.getElementById('extracted-type').textContent = data.bet_type || 'Unknown';
-      document.getElementById('extracted-odds').textContent = data.total_odds || 'N/A';
-      document.getElementById('extracted-wager').textContent = data.wager_amount || '0';
-      document.getElementById('extracted-payout').textContent = data.potential_payout || '0';
-      document.getElementById('extracted-date').textContent = data.bet_date || new Date().toISOString().split('T')[0];
+      // Calculate missing odds or payout
+      let odds = data.total_odds;
+      let wager = data.wager_amount;
+      let payout = data.potential_payout;
+      
+      // If odds is blank/N/A but we have wager and payout, calculate odds
+      if ((!odds || odds === 'N/A' || odds === 'null') && wager && payout) {
+        odds = calculateOddsFromPayout(wager, payout);
+        console.log(`Calculated odds: ${odds} from wager: ${wager} and payout: ${payout}`);
+      }
+      
+      // If payout is blank/N/A but we have wager and odds, calculate payout
+      if ((!payout || payout === 'N/A' || payout === 'null' || payout === 0) && wager && odds) {
+        payout = calculatePayoutFromOdds(wager, odds);
+        console.log(`Calculated payout: ${payout} from wager: ${wager} and odds: ${odds}`);
+      }
+      
+      // Populate editable fields
+      document.getElementById('extracted-site').value = data.bet_site || 'Unknown';
+      document.getElementById('extracted-type').value = data.bet_type || 'parlay';
+      document.getElementById('extracted-odds').value = odds || '';
+      document.getElementById('extracted-wager').value = wager || '0';
+      document.getElementById('extracted-payout').value = payout || '0';
+      document.getElementById('extracted-date').value = data.bet_date || new Date().toISOString().split('T')[0];
+      document.getElementById('extracted-bet-name').value = data.bet_name || '';
       document.getElementById('leg-count').textContent = data.legs?.length || 0;
+      
+      // Auto-calculate on change
+      const wagerInput = document.getElementById('extracted-wager');
+      const oddsInput = document.getElementById('extracted-odds');
+      const payoutInput = document.getElementById('extracted-payout');
+      
+      // When wager or odds change, recalculate payout
+      const recalculatePayout = () => {
+        const w = parseFloat(wagerInput.value);
+        const o = oddsInput.value.trim();
+        if (w && o) {
+          const p = calculatePayoutFromOdds(w, o);
+          if (p) payoutInput.value = p;
+        }
+      };
+      
+      // When wager or payout change, recalculate odds
+      const recalculateOdds = () => {
+        const w = parseFloat(wagerInput.value);
+        const p = parseFloat(payoutInput.value);
+        if (w && p && p > w) {
+          const o = calculateOddsFromPayout(w, p);
+          if (o) oddsInput.value = o;
+        }
+      };
+      
+      wagerInput.addEventListener('input', () => {
+        if (oddsInput.value && (!payoutInput.value || parseFloat(payoutInput.value) === 0)) {
+          recalculatePayout();
+        } else if (payoutInput.value && !oddsInput.value) {
+          recalculateOdds();
+        }
+      });
+      
+      oddsInput.addEventListener('input', recalculatePayout);
+      payoutInput.addEventListener('input', recalculateOdds);
       
       // Bet legs
       const legsList = document.getElementById('extracted-legs-list');
@@ -4256,35 +4405,38 @@ async function logoutToken() {
       if (data.legs && data.legs.length > 0) {
         data.legs.forEach((leg, index) => {
           const legDiv = document.createElement('div');
-          legDiv.style.cssText = 'padding: 15px; margin-bottom: 10px; background: white; border: 1px solid #ddd; border-radius: 8px;';
+          legDiv.style.cssText = 'padding: 16px; margin-bottom: 12px; background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%); border: 2px solid #e0e0e0; border-radius: 10px; transition: border-color 0.2s;';
+          legDiv.addEventListener('mouseenter', () => legDiv.style.borderColor = '#667eea');
+          legDiv.addEventListener('mouseleave', () => legDiv.style.borderColor = '#e0e0e0');
           
           let legDescription = '';
           if (leg.player_name) {
             // Player prop
-            legDescription = `<strong>${leg.player_name}</strong> (${leg.team_name || 'N/A'})`;
-            legDescription += `<br>${leg.stat_type || 'N/A'} ${leg.bet_line_type || ''} ${leg.target_value || ''}`;
+            legDescription = `<strong style="color: #2c3e50; font-size: 15px;">${leg.player_name}</strong> <span style="color: #666; font-size: 13px;">(${leg.team_name || 'N/A'})</span>`;
+            legDescription += `<br><span style="color: #555; font-size: 14px; font-weight: 500;">${leg.stat_type || 'N/A'} <span style="text-transform: uppercase; color: #667eea; font-weight: 600;">${leg.bet_line_type || ''}</span> ${leg.target_value || ''}</span>`;
           } else if (leg.bet_type === 'spread') {
             // Spread
-            legDescription = `<strong>${leg.team_name}</strong> ${leg.target_value > 0 ? '+' : ''}${leg.target_value}`;
+            legDescription = `<strong style="color: #2c3e50; font-size: 15px;">${leg.team_name}</strong> <span style="color: #667eea; font-weight: 600; font-size: 14px;">${leg.target_value > 0 ? '+' : ''}${leg.target_value}</span>`;
           } else if (leg.bet_type === 'moneyline') {
             // Moneyline
-            legDescription = `<strong>${leg.team_name}</strong> ML`;
+            legDescription = `<strong style="color: #2c3e50; font-size: 15px;">${leg.team_name}</strong> <span style="color: #667eea; font-weight: 600;">ML</span>`;
           } else if (leg.bet_type === 'total') {
             // Total
-            legDescription = `${leg.bet_line_type || ''} ${leg.target_value || ''} points`;
+            legDescription = `<span style="text-transform: uppercase; color: #667eea; font-weight: 600; font-size: 14px;">${leg.bet_line_type || ''}</span> <strong style="color: #2c3e50; font-size: 15px;">${leg.target_value || ''}</strong> <span style="color: #666;">points</span>`;
           }
           
           legDiv.innerHTML = `
             <div style="display: flex; justify-content: space-between; align-items: start;">
               <div style="flex: 1;">
-                <div style="font-size: 12px; color: #666; margin-bottom: 5px;">
-                  ${leg.sport || 'NFL'} • ${leg.game_info || ''}
-                  ${leg.game_date ? `<br>${new Date(leg.game_date).toLocaleString()}` : ''}
+                <div style="font-size: 12px; color: #888; margin-bottom: 6px; font-weight: 500;">
+                  <span style="background: #667eea; color: white; padding: 2px 8px; border-radius: 4px; font-weight: 600;">${leg.sport || 'NFL'}</span>
+                  ${leg.game_info ? `<span style="margin-left: 8px;">${leg.game_info}</span>` : ''}
+                  ${leg.game_date ? `<br><span style="color: #999; font-size: 11px;">${new Date(leg.game_date).toLocaleString()}</span>` : ''}
                 </div>
-                <div>${legDescription}</div>
+                <div style="margin-top: 8px;">${legDescription}</div>
               </div>
-              <div style="text-align: right; font-weight: bold; color: #667eea;">
-                ${leg.odds || ''}
+              <div style="text-align: right; font-weight: bold; font-size: 16px; color: #28a745; background: #e8f5e9; padding: 6px 12px; border-radius: 6px;">
+                ${leg.odds || 'N/A'}
               </div>
             </div>
           `;
@@ -4313,6 +4465,108 @@ async function logoutToken() {
       }
     });
     
+    // Fetch all users for autocomplete
+    async function fetchAllUsers() {
+      try {
+        const response = await fetch(`${API_BASE}/api/users`, {
+          credentials: 'include'
+        });
+        if (response.ok) {
+          const result = await response.json();
+          allUsers = result.users || [];
+        }
+      } catch (error) {
+        console.error('Failed to fetch users:', error);
+      }
+    }
+    
+    // Secondary bettors autocomplete
+    bettorSearch.addEventListener('input', () => {
+      const query = bettorSearch.value.toLowerCase().trim();
+      
+      if (query.length < 2) {
+        bettorSuggestions.style.display = 'none';
+        return;
+      }
+      
+      // Filter users by username or email
+      const matches = allUsers.filter(user => 
+        user.username.toLowerCase().includes(query) || 
+        user.email.toLowerCase().includes(query)
+      ).filter(user => 
+        // Exclude already selected bettors
+        !selectedSecondaryBettors.find(b => b.id === user.id)
+      ).slice(0, 5); // Max 5 suggestions
+      
+      if (matches.length === 0) {
+        bettorSuggestions.style.display = 'none';
+        return;
+      }
+      
+      bettorSuggestions.innerHTML = matches.map(user => `
+        <div class="bettor-suggestion" data-user-id="${user.id}" data-username="${user.username}" style="padding: 10px; cursor: pointer; border-bottom: 1px solid #eee; transition: background 0.2s;">
+          <div style="font-weight: 600; color: #2c3e50;">${user.username}</div>
+          <div style="font-size: 12px; color: #888;">${user.email}</div>
+        </div>
+      `).join('');
+      
+      bettorSuggestions.style.display = 'block';
+      
+      // Add click handlers
+      document.querySelectorAll('.bettor-suggestion').forEach(item => {
+        item.addEventListener('mouseenter', () => item.style.background = '#f0f0f0');
+        item.addEventListener('mouseleave', () => item.style.background = 'white');
+        item.addEventListener('click', () => {
+          const userId = parseInt(item.dataset.userId);
+          const username = item.dataset.username;
+          addSecondaryBettor(userId, username);
+          bettorSearch.value = '';
+          bettorSuggestions.style.display = 'none';
+        });
+      });
+    });
+    
+    // Add secondary bettor
+    function addSecondaryBettor(userId, username) {
+      if (selectedSecondaryBettors.find(b => b.id === userId)) {
+        return; // Already added
+      }
+      
+      selectedSecondaryBettors.push({ id: userId, username });
+      renderSelectedBettors();
+    }
+    
+    // Render selected bettors
+    function renderSelectedBettors() {
+      if (selectedSecondaryBettors.length === 0) {
+        selectedBettorsContainer.innerHTML = '<p style="color: #999; font-size: 13px; font-style: italic;">No secondary bettors added</p>';
+        return;
+      }
+      
+      selectedBettorsContainer.innerHTML = selectedSecondaryBettors.map(bettor => `
+        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 8px 12px; border-radius: 20px; display: inline-flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 500;">
+          <span>${bettor.username}</span>
+          <button class="remove-bettor" data-user-id="${bettor.id}" style="background: rgba(255,255,255,0.3); border: none; color: white; cursor: pointer; border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: bold;">×</button>
+        </div>
+      `).join('');
+      
+      // Add remove handlers
+      document.querySelectorAll('.remove-bettor').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const userId = parseInt(btn.dataset.userId);
+          selectedSecondaryBettors = selectedSecondaryBettors.filter(b => b.id !== userId);
+          renderSelectedBettors();
+        });
+      });
+    }
+    
+    // Hide suggestions when clicking outside
+    document.addEventListener('click', (e) => {
+      if (!bettorSearch.contains(e.target) && !bettorSuggestions.contains(e.target)) {
+        bettorSuggestions.style.display = 'none';
+      }
+    });
+    
     // Confirm and save bet
     confirmSaveBtn.addEventListener('click', async () => {
       if (!extractedBetData) {
@@ -4325,6 +4579,19 @@ async function logoutToken() {
         confirmSaveBtn.disabled = true;
         confirmSaveBtn.textContent = 'Saving...';
         
+        // Get edited values from form
+        const editedData = {
+          ...extractedBetData,
+          bet_site: document.getElementById('extracted-site').value,
+          bet_type: document.getElementById('extracted-type').value,
+          total_odds: document.getElementById('extracted-odds').value,
+          wager_amount: parseFloat(document.getElementById('extracted-wager').value),
+          potential_payout: parseFloat(document.getElementById('extracted-payout').value),
+          bet_date: document.getElementById('extracted-date').value,
+          bet_name: document.getElementById('extracted-bet-name').value || null,
+          secondary_bettor_ids: selectedSecondaryBettors.map(b => b.id)
+        };
+        
         // Send to save endpoint
         const response = await fetch(`${API_BASE}/api/save-extracted-bet`, {
           method: 'POST',
@@ -4332,7 +4599,7 @@ async function logoutToken() {
           headers: {
             'Content-Type': 'application/json'
           },
-          body: JSON.stringify(extractedBetData)
+          body: JSON.stringify(editedData)
         });
         
         const result = await response.json();
@@ -4344,9 +4611,11 @@ async function logoutToken() {
         // Success!
         alert(`✅ ${result.message}\n\nBet ID: ${result.bet.bet_id}`);
         
-        // Close modal
+        // Close modal and reset
         ocrModal.style.display = 'none';
         extractedBetData = null;
+        selectedSecondaryBettors = [];
+        renderSelectedBettors();
         
         // Refresh the bets list
         update();

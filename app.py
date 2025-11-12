@@ -2466,6 +2466,25 @@ def bulk_unarchive_bets():
         return jsonify({'error': str(e)}), 500
 
 
+@app.route('/api/users', methods=['GET'])
+@login_required
+def get_users():
+    """Get all active users for autocomplete (excluding current user)"""
+    try:
+        users = User.query.filter(
+            User.is_active == True,
+            User.id != current_user.id  # Exclude current user
+        ).all()
+        
+        return jsonify({
+            'success': True,
+            'users': [user.to_dict() for user in users]
+        })
+    except Exception as e:
+        app.logger.error(f"Error fetching users: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
 # ========================================
 # BET SLIP OCR API (GPT-4 Vision)
 # ========================================
@@ -2667,18 +2686,39 @@ def save_extracted_bet():
         
         app.logger.info(f"[OCR-SAVE] Saving extracted bet for user {current_user.username}")
         
+        # Extract secondary bettor IDs
+        secondary_bettor_ids = ocr_data.pop('secondary_bettor_ids', [])
+        
         # Convert OCR format to bet_data format
         bet_data = convert_ocr_to_bet_format(ocr_data)
         
-        # Save to database
-        saved_bet = save_bet_to_db(current_user.id, bet_data)
+        # Save to database (bet_data includes uploader_id already from current_user.id)
+        saved_bet_dict = save_bet_to_db(current_user.id, bet_data)
         
-        app.logger.info(f"[OCR-SAVE] ✓ Saved bet {saved_bet['bet_id']} with {len(saved_bet.get('legs', []))} legs")
+        # Add secondary bettors if provided
+        if secondary_bettor_ids:
+            bet = Bet.query.get(saved_bet_dict['id'])
+            if bet:
+                # Initialize secondary_bettors array if None
+                if bet.secondary_bettors is None:
+                    bet.secondary_bettors = []
+                
+                # Add secondary bettors (avoid duplicates)
+                for user_id in secondary_bettor_ids:
+                    if user_id not in bet.secondary_bettors and user_id != current_user.id:
+                        bet.secondary_bettors.append(user_id)
+                
+                db.session.commit()
+                backup_to_json(current_user.id)
+                
+                app.logger.info(f"[OCR-SAVE] Added {len(secondary_bettor_ids)} secondary bettors to bet {bet.id}")
+        
+        app.logger.info(f"[OCR-SAVE] ✓ Saved bet {saved_bet_dict['bet_id']} with {len(saved_bet_dict.get('legs', []))} legs")
         
         return jsonify({
             'success': True,
-            'bet': saved_bet,
-            'message': f'Bet saved successfully! {len(saved_bet.get("legs", []))} legs added.'
+            'bet': saved_bet_dict,
+            'message': f'Bet saved successfully! {len(saved_bet_dict.get("legs", []))} legs added.'
         })
         
     except Exception as e:
@@ -2701,12 +2741,14 @@ def convert_ocr_to_bet_format(ocr_data):
       "wager_amount": 25.00,
       "potential_payout": 137.50,
       "bet_date": "2024-11-12",
+      "bet_name": "Sunday NFL Parlay",
       "legs": [...]
     }
     
     Bet format:
     {
       "bet_id": "ocr_12345",
+      "name": "Sunday NFL Parlay",
       "type": "parlay",
       "betting_site": "DraftKings",
       "bet_date": "2024-11-12",
@@ -2747,9 +2789,19 @@ def convert_ocr_to_bet_format(ocr_data):
         
         converted_legs.append(converted_leg)
     
+    # Build bet name (use provided or generate default)
+    bet_name = ocr_data.get('bet_name')
+    if not bet_name:
+        # Generate default name: "{num_legs}-Leg {type} - {site}"
+        num_legs = len(converted_legs)
+        bet_type = ocr_data.get('bet_type', 'parlay').title()
+        site = ocr_data.get('bet_site', 'Unknown')
+        bet_name = f"{num_legs}-Leg {bet_type} - {site}"
+    
     # Build bet data
     bet_data = {
         'bet_id': bet_id,
+        'name': bet_name,
         'type': ocr_data.get('bet_type', 'parlay'),
         'betting_site': ocr_data.get('bet_site', 'Unknown'),
         'bet_date': ocr_data.get('bet_date') or datetime.now().strftime('%Y-%m-%d'),
