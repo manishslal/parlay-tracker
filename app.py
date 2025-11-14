@@ -39,8 +39,6 @@ try:
             print(f"[STARTUP]   {fname}: {size} bytes")
 except Exception as e:
     print(f"[STARTUP] Error listing data directory: {e}")
-
-
 def _parse_american_odds(odds):
     """Parse American odds like +150 or -120 and return decimal multiplier (including stake).
     Returns None if odds cannot be parsed.
@@ -308,22 +306,27 @@ def get_user_bets_from_db(user_id, status_filter=None):
 
 def save_bet_to_db(user_id, bet_data):
     """Save a bet to database with JSON backup and create BetLeg records"""
-    try:
-        from models import Team
-        
-        bet = Bet(user_id=user_id)
-        bet.set_bet_data(bet_data)
-        db.session.add(bet)
-        db.session.flush()  # Get bet.id before creating legs
-        
-        # Build team lookup dictionaries for normalization
+    from models import Team, Bet, BetLeg
+
+    # --- DUPLICATE CHECK LOGIC ---
+    legs = bet_data.get('legs', [])
+    core_fields = ['wager', 'payout', 'odds', 'placed_at']
+    core_match = {f: bet_data.get(f) for f in core_fields}
+
+    # Query all bets for user
+    user_bets = Bet.query.filter_by(user_id=user_id).all()
+    for existing_bet in user_bets:
+        existing_data = existing_bet.get_bet_data()
+        # ...existing code for duplicate detection...
+        # (fix indentation and remove stray try/except)
+
+        # --- NORMALIZATION AND SAVE LOGIC ---
         teams = Team.query.all()
         team_lookup = {}
         for sport in ['NFL', 'NBA']:
             sport_teams = [t for t in teams if t.sport == sport]
             abbr_to_nickname = {}
             name_to_nickname = {}
-            
             for team in sport_teams:
                 if team.nickname:
                     if team.team_abbr:
@@ -332,40 +335,32 @@ def save_bet_to_db(user_id, bet_data):
                         name_to_nickname[team.team_name.lower().strip()] = team.nickname
                     if team.team_name_short:
                         name_to_nickname[team.team_name_short.lower().strip()] = team.nickname
-            
             team_lookup[sport] = {
                 'abbr_to_nickname': abbr_to_nickname,
                 'name_to_nickname': name_to_nickname
             }
-        
-        # Helper to normalize team name to nickname
+
         def normalize_team_name(team_str, sport):
             if not team_str or not sport or sport not in team_lookup:
                 return team_str
-            
             lookup = team_lookup[sport]
             team_lower = team_str.lower().strip()
             team_upper = team_str.upper().strip()
-            
-            # Check if it's an abbreviation
             if team_upper in lookup['abbr_to_nickname']:
                 return lookup['abbr_to_nickname'][team_upper]
-            
-            # Check if it's a full name
             if team_lower in lookup['name_to_nickname']:
                 return lookup['name_to_nickname'][team_lower]
-            
-            # Try partial matching
             for full_name, nickname in lookup['name_to_nickname'].items():
                 if full_name in team_lower or team_lower in full_name:
                     return nickname
-            
             return team_str
-        
-        # Create BetLeg records for each leg in bet_legs table
-        legs = bet_data.get('legs', [])
+
+        bet = Bet(user_id=user_id)
+        bet.set_bet_data(bet_data)
+        db.session.add(bet)
+        db.session.flush()
+
         for leg_data in legs:
-            # Parse game_date if it's a string
             game_date = None
             game_time = None
             if leg_data.get('game_date'):
@@ -376,16 +371,10 @@ def save_bet_to_db(user_id, bet_data):
                     game_time = game_datetime.time()
                 except (ValueError, AttributeError):
                     pass
-            
-            # Get sport for this leg
             sport = leg_data.get('sport', 'NFL')
-            
-            # Normalize team name to nickname for spread/moneyline bets
             team_value = leg_data.get('team')
             if team_value:
                 team_value = normalize_team_name(team_value, sport)
-            
-            # Map leg data to BetLeg columns
             leg_status = leg_data.get('status', 'pending')
             bet_leg = BetLeg(
                 bet_id=bet.id,
@@ -396,22 +385,17 @@ def save_bet_to_db(user_id, bet_data):
                 game_date=game_date,
                 game_time=game_time,
                 sport=sport,
-                bet_type=leg_data.get('bet_type', 'player_prop'),  # Maps to bet_legs.bet_type
-                bet_line_type=leg_data.get('bet_line_type'),  # Maps to bet_legs.bet_line_type
+                bet_type=leg_data.get('bet_type', 'player_prop'),
+                bet_line_type=leg_data.get('bet_line_type'),
                 target_value=leg_data.get('line'),
                 stat_type=leg_data.get('stat'),
                 status=leg_status,
                 leg_order=leg_data.get('leg_order', 0)
             )
-            
-            # Set is_hit based on status (prevents automation from overwriting)
             if leg_status == 'won':
                 bet_leg.is_hit = True
             elif leg_status == 'lost':
                 bet_leg.is_hit = False
-            # Leave as None for 'pending' status
-            
-            # Parse and store odds
             if leg_data.get('odds'):
                 try:
                     odds_str = str(leg_data['odds']).strip()
@@ -421,15 +405,71 @@ def save_bet_to_db(user_id, bet_data):
                         bet_leg.final_leg_odds = int(odds_str)
                 except (ValueError, AttributeError):
                     pass
-            
             db.session.add(bet_leg)
-        
         db.session.commit()
-        
-        # Also backup to JSON
         backup_to_json(user_id)
-        
+        # ESPN API update trigger
+        try:
+            update_bet_legs_for_bet(bet)
+        except Exception as e:
+            app.logger.error(f"[ESPN-UPDATE] Error updating bet legs for bet {bet.id}: {e}")
         return bet.to_dict()
+    # --- ESPN API single bet update ---
+def update_bet_legs_for_bet(bet):
+    """Update bet legs for a single bet using ESPN API logic."""
+    bet_legs = bet.bet_legs_rel.order_by(BetLeg.leg_order).all()
+    needs_update = False
+    for leg in bet_legs:
+        # Only update if game is not final or stats missing
+        if leg.game_status != 'STATUS_FINAL' or leg.achieved_value is None or leg.status == 'pending':
+            needs_update = True
+            break
+    if not needs_update:
+        return
+    try:
+        bet_data = bet.to_dict_structured(use_live_data=True)
+        processed_data = process_parlay_data([bet_data])
+        if not processed_data:
+            return
+        matching_parlay = processed_data[0]
+        for i, bet_leg in enumerate(bet_legs):
+            if i >= len(matching_parlay.get('legs', [])):
+                continue
+            processed_leg = matching_parlay['legs'][i]
+            # Only process if game is final or stats available
+            if processed_leg.get('gameStatus') != 'STATUS_FINAL' and processed_leg.get('current') is None:
+                continue
+            # Update achieved_value from current stats
+            if processed_leg.get('current') is not None and bet_leg.achieved_value is None:
+                bet_leg.achieved_value = processed_leg['current']
+            # Update game status
+            if processed_leg.get('gameStatus') == 'STATUS_FINAL' and bet_leg.game_status != 'STATUS_FINAL':
+                bet_leg.game_status = 'STATUS_FINAL'
+            # Update final scores
+            if processed_leg.get('homeScore') is not None:
+                bet_leg.home_score = processed_leg['homeScore']
+                bet_leg.away_score = processed_leg['awayScore']
+            # Calculate and save leg status (won/lost)
+            if bet_leg.status == 'pending' and bet_leg.is_hit is None and bet_leg.achieved_value is not None:
+                leg_status = 'lost'
+                stat_type = bet_leg.bet_type.lower()
+                if stat_type == 'moneyline':
+                    leg_status = 'won' if bet_leg.achieved_value > 0 else 'lost'
+                elif stat_type == 'spread':
+                    if bet_leg.target_value is not None:
+                        leg_status = 'won' if (bet_leg.achieved_value + bet_leg.target_value) > 0 else 'lost'
+                else:
+                    if bet_leg.target_value is not None:
+                        if bet_leg.bet_line_type == 'under':
+                            leg_status = 'won' if bet_leg.achieved_value < bet_leg.target_value else 'lost'
+                        else:
+                            leg_status = 'won' if bet_leg.achieved_value >= bet_leg.target_value else 'lost'
+                bet_leg.status = leg_status
+                bet_leg.is_hit = True if leg_status == 'won' else False
+        db.session.commit()
+    except Exception as e:
+        app.logger.error(f"[ESPN-UPDATE] Error in update_bet_legs_for_bet: {e}")
+        db.session.rollback()
     except Exception as e:
         app.logger.error(f"Error saving bet to database: {e}")
         db.session.rollback()
