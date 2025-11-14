@@ -3784,8 +3784,16 @@ async function logoutToken() {
 
                 if (gameData) {
                   // Use ESPN game data
-                  const isBetTeamHome = betTeam === gameData.teams.home;
-                  const isBetTeamAway = betTeam === gameData.teams.away;
+                  const betTeamLower = betTeam.toLowerCase();
+                  const homeLower = gameData.teams.home.toLowerCase();
+                  const awayLower = gameData.teams.away.toLowerCase();
+                  let isBetTeamHome = false, isBetTeamAway = false;
+                  // Partial match: check if bet team name is included in home or away team name
+                  if (homeLower.includes(betTeamLower)) {
+                    isBetTeamHome = true;
+                  } else if (awayLower.includes(betTeamLower)) {
+                    isBetTeamAway = true;
+                  }
                   if (isBetTeamHome) {
                     opponentTeamName = gameData.teams.away.split(' ').pop();
                     betTeamScore = gameData.score.home;
@@ -3797,8 +3805,8 @@ async function logoutToken() {
                   } else {
                     // Fallback: if bet team doesn't match home/away, just show as is
                     opponentTeamName = (gameData.teams.home !== betTeam ? gameData.teams.home : gameData.teams.away).split(' ').pop();
-                    betTeamScore = isBetTeamHome ? gameData.score.home : (isBetTeamAway ? gameData.score.away : null);
-                    oppTeamScore = isBetTeamHome ? gameData.score.away : (isBetTeamAway ? gameData.score.home : null);
+                    betTeamScore = null;
+                    oppTeamScore = null;
                   }
 
                   // Determine if bet is currently winning or losing
