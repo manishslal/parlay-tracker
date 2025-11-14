@@ -1,3 +1,35 @@
+# Define run_migrations_once before usage
+_migration_completed = False
+def run_migrations_once():
+    global _migration_completed
+    if _migration_completed:
+        return
+    with app.app_context():
+        try:
+            from sqlalchemy import inspect
+            inspector = inspect(db.engine)
+            columns = [col['name'] for col in inspector.get_columns('users')]
+            if 'user_role' not in columns:
+                print("[MIGRATION] Adding user_role column...")
+                db.session.execute(db.text("ALTER TABLE users ADD COLUMN user_role VARCHAR(20) DEFAULT 'user' NOT NULL"))
+                db.session.commit()
+                print("[MIGRATION] ✓ user_role column added")
+                from models import User
+                manish_user = User.query.filter_by(username='manishslal').first()
+                if manish_user:
+                    manish_user.user_role = 'admin'
+                    db.session.commit()
+                    print(f"[MIGRATION] ✓ Set {manish_user.username} as admin")
+                print("[MIGRATION] ✓ Migration completed")
+            else:
+                print("[MIGRATION] ✓ user_role column already exists")
+            _migration_completed = True
+        except Exception as e:
+            print(f"[MIGRATION] Migration check failed: {e}")
+            try:
+                db.session.rollback()
+            except Exception:
+                pass
 # app.py - Parlay Tracker Backend - Multi-User Edition
 # Force redeploy: 2025-11-01 00:00
 from flask import Flask, jsonify, send_from_directory, request, session, redirect, url_for
@@ -39,80 +71,40 @@ try:
             print(f"[STARTUP]   {fname}: {size} bytes")
 except Exception as e:
     print(f"[STARTUP] Error listing data directory: {e}")
-def _parse_american_odds(odds):
-    """Parse American odds like +150 or -120 and return decimal multiplier (including stake).
-    Returns None if odds cannot be parsed.
-    """
-    if odds is None:
-        return None
-    # allow numeric input as well
-    try:
-        # strip whitespace
-        s = str(odds).strip()
-        # if empty
-        if s == "":
-            return None
-        # remove plus if present
-        if s.startswith("+"):
-            val = int(s[1:])
-            return 1 + (val / 100.0)
-        if s.startswith("-"):
-            val = int(s[1:])
-            if val == 0:
-                return None
-            return 1 + (100.0 / val)
-        # try plain integer
-        if s.isdigit() or (s[0] == '-' and s[1:].isdigit()):
-            val = int(s)
-            if val > 0:
-                return 1 + (val / 100.0)
-            else:
-                return 1 + (100.0 / abs(val))
-        # fallback: try float (decimal odds)
-        f = float(s)
-        if f > 0:
-            return f
-    except Exception:
-        return None
-    return None
 
+# Flask app initialization and config
+app = Flask(__name__, static_folder='.', static_url_path='')
 
-def _compute_parlay_returns_from_odds(wager, parlay_odds=None, leg_odds_list=None):
-    """Compute expected profit (returns) from wager and odds.
-    If parlay_odds provided (American odds string), use that. Otherwise, if leg_odds_list
-    provided, compute combined multiplier. Returns numeric profit or None if not computable.
-    """
-    try:
-        if wager is None:
-            return None
-        w = float(wager)
-        # prefer parlay odds
-        if parlay_odds:
-            mult = _parse_american_odds(parlay_odds)
-            if mult is None:
-                return None
-            # profit is wager * (mult - 1)
-            return round(w * (mult - 1), 2)
-
-        # else try combined leg odds
-        if leg_odds_list:
-            mult = 1.0
-            any_parsed = False
-            for o in leg_odds_list:
-                pm = _parse_american_odds(o)
-                if pm is None:
-                    continue
-                any_parsed = True
-                mult *= pm
-            if any_parsed:
-                return round(w * (mult - 1), 2)
-
-        return None
-    except Exception:
-        return None
-
+# Database configuration
+database_url = os.environ.get('DATABASE_URL', 'sqlite:///parlays.db')
+if database_url.startswith('postgres://'):
+    database_url = database_url.replace('postgres://', 'postgresql://', 1)
+if database_url.startswith('postgresql://'):
+    if '?' in database_url:
+        database_url += '&sslmode=require'
+    else:
+        database_url += '?sslmode=require'
+app.config['SQLALCHEMY_DATABASE_URI'] = database_url
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-secret-key-change-in-production')
+app.config['SESSION_COOKIE_HTTPONLY'] = True
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+app.config['PERMANENT_SESSION_LIFETIME'] = 2592000
+app.config['SESSION_COOKIE_SECURE'] = False
+app.config['REMEMBER_COOKIE_DURATION'] = 2592000
+CORS(app, supports_credentials=True)
+db.init_app(app)
 
 from functools import wraps
+from helpers.utils import (
+    parse_american_odds,
+    compute_parlay_returns_from_odds,
+    sort_parlays_by_date,
+    get_events,
+    calculate_bet_value,
+    _get_player_stat_from_boxscore,
+    _get_touchdowns
+)
 
 def get_user_bets_query(user, **filters):
     """
@@ -141,86 +133,10 @@ def get_user_bets_query(user, **filters):
     for key, value in filters.items():
         if hasattr(Bet, key):
             if isinstance(value, list):
-                # Handle IN clause for lists
                 query = query.filter(getattr(Bet, key).in_(value))
             else:
                 query = query.filter(getattr(Bet, key) == value)
-    
     return query
-
-# Configure Flask to serve static files from root directory
-app = Flask(__name__, static_folder='.', static_url_path='')
-
-# Database configuration
-# Get DATABASE_URL from environment, default to SQLite for local dev
-database_url = os.environ.get('DATABASE_URL', 'sqlite:///parlays.db')
-
-# Fix for Render PostgreSQL: Render uses postgres:// but SQLAlchemy needs postgresql://
-if database_url.startswith('postgres://'):
-    database_url = database_url.replace('postgres://', 'postgresql://', 1)
-
-# Add SSL mode for PostgreSQL connections
-if database_url.startswith('postgresql://'):
-    if '?' in database_url:
-        database_url += '&sslmode=require'
-    else:
-        database_url += '?sslmode=require'
-
-app.config['SQLALCHEMY_DATABASE_URI'] = database_url
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-secret-key-change-in-production')
-app.config['SESSION_COOKIE_HTTPONLY'] = True
-app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
-app.config['PERMANENT_SESSION_LIFETIME'] = 2592000  # 30 days in seconds
-app.config['SESSION_COOKIE_SECURE'] = False  # Set to True if using HTTPS only
-app.config['REMEMBER_COOKIE_DURATION'] = 2592000  # 30 days in seconds
-
-# Initialize extensions
-CORS(app, supports_credentials=True)
-db.init_app(app)
-
-# Database migration flag to ensure it only runs once
-_migration_completed = False
-
-def run_migrations_once():
-    """Run database migrations only once per app instance"""
-    global _migration_completed
-    if _migration_completed:
-        return
-    
-    with app.app_context():
-        try:
-            from sqlalchemy import inspect
-            inspector = inspect(db.engine)
-            columns = [col['name'] for col in inspector.get_columns('users')]
-            
-            if 'user_role' not in columns:
-                print("[MIGRATION] Adding user_role column...")
-                db.session.execute(
-                    db.text("ALTER TABLE users ADD COLUMN user_role VARCHAR(20) DEFAULT 'user' NOT NULL")
-                )
-                db.session.commit()
-                print("[MIGRATION] ✓ user_role column added")
-                
-                # Set manishslal as admin
-                from models import User
-                manish_user = User.query.filter_by(username='manishslal').first()
-                if manish_user:
-                    manish_user.user_role = 'admin'
-                    db.session.commit()
-                    print(f"[MIGRATION] ✓ Set {manish_user.username} as admin")
-                
-                print("[MIGRATION] ✓ Migration completed")
-            else:
-                print("[MIGRATION] ✓ user_role column already exists")
-            
-            _migration_completed = True
-        except Exception as e:
-            print(f"[MIGRATION] Migration check failed: {e}")
-            try:
-                db.session.rollback()
-            except:
-                pass
 
 # Use before_first_request to run migrations (deprecated in Flask 2.3+, but works)
 # Alternative: Run in a background thread or use Flask-Migrate
@@ -1242,7 +1158,7 @@ def initialize_parlay_files():
                     returns = parlay.get('returns')
                     # Treat None or empty-string as missing and compute
                     if returns is None or (isinstance(returns, str) and str(returns).strip() == ""):
-                        returns = _compute_parlay_returns_from_odds(parlay_wager, parlay_odds, leg_odds)
+                        returns = compute_parlay_returns_from_odds(parlay_wager, parlay_odds, leg_odds)
                         if returns is not None:
                             returns = f"{returns:.2f}"
                     parlay['returns'] = returns
@@ -1251,7 +1167,7 @@ def initialize_parlay_files():
                 if parlay_id not in existing_live:
                     returns = parlay.get('returns')
                     if returns is None or (isinstance(returns, str) and str(returns).strip() == ""):
-                        returns = _compute_parlay_returns_from_odds(parlay_wager, parlay_odds, leg_odds)
+                        returns = compute_parlay_returns_from_odds(parlay_wager, parlay_odds, leg_odds)
                         if returns is not None:
                             returns = f"{returns:.2f}"
                     parlay['returns'] = returns
@@ -1426,7 +1342,7 @@ def process_parlays(current_parlays):
                 returns = parlay.get('returns')
                 # Treat None or empty-string as missing and compute
                 if returns is None or (isinstance(returns, str) and str(returns).strip() == ""):
-                    returns = _compute_parlay_returns_from_odds(parlay_wager, parlay_odds, leg_odds)
+                    returns = compute_parlay_returns_from_odds(parlay_wager, parlay_odds, leg_odds)
                     if returns is not None:
                         returns = f"{returns:.2f}"
                     parlay['returns'] = returns
@@ -1441,7 +1357,7 @@ def process_parlays(current_parlays):
                 returns = parlay.get('returns')
                 # Treat None or empty-string as missing and compute
                 if returns is None or (isinstance(returns, str) and str(returns).strip() == ""):
-                    returns = _compute_parlay_returns_from_odds(parlay_wager, parlay_odds, leg_odds)
+                    returns = compute_parlay_returns_from_odds(parlay_wager, parlay_odds, leg_odds)
                     if returns is not None:
                         returns = f"{returns:.2f}"
                     parlay['returns'] = returns
@@ -1967,7 +1883,7 @@ def compute_and_persist_returns(force=False):
             leg_odds = [l.get('odds') for l in parlay.get('legs', []) if l.get('odds') is not None]
             current = parlay.get('returns')
             if force or current is None or (isinstance(current, str) and str(current).strip() == ""):
-                val = _compute_parlay_returns_from_odds(parlay_wager, parlay_odds, leg_odds)
+                val = compute_parlay_returns_from_odds(parlay_wager, parlay_odds, leg_odds)
                 if val is not None:
                     # ensure 2 decimal places and format as string
                     val = round(float(val), 2)
