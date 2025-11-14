@@ -3767,52 +3767,63 @@ async function logoutToken() {
                   progressCol = `<div style="text-align:center;padding:0.5rem;">-</div>`;
                 }
               } else if (isSpreadOrML) {
-                // For spread/moneyline, show score with team names only
+                // For spread/moneyline, show score with bet team on left and opponent on right
                 const scoreDiff = p.score_diff ?? 0;
-                const betTeam = p.team || '';
-                const betTeamName = betTeam.split(' ').pop(); // Get last word (e.g., "Cowboys")
-                
+                // Use player_team from bet leg for bet team
+                const betTeam = p.player_team || p.team || '';
+                const betTeamName = betTeam.split(' ').pop();
+
                 // Determine if bet is currently winning or losing
                 let isWinning = false;
                 let progressColor = '';
-                
-                // Check if we have ESPN game data
-                if (gameData && gameData.statusTypeName !== 'STATUS_SCHEDULED') {
-                  if (p.stat === 'moneyline') {
-                    isWinning = scoreDiff > 0;
-                  } else if (p.stat === 'spread') {
-                    // For spread, check if covering the spread
-                    isWinning = (scoreDiff + p.target) > 0;
-                  }
-                  progressColor = isWinning ? 'color: #4caf50;' : 'color: #f44336;'; // Green if winning, red if losing
-                }
-                // For historical games, use database status
-                else if (p.status === 'won' || p.status === 'lost') {
-                  isWinning = p.status === 'won';
-                  progressColor = isWinning ? 'color: #4caf50;' : 'color: #f44336;';
-                }
-                
+
                 // Find opponent team name and scores
                 let opponentTeamName = '';
                 let betTeamScore = null;
                 let oppTeamScore = null;
-                
+
                 if (gameData) {
                   // Use ESPN game data
-                  const isHome = betTeam === gameData.teams.home;
-                  const opponentFull = isHome ? gameData.teams.away : gameData.teams.home;
-                  opponentTeamName = opponentFull.split(' ').pop();
-                  betTeamScore = isHome ? gameData.score.home : gameData.score.away;
-                  oppTeamScore = isHome ? gameData.score.away : gameData.score.home;
+                  const isBetTeamHome = betTeam === gameData.teams.home;
+                  const isBetTeamAway = betTeam === gameData.teams.away;
+                  if (isBetTeamHome) {
+                    opponentTeamName = gameData.teams.away.split(' ').pop();
+                    betTeamScore = gameData.score.home;
+                    oppTeamScore = gameData.score.away;
+                  } else if (isBetTeamAway) {
+                    opponentTeamName = gameData.teams.home.split(' ').pop();
+                    betTeamScore = gameData.score.away;
+                    oppTeamScore = gameData.score.home;
+                  } else {
+                    // Fallback: if bet team doesn't match home/away, just show as is
+                    opponentTeamName = (gameData.teams.home !== betTeam ? gameData.teams.home : gameData.teams.away).split(' ').pop();
+                    betTeamScore = isBetTeamHome ? gameData.score.home : (isBetTeamAway ? gameData.score.away : null);
+                    oppTeamScore = isBetTeamHome ? gameData.score.away : (isBetTeamAway ? gameData.score.home : null);
+                  }
+
+                  // Determine if bet is currently winning or losing
+                  if (p.stat === 'moneyline') {
+                    isWinning = scoreDiff > 0;
+                  } else if (p.stat === 'spread') {
+                    isWinning = (scoreDiff + p.target) > 0;
+                  }
+                  progressColor = isWinning ? 'color: #4caf50;' : 'color: #f44336;';
                 } else if (p.homeScore !== undefined && p.awayScore !== undefined) {
                   // Use database scores (for historical games)
-                  // Determine if bet team is home or away
-                  const isHome = betTeam === p.home || (p.home && betTeam && p.home.includes(betTeamName));
-                  opponentTeamName = isHome ? (p.away || '').split(' ').pop() : (p.home || '').split(' ').pop();
-                  betTeamScore = isHome ? p.homeScore : p.awayScore;
-                  oppTeamScore = isHome ? p.awayScore : p.homeScore;
+                  const isBetTeamHome = betTeam === p.home || (p.home && betTeam && p.home.includes(betTeamName));
+                  if (isBetTeamHome) {
+                    opponentTeamName = (p.away || '').split(' ').pop();
+                    betTeamScore = p.homeScore;
+                    oppTeamScore = p.awayScore;
+                  } else {
+                    opponentTeamName = (p.home || '').split(' ').pop();
+                    betTeamScore = p.awayScore;
+                    oppTeamScore = p.homeScore;
+                  }
+                  isWinning = p.status === 'won';
+                  progressColor = isWinning ? 'color: #4caf50;' : 'color: #f44336;';
                 }
-                
+
                 // Show score if available
                 if (betTeamScore !== null && oppTeamScore !== null) {
                   progressCol = `<div style="text-align:center;padding:0.5rem;font-weight:bold;${progressColor}">${betTeamName} ${betTeamScore} - ${oppTeamScore} ${opponentTeamName}</div>`;
