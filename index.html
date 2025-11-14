@@ -2534,6 +2534,7 @@
       
       if (pullRefresh.classList.contains('active')) {
         pullRefresh.textContent = 'Refreshing...';
+        cachedLive = null; // Reset live bets cache before fetching
         await update();
         setTimeout(() => {
           pullRefresh.classList.remove('active');
