@@ -3262,8 +3262,8 @@ async function logoutToken() {
         const header=document.createElement('div');
         header.className='parlay-header';
         
-        // Enhance parlay name with team matchup if applicable
-        const displayName = enhanceParlayName(parlay);
+        // Use parlay.name from bet_data for header display
+        const displayName = parlay.name || enhanceParlayName(parlay);
         
         // Check if all legs are Hit AND all games are final (winning bet deserves trophy)
         const allLegsComplete = parlay.legs && parlay.legs.length > 0 && 
