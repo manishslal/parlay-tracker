@@ -27,6 +27,8 @@ class BetLeg(db.Model):
     bet_type = db.Column(db.String(50), nullable=False)
     stat_type = db.Column(db.String(50))  # Moved here, increased size
     bet_line_type = db.Column(db.String(20))  # 'over', 'under', NULL
+    target_value = db.Column(db.Numeric(10, 2), nullable=False)
+    achieved_value = db.Column(db.Numeric(10, 2))
 
     # Performance Comparison
     player_season_avg = db.Column(db.Numeric(10, 2))
