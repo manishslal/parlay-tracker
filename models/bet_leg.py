@@ -64,13 +64,13 @@ class BetLeg(db.Model):
     updated_at = db.Column(db.DateTime, default=db.func.now(), onupdate=db.func.now())
 
     def get_display_values(self):
-        """Calculate display values for Current and Progress fields for moneyline and spread bets."""
+        """Calculate display values for Current and Progress fields for moneyline, spread, and total_points bets."""
         current_display = None
         progress_display = None
         progress_color = None
         
-        # Only calculate for moneyline and spread bets
-        if self.stat_type and self.stat_type.lower() in ['moneyline', 'spread']:
+        # Only calculate for moneyline, spread, and total_points bets
+        if self.stat_type and self.stat_type.lower() in ['moneyline', 'spread', 'total_points']:
             # Determine bet team and opponent
             bet_team = self.player_name or self.player_team or ''
             is_home_bet = self.is_home_game
@@ -110,7 +110,7 @@ class BetLeg(db.Model):
                     else:
                         current_display = "Even"
                         progress_color = "yellow"
-            
+                        
             elif self.stat_type.lower() == 'spread':
                 spread_value = self.target_value or 0
                 if self.status in ['won', 'lost']:
@@ -127,6 +127,38 @@ class BetLeg(db.Model):
                     elif spread_diff < 0:
                         current_display = f"{spread_diff}"
                         progress_color = "red"
+                    else:
+                        current_display = "Push"
+                        progress_color = "yellow"
+                        
+            elif self.stat_type.lower() == 'total_points':
+                target_total = self.target_value or 0
+                actual_total = (self.home_score or 0) + (self.away_score or 0)
+                
+                # Progress display: "AWAY_TEAM SCORE - HOME_TEAM SCORE (TOTAL)"
+                progress_display = f"{self.away_team} {self.away_score or 0} - {self.home_team} {self.home_score or 0} ({actual_total})"
+                
+                if self.status in ['won', 'lost']:
+                    # For completed games, show Over/Under result
+                    if self.bet_line_type and 'over' in self.bet_line_type.lower():
+                        current_display = f"Over {target_total}"
+                    elif self.bet_line_type and 'under' in self.bet_line_type.lower():
+                        current_display = f"Under {target_total}"
+                    else:
+                        current_display = f"{'Over' if actual_total > target_total else 'Under'} {target_total}"
+                    
+                    # Color based on win/loss
+                    progress_color = "green" if self.status == 'won' else "red"
+                    
+                elif self.status == 'pending' and self.home_score is not None and self.away_score is not None:
+                    # For pending games, show current total vs target
+                    total_diff = actual_total - target_total
+                    if total_diff > 0:
+                        current_display = f"+{total_diff}"
+                        progress_color = "green" if (self.bet_line_type and 'over' in self.bet_line_type.lower()) else "red"
+                    elif total_diff < 0:
+                        current_display = f"{total_diff}"
+                        progress_color = "red" if (self.bet_line_type and 'over' in self.bet_line_type.lower()) else "green"
                     else:
                         current_display = "Push"
                         progress_color = "yellow"
@@ -205,7 +237,7 @@ class BetLeg(db.Model):
         progress_color = None
         
         # Only calculate for moneyline and spread bets
-        if self.stat_type and self.stat_type.lower() in ['moneyline', 'spread']:
+        if self.stat_type and self.stat_type.lower() in ['moneyline', 'spread', 'total_points']:
             # Determine bet team and opponent
             bet_team = self.player_name or self.player_team or ''
             is_home_bet = self.is_home_game
@@ -245,6 +277,37 @@ class BetLeg(db.Model):
                     else:
                         current_display = "Even"
                         progress_color = "yellow"
+            elif self.stat_type.lower() == 'total_points':
+                target_total = self.target_value or 0
+                actual_total = (self.home_score or 0) + (self.away_score or 0)
+                
+                # Progress display: "AWAY_TEAM SCORE - HOME_TEAM SCORE (TOTAL)"
+                progress_display = f"{self.away_team} {self.away_score or 0} - {self.home_team} {self.home_score or 0} ({actual_total})"
+                
+                if self.status in ['won', 'lost']:
+                    # For completed games, show Over/Under result
+                    if self.bet_line_type and 'over' in self.bet_line_type.lower():
+                        current_display = f"Over {target_total}"
+                    elif self.bet_line_type and 'under' in self.bet_line_type.lower():
+                        current_display = f"Under {target_total}"
+                    else:
+                        current_display = f"{'Over' if actual_total > target_total else 'Under'} {target_total}"
+                    
+                    # Color based on win/loss
+                    progress_color = "green" if self.status == 'won' else "red"
+                    
+                elif self.status == 'pending' and self.home_score is not None and self.away_score is not None:
+                    # For pending games, show current total vs target
+                    total_diff = actual_total - target_total
+                    if total_diff > 0:
+                        current_display = f"+{total_diff}"
+                        progress_color = "green" if (self.bet_line_type and 'over' in self.bet_line_type.lower()) else "red"
+                    elif total_diff < 0:
+                        current_display = f"{total_diff}"
+                        progress_color = "red" if (self.bet_line_type and 'over' in self.bet_line_type.lower()) else "green"
+                    else:
+                        current_display = "Push"
+                        progress_color = "yellow"
             
             elif self.stat_type.lower() == 'spread':
                 spread_value = self.target_value or 0
@@ -262,6 +325,37 @@ class BetLeg(db.Model):
                     elif spread_diff < 0:
                         current_display = f"{spread_diff}"
                         progress_color = "red"
+                    else:
+                        current_display = "Push"
+                        progress_color = "yellow"
+            elif self.stat_type.lower() == 'total_points':
+                target_total = self.target_value or 0
+                actual_total = (self.home_score or 0) + (self.away_score or 0)
+                
+                # Progress display: "AWAY_TEAM SCORE - HOME_TEAM SCORE (TOTAL)"
+                progress_display = f"{self.away_team} {self.away_score or 0} - {self.home_team} {self.home_score or 0} ({actual_total})"
+                
+                if self.status in ['won', 'lost']:
+                    # For completed games, show Over/Under result
+                    if self.bet_line_type and 'over' in self.bet_line_type.lower():
+                        current_display = f"Over {target_total}"
+                    elif self.bet_line_type and 'under' in self.bet_line_type.lower():
+                        current_display = f"Under {target_total}"
+                    else:
+                        current_display = f"{'Over' if actual_total > target_total else 'Under'} {target_total}"
+                    
+                    # Color based on win/loss
+                    progress_color = "green" if self.status == 'won' else "red"
+                    
+                elif self.status == 'pending' and self.home_score is not None and self.away_score is not None:
+                    # For pending games, show current total vs target
+                    total_diff = actual_total - target_total
+                    if total_diff > 0:
+                        current_display = f"+{total_diff}"
+                        progress_color = "green" if (self.bet_line_type and 'over' in self.bet_line_type.lower()) else "red"
+                    elif total_diff < 0:
+                        current_display = f"{total_diff}"
+                        progress_color = "red" if (self.bet_line_type and 'over' in self.bet_line_type.lower()) else "green"
                     else:
                         current_display = "Push"
                         progress_color = "yellow"

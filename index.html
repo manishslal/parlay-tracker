@@ -3881,11 +3881,25 @@ async function logoutToken() {
               ) : null;
               
               let progressCol = '';
-              let currentDisplay = current;
+              let currentDisplay = p.current_display || current;
               let targetDisplay = p.target;
               
               // For spread/moneyline, use team name; for player props, use player name
               let playerDisplay = p.player || p.team || 'N/A';
+              
+              // Use backend-calculated display values if available
+              let useBackendValues = false;
+              if (p.progress_display) {
+                const colorStyle = p.progress_color ? `color: ${p.progress_color === 'green' ? '#4caf50' : p.progress_color === 'red' ? '#f44336' : p.progress_color === 'yellow' ? '#ffeb3b' : 'inherit'};` : '';
+                progressCol = `<div style="text-align:center;padding:0.5rem;font-weight:bold;${colorStyle}">${p.progress_display}</div>`;
+                useBackendValues = true;
+              } else {
+                // Fallback to old logic if backend values not available
+                progressCol = `<div style="text-align:center;padding:0.5rem;">-</div>`;
+              }
+              
+              // Skip old frontend logic if we have backend values
+              if (!useBackendValues) {
               if (isSpreadOrML && p.team) {
                 // Extract just the team name (e.g., "Dallas Cowboys" -> "Cowboys")
                 playerDisplay = p.team.split(' ').pop();
@@ -4209,6 +4223,7 @@ async function logoutToken() {
               } else {
                 txt='⏳ In Progress'; // Default to in progress
               }
+              } // End of !useBackendValues condition
               
               // Format for mobile display
               const playerOrTeam = playerDisplay; // Use the calculated playerDisplay
