@@ -1,3 +1,9 @@
+import os
+
+DATA_DIR = os.path.join(os.path.dirname(__file__), "../data")
+
+def data_path(filename: str) -> str:
+    return os.path.join(DATA_DIR, filename)
 import re
 from datetime import datetime
 from typing import Any, List, Optional

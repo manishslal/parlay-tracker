@@ -31,11 +31,8 @@ load_dotenv()
 from models import db, User, Bet, BetLeg
 from helpers.database import run_migrations_once
 
-# Data directory for JSON fixtures
-DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
 
-def data_path(filename: str) -> str:
-    return os.path.join(DATA_DIR, filename)
+from helpers.utils import data_path, DATA_DIR
 
 # Ensure data directory exists
 os.makedirs(DATA_DIR, exist_ok=True)
