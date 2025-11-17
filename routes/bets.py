@@ -65,7 +65,7 @@ def process_betslip_image(file):
                     'content': [
                         {
                             'type': 'text',
-                            'text': '''Extract betting information from this bet slip image. Return a JSON object with this exact structure:
+                            'text': '''Extract betting information from this bet slip image. Return ONLY a valid JSON object with this exact structure. Do not include any markdown formatting, code blocks, or additional text:
 
 {
   "bet_site": "name of the betting site (e.g., DraftKings, FanDuel, etc.)",
@@ -86,7 +86,7 @@ def process_betslip_image(file):
   ]
 }
 
-Only include fields that are clearly visible in the image. If a field is not visible, omit it rather than guessing.'''
+Return ONLY the JSON object, no other text or formatting.'''
                         },
                         {
                             'type': 'image_url',
@@ -110,11 +110,53 @@ Only include fields that are clearly visible in the image. If a field is not vis
         if response.status_code != 200:
             raise ValueError(f"OpenAI API error: {response.status_code} - {response.text}")
         
-        result = response.json()
+        try:
+            result = response.json()
+        except json.JSONDecodeError as e:
+            raise ValueError(f"Failed to parse OpenAI API response as JSON: {e}. Response text: {response.text[:500]}")
+        
+        # Debug: Log the full response structure
+        logger.info(f"OpenAI API response: {result}")
+        
+        # Validate response structure
+        if 'choices' not in result or not result['choices']:
+            raise ValueError(f"OpenAI API returned no choices: {result}")
+        
+        if 'message' not in result['choices'][0]:
+            raise ValueError(f"OpenAI API choice has no message: {result['choices'][0]}")
+        
         content = result['choices'][0]['message']['content']
         
+        # Debug: Log the content before parsing
+        logger.info(f"OpenAI content to parse: {content}")
+        
+        if not content or not content.strip():
+            raise ValueError("OpenAI API returned empty content")
+        
+        # Clean the content - remove markdown code blocks if present
+        content = content.strip()
+        if content.startswith('```json'):
+            content = content[7:]
+        if content.startswith('```'):
+            content = content[3:]
+        if content.endswith('```'):
+            content = content[:-3]
+        content = content.strip()
+        
         # Parse the JSON response
-        extracted_data = json.loads(content)
+        try:
+            extracted_data = json.loads(content)
+        except json.JSONDecodeError as e:
+            # Try to extract JSON from the content if it contains extra text
+            import re
+            json_match = re.search(r'\{.*\}', content, re.DOTALL)
+            if json_match:
+                try:
+                    extracted_data = json.loads(json_match.group())
+                except json.JSONDecodeError:
+                    raise ValueError(f"Failed to parse OpenAI response as JSON: {e}. Content: {content[:500]}")
+            else:
+                raise ValueError(f"Failed to parse OpenAI response as JSON: {e}. Content: {content[:500]}")
         
         # Validate the structure
         if not isinstance(extracted_data, dict):
