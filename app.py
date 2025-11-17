@@ -441,6 +441,7 @@ def save_bet_to_db(user_id: int, bet_data: dict) -> dict:
     import json
     bet.bet_data = json.dumps(bet_data)
     bet.betting_site_id = bet_data.get('bet_id') or bet_data.get('betting_site_id')
+    bet.secondary_bettors = bet_data.get('secondary_bettor_ids', [])
     bet.is_active = True
     bet.is_archived = False
     bet.status = 'pending'

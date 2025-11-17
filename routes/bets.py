@@ -143,6 +143,7 @@ def transform_extracted_bet_data(data):
         'odds': data.get('total_odds'),
         'payout': data.get('potential_payout'),
         'placed_at': data.get('bet_date'),
+        'secondary_bettor_ids': data.get('secondary_bettor_ids', []),
         'legs': []
     }
     
@@ -220,6 +221,11 @@ def create_bet() -> Any:
 		# Ensure status is set properly
 		if 'status' not in data:
 			data['status'] = 'pending'
+		
+		# Handle secondary bettors
+		if 'secondary_bettor_ids' in data and data['secondary_bettor_ids']:
+			# Ensure it's a list of integers
+			data['secondary_bettor_ids'] = [int(id) for id in data['secondary_bettor_ids'] if id]
 		
 		# Standardize leg data format
 		if 'legs' in data:
