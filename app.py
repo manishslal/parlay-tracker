@@ -97,6 +97,10 @@ app.config['REMEMBER_COOKIE_DURATION'] = 2592000
 CORS(app, supports_credentials=True)
 db.init_app(app)
 
+# Create database tables
+with app.app_context():
+    db.create_all()
+
 from functools import wraps
 from helpers.utils import (
     compute_parlay_returns_from_odds,
