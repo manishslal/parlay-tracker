@@ -123,16 +123,24 @@ class Bet(db.Model):
             
         # For historical bets, create games array from leg data so frontend can show scoreboards
         if not use_live_data and 'games' not in result:
+            from models import Team
             games_map = {}
             for leg in result['legs']:
                 if leg.get('home_team') and leg.get('away_team'):
                     game_key = f"{leg['away_team']}-{leg['home_team']}"
                     if game_key not in games_map:
+                        # Look up team abbreviations from teams table using partial matching
+                        home_team_obj = Team.query.filter(Team.team_name.ilike(f'%{leg["home_team"]}%')).first()
+                        away_team_obj = Team.query.filter(Team.team_name.ilike(f'%{leg["away_team"]}%')).first()
+                        
+                        home_abbr = home_team_obj.team_abbr if home_team_obj else leg['home_team'][:3].upper()
+                        away_abbr = away_team_obj.team_abbr if away_team_obj else leg['away_team'][:3].upper()
+                        
                         # Create mock game object with final scores
                         mock_game = {
                             'teams': {
-                                'home': leg['home_team'],
-                                'away': leg['away_team']
+                                'home': home_abbr,  # Use abbreviation instead of full name
+                                'away': away_abbr   # Use abbreviation instead of full name
                             },
                             'score': {
                                 'home': leg.get('homeScore', 0),
