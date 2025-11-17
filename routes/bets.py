@@ -353,6 +353,8 @@ def db_health_check():
 @login_required
 @db_error_handler
 def live():
+	auto_move_bets_no_live_legs()  # Move bets with no live legs to historical
+	auto_determine_leg_hit_status()  # Ensure hit/miss status is up to date
 	bets = get_user_bets_query(current_user, is_active=True, is_archived=False, status='live').options(db.joinedload(Bet.bet_legs_rel)).all()
 	live_parlays = [bet.to_dict_structured(use_live_data=True) for bet in bets]
 	processed = process_parlay_data(live_parlays)
