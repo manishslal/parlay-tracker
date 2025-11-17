@@ -9,6 +9,7 @@ from functools import wraps
 import logging
 import os
 import requests
+import json
 from werkzeug.utils import secure_filename
 
 bets_bp = Blueprint('bets', __name__)
@@ -113,7 +114,6 @@ Only include fields that are clearly visible in the image. If a field is not vis
         content = result['choices'][0]['message']['content']
         
         # Parse the JSON response
-        import json
         extracted_data = json.loads(content)
         
         # Validate the structure
