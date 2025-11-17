@@ -10,9 +10,10 @@ db = SQLAlchemy()
 
 # Import Player for legacy code (this file is not actively used)
 try:
-    from models import Player
+    from models import Player, BetLeg
 except ImportError:
     Player = None
+    BetLeg = None
 
 # OLD: Association table for many-to-many relationship (DEPRECATED - keeping for rollback)
 # Migration to array columns completed. This table can be dropped after verification.
@@ -547,11 +548,25 @@ class Bet(db.Model):
                     if json_leg.get('game_date'):
                         leg_dict['game_date'] = json_leg['game_date']
                     
-                    # Add scores from JSON if not in database
-                    if not leg_dict.get('homeScore') and json_leg.get('homeScore') is not None:
-                        leg_dict['homeScore'] = json_leg['homeScore']
-                    if not leg_dict.get('awayScore') and json_leg.get('awayScore') is not None:
-                        leg_dict['awayScore'] = json_leg['awayScore']
+                    # Add scores from JSON if not in database (check both camelCase and snake_case)
+                    # But prefer database values - only use JSON if database is None
+                    # Actually, always prefer database values since they should be up to date
+                    if leg_dict.get('homeScore') is None:
+                        if json_leg.get('homeScore') is not None:
+                            leg_dict['homeScore'] = json_leg['homeScore']
+                        elif json_leg.get('home_score') is not None:
+                            leg_dict['homeScore'] = json_leg['home_score']
+                        # If still None, try to get from database again (this shouldn't be needed but...)
+                        elif bet_leg.home_score is not None:
+                            leg_dict['homeScore'] = bet_leg.home_score
+                    if leg_dict.get('awayScore') is None:
+                        if json_leg.get('awayScore') is not None:
+                            leg_dict['awayScore'] = json_leg['awayScore']
+                        elif json_leg.get('away_score') is not None:
+                            leg_dict['awayScore'] = json_leg['away_score']
+                        # If still None, try to get from database again
+                        elif bet_leg.away_score is not None:
+                            leg_dict['awayScore'] = bet_leg.away_score
                     
                     # Calculate score_diff from JSON scores if needed for spread/moneyline
                     if not leg_dict.get('score_diff') and leg_dict.get('homeScore') is not None and leg_dict.get('awayScore') is not None:
@@ -578,6 +593,32 @@ class Bet(db.Model):
             # Log but don't fail if JSON fallback has issues
             import logging
             logging.warning(f"JSON fallback failed: {e}")
+        
+        # For historical bets, create games array from leg data so frontend can show scoreboards
+        if not use_live_data and 'games' not in bet_dict:
+            games_map = {}
+            for leg in legs:
+                if leg.get('homeTeam') and leg.get('awayTeam'):
+                    game_key = f"{leg['awayTeam']}-{leg['homeTeam']}"
+                    if game_key not in games_map:
+                        # Create mock game object with final scores
+                        mock_game = {
+                            'teams': {
+                                'home': leg['homeTeam'],
+                                'away': leg['awayTeam']
+                            },
+                            'score': {
+                                'home': leg.get('homeScore', 0),
+                                'away': leg.get('awayScore', 0)
+                            },
+                            'statusTypeName': 'STATUS_FINAL' if leg.get('gameStatus') == 'STATUS_FINAL' else 'STATUS_SCHEDULED',
+                            'game_date': leg.get('game_date', ''),
+                            'startDateTime': leg.get('game_date', ''),
+                            'period': leg.get('currentPeriod', ''),
+                            'clock': leg.get('time_remaining', '')
+                        }
+                        games_map[game_key] = mock_game
+            bet_dict['games'] = list(games_map.values())
         
         return bet_dict
     

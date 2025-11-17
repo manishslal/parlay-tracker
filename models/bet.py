@@ -121,6 +121,32 @@ class Bet(db.Model):
         else:
             result['legs'] = []
             
+        # For historical bets, create games array from leg data so frontend can show scoreboards
+        if not use_live_data and 'games' not in result:
+            games_map = {}
+            for leg in result['legs']:
+                if leg.get('home_team') and leg.get('away_team'):
+                    game_key = f"{leg['away_team']}-{leg['home_team']}"
+                    if game_key not in games_map:
+                        # Create mock game object with final scores
+                        mock_game = {
+                            'teams': {
+                                'home': leg['home_team'],
+                                'away': leg['away_team']
+                            },
+                            'score': {
+                                'home': leg.get('homeScore', 0),
+                                'away': leg.get('awayScore', 0)
+                            },
+                            'statusTypeName': 'STATUS_FINAL' if leg.get('gameStatus') == 'STATUS_FINAL' else 'STATUS_SCHEDULED',
+                            'game_date': leg.get('game_date', ''),
+                            'startDateTime': leg.get('game_date', ''),
+                            'period': leg.get('current_quarter', ''),
+                            'clock': leg.get('time_remaining', '')
+                        }
+                        games_map[game_key] = mock_game
+            result['games'] = list(games_map.values())
+            
         return result
 
     def to_dict(self):

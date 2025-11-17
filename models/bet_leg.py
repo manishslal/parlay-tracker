@@ -215,6 +215,8 @@ class BetLeg(db.Model):
             'time_remaining': self.time_remaining,
             'home_score': self.home_score,
             'away_score': self.away_score,
+            'homeScore': self.home_score,  # Frontend expects camelCase
+            'awayScore': self.away_score,  # Frontend expects camelCase
             'is_home_game': self.is_home_game,
             'weather_conditions': self.weather_conditions,
             'injury_during_game': self.injury_during_game,
