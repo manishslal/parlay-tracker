@@ -6,7 +6,7 @@ class Bet(db.Model):
     __tablename__ = 'bets'
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
-    bet_id = db.Column(db.String(100))
+    betting_site_id = db.Column(db.String(100))
     bet_type = db.Column(db.String(50))
     betting_site = db.Column(db.String(50))
     status = db.Column(db.String(20))
@@ -39,6 +39,17 @@ class Bet(db.Model):
     watchers = db.Column(db.ARRAY(db.Integer))
     bet_legs_rel = db.relationship('BetLeg', backref='bet', lazy=True)
 
+    __mapper_args__ = {
+        'include_properties': [
+            'id', 'user_id', 'betting_site_id', 'bet_type', 'betting_site', 'status',
+            'is_active', 'is_archived', 'api_fetched', 'bet_data', 'created_at', 'updated_at',
+            'bet_date', 'wager', 'original_odds', 'boosted_odds', 'final_odds', 'is_boosted',
+            'potential_winnings', 'actual_winnings', 'has_insurance', 'insurance_type',
+            'insurance_amount', 'insurance_triggered', 'total_legs', 'legs_won', 'legs_lost',
+            'legs_pending', 'legs_live', 'legs_void', 'last_api_update', 'secondary_bettors', 'watchers'
+        ]
+    }
+
     def get_bet_data(self):
         import json
         data = {}
@@ -57,7 +68,7 @@ class Bet(db.Model):
     def to_dict_structured(self, use_live_data=False):
         result = {
             'db_id': self.id,
-            'bet_id': self.bet_id,
+            'betting_site_id': self.betting_site_id,
             'user_id': self.user_id,
             'bet_type': self.bet_type,
             'betting_site': self.betting_site,
@@ -99,3 +110,7 @@ class Bet(db.Model):
             result['legs'] = []
             
         return result
+
+    def to_dict(self):
+        """Alias for to_dict_structured for backward compatibility"""
+        return self.to_dict_structured()
