@@ -479,6 +479,7 @@ def save_bet_to_db(user_id: int, bet_data: dict) -> dict:
                 target_value=leg_data.get('line') or 0.0,
                 stat_type=leg_data.get('stat'),
                 status=leg_status,
+                game_status='STATUS_SCHEDULED',  # Initialize with scheduled status
                 leg_order=leg_data.get('leg_order', 0)
             )
             if leg_status == 'won':
@@ -965,8 +966,8 @@ def update_completed_bet_legs():
                             leg_updated = True
                         
                         # Calculate and save leg status (won/lost) based on bet type
-                        # Only update if status is pending AND is_hit is None (not already determined)
-                        if bet_leg.status == 'pending' and bet_leg.is_hit is None and bet_leg.achieved_value is not None:
+                        # Only update if status is pending/None AND is_hit is None (not already determined)
+                        if (bet_leg.status == 'pending' or bet_leg.status is None) and bet_leg.is_hit is None and bet_leg.achieved_value is not None:
                             leg_status = 'lost'  # Default to lost
                             stat_type = bet_leg.bet_type.lower()
                             
@@ -985,11 +986,11 @@ def update_completed_bet_legs():
                                         leg_status = 'won' if bet_leg.achieved_value < bet_leg.target_value else 'lost'
                                     else:  # 'over' or None (default to over)
                                         leg_status = 'won' if bet_leg.achieved_value >= bet_leg.target_value else 'lost'
-                        
-                        bet_leg.status = leg_status
-                        bet_leg.is_hit = True if leg_status == 'won' else False
-                        leg_updated = True
-                        app.logger.info(f"[AUTO-UPDATE] Bet {bet.id} Leg {i+1}: status = {leg_status}, is_hit = {bet_leg.is_hit}")
+                            
+                            bet_leg.status = leg_status
+                            bet_leg.is_hit = True if leg_status == 'won' else False
+                            leg_updated = True
+                            app.logger.info(f"[AUTO-UPDATE] Bet {bet.id} Leg {i+1}: status = {leg_status}, is_hit = {bet_leg.is_hit}")
                     
                     if updated_legs > 0:
                         updated_bets += 1
@@ -1858,9 +1859,29 @@ def fetch_game_details_from_espn(game_date, away_team, home_team, sport='NFL'):
                 team_abbrs = {c['team']['abbreviation'] for c in competitors}
                 app.logger.info(f"Event teams: {team_names} | Abbreviations: {team_abbrs}")
                 
-                # Match by either full name or abbreviation
-                away_match = away_team in team_names or away_team in team_abbrs
-                home_match = home_team in team_names or home_team in team_abbrs
+                # Match by either full name or abbreviation with flexible matching
+                def team_matches(search_team, team_names, team_abbrs):
+                    """Check if search_team matches any team, allowing partial matches"""
+                    search_lower = search_team.lower().strip()
+                    
+                    # Check exact matches first
+                    if search_team in team_names or search_team in team_abbrs:
+                        return True
+                    
+                    # Check partial matches for team names (e.g., 'Packers' matches 'Green Bay Packers')
+                    for name in team_names:
+                        if search_lower in name.lower() or name.lower() in search_lower:
+                            return True
+                    
+                    # Check partial matches for abbreviations (e.g., 'Packers' might match 'GB' in some cases)
+                    for abbr in team_abbrs:
+                        if search_lower == abbr.lower() or abbr.lower() in search_lower:
+                            return True
+                    
+                    return False
+                
+                away_match = team_matches(away_team, team_names, team_abbrs)
+                home_match = team_matches(home_team, team_names, team_abbrs)
                 
                 if away_match and home_match:
                     ev = event
