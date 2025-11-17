@@ -238,25 +238,56 @@ class BetLeg(db.Model):
         
         # Only calculate for moneyline and spread bets
         if self.stat_type and self.stat_type.lower() in ['moneyline', 'spread', 'total_points']:
-            # Determine bet team and opponent
-            bet_team = self.player_name or self.player_team or ''
-            is_home_bet = self.is_home_game
-            
             # Get scores
             home_score = self.home_score or 0
             away_score = self.away_score or 0
             
-            # Calculate score differential from bet team's perspective
-            if is_home_bet:
-                score_diff = home_score - away_score
-                bet_score = home_score
-                opp_score = away_score
-                opp_team = self.away_team
+            # For moneyline bets, determine bet team and opponent based on player_team
+            if self.stat_type.lower() == 'moneyline':
+                bet_team = self.player_team or self.player_name or ''
+                # Determine if bet team is home or away
+                if bet_team and self.home_team and bet_team.lower() in self.home_team.lower():
+                    # Bet is on home team
+                    bet_score = home_score
+                    opp_score = away_score
+                    opp_team = self.away_team
+                    score_diff = home_score - away_score
+                elif bet_team and self.away_team and bet_team.lower() in self.away_team.lower():
+                    # Bet is on away team
+                    bet_score = away_score
+                    opp_score = home_score
+                    opp_team = self.home_team
+                    score_diff = away_score - home_score
+                else:
+                    # Fallback: use is_home_game if team matching fails
+                    bet_team = self.player_name or self.player_team or ''
+                    is_home_bet = self.is_home_game
+                    if is_home_bet:
+                        score_diff = home_score - away_score
+                        bet_score = home_score
+                        opp_score = away_score
+                        opp_team = self.away_team
+                    else:
+                        score_diff = away_score - home_score
+                        bet_score = away_score
+                        opp_score = home_score
+                        opp_team = self.home_team
             else:
-                score_diff = away_score - home_score
-                bet_score = away_score
-                opp_score = home_score
-                opp_team = self.home_team
+                # For spread and total_points, use the original logic
+                bet_team = self.player_name or self.player_team or ''
+                is_home_bet = self.is_home_game
+                
+                # Calculate score differential from bet team's perspective
+                if is_home_bet:
+                    score_diff = home_score - away_score
+                    bet_score = home_score
+                    opp_score = away_score
+                    opp_team = self.away_team
+                else:
+                    score_diff = away_score - home_score
+                    bet_score = away_score
+                    opp_score = home_score
+                    opp_team = self.home_team
             
             # Progress display: "BET_TEAM SCORE - OPP_SCORE OPP_TEAM"
             progress_display = f"{bet_team} {bet_score} - {opp_score} {opp_team}"
