@@ -309,6 +309,39 @@
         font-size: 1.3em;
       }
     }
+
+    /* Autocomplete styles */
+    .autocomplete-items {
+      position: absolute;
+      border: 1px solid #ddd;
+      border-bottom: none;
+      border-top: none;
+      z-index: 99;
+      top: 100%;
+      left: 0;
+      right: 0;
+      background: #252525;
+      max-height: 200px;
+      overflow-y: auto;
+      border-radius: 0 0 8px 8px;
+    }
+
+    .autocomplete-items div {
+      padding: 10px;
+      cursor: pointer;
+      background-color: #252525;
+      border-bottom: 1px solid #333;
+      color: #e0e0e0;
+    }
+
+    .autocomplete-items div:hover {
+      background-color: #333;
+    }
+
+    .autocomplete-active {
+      background-color: #140d52 !important;
+      color: #fff !important;
+    }
   </style>
 </head>
 <body>
@@ -493,8 +526,85 @@
     let selectedSecondaryBettors = [];
     let allUsers = [];
 
+    // Static data for autofill
+    const autofillData = {
+      teams: {
+        NFL: [
+          "Arizona Cardinals", "Atlanta Falcons", "Baltimore Ravens", "Buffalo Bills",
+          "Carolina Panthers", "Chicago Bears", "Cincinnati Bengals", "Cleveland Browns",
+          "Dallas Cowboys", "Denver Broncos", "Detroit Lions", "Green Bay Packers",
+          "Houston Texans", "Indianapolis Colts", "Jacksonville Jaguars", "Kansas City Chiefs",
+          "Las Vegas Raiders", "Los Angeles Chargers", "Los Angeles Rams", "Miami Dolphins",
+          "Minnesota Vikings", "New England Patriots", "New Orleans Saints", "New York Giants",
+          "New York Jets", "Philadelphia Eagles", "Pittsburgh Steelers", "San Francisco 49ers",
+          "Seattle Seahawks", "Tampa Bay Buccaneers", "Tennessee Titans", "Washington Commanders"
+        ],
+        NBA: [
+          "Atlanta Hawks", "Boston Celtics", "Brooklyn Nets", "Charlotte Hornets",
+          "Chicago Bulls", "Cleveland Cavaliers", "Dallas Mavericks", "Denver Nuggets",
+          "Detroit Pistons", "Golden State Warriors", "Houston Rockets", "Indiana Pacers",
+          "LA Clippers", "Los Angeles Lakers", "Memphis Grizzlies", "Miami Heat",
+          "Milwaukee Bucks", "Minnesota Timberwolves", "New Orleans Pelicans", "New York Knicks",
+          "Oklahoma City Thunder", "Orlando Magic", "Philadelphia 76ers", "Phoenix Suns",
+          "Portland Trail Blazers", "Sacramento Kings", "San Antonio Spurs", "Toronto Raptors",
+          "Utah Jazz", "Washington Wizards"
+        ],
+        MLB: [
+          "Arizona Diamondbacks", "Atlanta Braves", "Baltimore Orioles", "Boston Red Sox",
+          "Chicago Cubs", "Chicago White Sox", "Cincinnati Reds", "Cleveland Guardians",
+          "Colorado Rockies", "Detroit Tigers", "Houston Astros", "Kansas City Royals",
+          "Los Angeles Angels", "Los Angeles Dodgers", "Miami Marlins", "Milwaukee Brewers",
+          "Minnesota Twins", "New York Mets", "New York Yankees", "Oakland Athletics",
+          "Philadelphia Phillies", "Pittsburgh Pirates", "San Diego Padres", "San Francisco Giants",
+          "Seattle Mariners", "St. Louis Cardinals", "Tampa Bay Rays", "Texas Rangers",
+          "Toronto Blue Jays", "Washington Nationals"
+        ],
+        NHL: [
+          "Anaheim Ducks", "Arizona Coyotes", "Boston Bruins", "Buffalo Sabres",
+          "Calgary Flames", "Carolina Hurricanes", "Chicago Blackhawks", "Colorado Avalanche",
+          "Columbus Blue Jackets", "Dallas Stars", "Detroit Red Wings", "Edmonton Oilers",
+          "Florida Panthers", "Los Angeles Kings", "Minnesota Wild", "Montreal Canadiens",
+          "Nashville Predators", "New Jersey Devils", "New York Islanders", "New York Rangers",
+          "Ottawa Senators", "Philadelphia Flyers", "Pittsburgh Penguins", "San Jose Sharks",
+          "Seattle Kraken", "St. Louis Blues", "Tampa Bay Lightning", "Toronto Maple Leafs",
+          "Vancouver Canucks", "Vegas Golden Knights", "Washington Capitals", "Winnipeg Jets"
+        ]
+      },
+      players: {
+        NFL: [
+          "Patrick Mahomes", "Josh Allen", "Lamar Jackson", "Joe Burrow", "Justin Herbert",
+          "Dak Prescott", "Jalen Hurts", "Deshaun Watson", "Matthew Stafford", "Tom Brady",
+          "Christian McCaffrey", "Austin Ekeler", "Derrick Henry", "Nick Chubb", "Saquon Barkley",
+          "Davante Adams", "Tyreek Hill", "Stefon Diggs", "DeAndre Hopkins", "Mike Evans",
+          "Travis Kelce", "George Kittle", "Mark Andrews", "Dallas Goedert", "T.J. Hockenson"
+        ],
+        NBA: [
+          "Stephen Curry", "LeBron James", "Kevin Durant", "Giannis Antetokounmpo", "Kawhi Leonard",
+          "Luka Dončić", "Nikola Jokić", "Joel Embiid", "James Harden", "Russell Westbrook",
+          "Kyrie Irving", "Damian Lillard", "Ja Morant", "Zion Williamson", "Victor Wembanyama",
+          "Anthony Davis", "Donovan Mitchell", "Devin Booker", "Jayson Tatum", "Jaylen Brown"
+        ]
+      }
+    };
+
+    // SGP state management
+    let sgpHomeTeam = '';
+    let sgpAwayTeam = '';
+
     // Set today's date as default
     document.getElementById('bet-date').valueAsDate = new Date();
+
+    // Handle bet type changes for SGP logic
+    document.getElementById('bet-type').addEventListener('change', function() {
+      const betType = this.value;
+      const isSGP = betType === 'SGP';
+      
+      // Update all existing legs
+      const legCards = document.querySelectorAll('.leg-card');
+      legCards.forEach((legCard, index) => {
+        updateLegForSGP(legCard, index, isSGP);
+      });
+    });
 
     // Auto-calculation functions
     function calculatePayoutFromOdds(wager, odds) {
@@ -665,11 +775,46 @@
     fetchAllUsers();
     renderSelectedBettors();
 
+    function updateLegForSGP(legCard, legIndex, isSGP) {
+      const awayInput = legCard.querySelector('.leg-away');
+      const homeInput = legCard.querySelector('.leg-home');
+      
+      if (isSGP && legIndex > 0) { // Legs after the first one
+        // Auto-populate from first leg's values
+        awayInput.value = sgpAwayTeam;
+        homeInput.value = sgpHomeTeam;
+        
+        // Disable the inputs for legs 2+
+        awayInput.disabled = true;
+        homeInput.disabled = true;
+        
+        // Add visual indicator
+        awayInput.style.backgroundColor = '#333';
+        homeInput.style.backgroundColor = '#333';
+        awayInput.style.color = '#888';
+        homeInput.style.color = '#888';
+      } else {
+        // Enable inputs for first leg or non-SGP bets
+        awayInput.disabled = false;
+        homeInput.disabled = false;
+        
+        // Reset styling
+        awayInput.style.backgroundColor = '';
+        homeInput.style.backgroundColor = '';
+        awayInput.style.color = '';
+        homeInput.style.color = '';
+      }
+    }
+
     function addLeg() {
       legCount++;
       const legCard = document.createElement('div');
       legCard.className = 'leg-card';
       legCard.id = `leg-${legCount}`;
+      
+      const betType = document.getElementById('bet-type').value;
+      const isSGP = betType === 'SGP';
+      const isFirstLeg = legCount === 1;
       
       legCard.innerHTML = `
         <h3>
@@ -705,19 +850,19 @@
 
           <div class="form-group leg-player-group">
             <label class="leg-player-label">Player/Team Name <span class="required">*</span></label>
-            <input type="text" class="leg-player" placeholder="e.g., Patrick Mahomes" required>
+            <input type="text" class="leg-player" placeholder="e.g., Patrick Mahomes" required autocomplete="off" data-autofill="player">
           </div>
         </div>
 
         <div class="form-row">
           <div class="form-group">
             <label>Away Team <span class="required">*</span></label>
-            <input type="text" class="leg-away" placeholder="e.g., Kansas City Chiefs" required>
+            <input type="text" class="leg-away" placeholder="e.g., Kansas City Chiefs" required autocomplete="off" data-autofill="team" ${isSGP && !isFirstLeg ? 'disabled' : ''}>
           </div>
 
           <div class="form-group">
             <label>Home Team <span class="required">*</span></label>
-            <input type="text" class="leg-home" placeholder="e.g., Tampa Bay Buccaneers" required>
+            <input type="text" class="leg-home" placeholder="e.g., Tampa Bay Buccaneers" required autocomplete="off" data-autofill="team" ${isSGP && !isFirstLeg ? 'disabled' : ''}>
           </div>
         </div>
 
@@ -749,13 +894,161 @@
       // Set today's date as default
       const today = new Date().toISOString().split('T')[0];
       legCard.querySelector('.leg-date').value = today;
+      
+      // Apply SGP styling if needed
+      if (isSGP && !isFirstLeg) {
+        updateLegForSGP(legCard, legCount - 1, true);
+      }
+      
+      // Add autofill functionality
+      setupAutofill(legCard);
+      
+      // Add SGP listeners for first leg
+      if (isSGP && isFirstLeg) {
+        const awayInput = legCard.querySelector('.leg-away');
+        const homeInput = legCard.querySelector('.leg-home');
+        
+        awayInput.addEventListener('input', updateSGPTeams);
+        homeInput.addEventListener('input', updateSGPTeams);
+      }
     }
 
-    function removeLeg(legId) {
-      const leg = document.getElementById(`leg-${legId}`);
-      if (leg) {
-        leg.remove();
+    function updateSGPTeams() {
+      // Update SGP team values from first leg
+      const firstLeg = document.getElementById('leg-1');
+      if (firstLeg) {
+        const awayInput = firstLeg.querySelector('.leg-away');
+        const homeInput = firstLeg.querySelector('.leg-home');
+        
+        sgpAwayTeam = awayInput.value;
+        sgpHomeTeam = homeInput.value;
+        
+        // Update all other legs
+        const betType = document.getElementById('bet-type').value;
+        if (betType === 'SGP') {
+          const legCards = document.querySelectorAll('.leg-card');
+          legCards.forEach((legCard, index) => {
+            if (index > 0) { // Skip first leg
+              const legAwayInput = legCard.querySelector('.leg-away');
+              const legHomeInput = legCard.querySelector('.leg-home');
+              
+              legAwayInput.value = sgpAwayTeam;
+              legHomeInput.value = sgpHomeTeam;
+            }
+          });
+        }
       }
+    }
+
+    function setupAutofill(legCard) {
+      // Setup autofill for player/team inputs
+      const inputs = legCard.querySelectorAll('input[data-autofill]');
+      
+      inputs.forEach(input => {
+        const autofillType = input.getAttribute('data-autofill');
+        let suggestions = [];
+        
+        // Get sport from the leg
+        const sportSelect = legCard.querySelector('.leg-sport');
+        
+        function updateSuggestions() {
+          const sport = sportSelect.value;
+          if (autofillType === 'player') {
+            suggestions = autofillData.players[sport] || [];
+          } else if (autofillType === 'team') {
+            suggestions = autofillData.teams[sport] || [];
+          }
+        }
+        
+        // Update suggestions when sport changes
+        sportSelect.addEventListener('change', updateSuggestions);
+        updateSuggestions(); // Initial update
+        
+        let currentFocus = -1;
+        
+        input.addEventListener('input', function() {
+          const value = this.value.toLowerCase();
+          closeAllLists();
+          
+          if (!value) return;
+          
+          currentFocus = -1;
+          
+          // Create a DIV element that will contain the items
+          const listContainer = document.createElement('div');
+          listContainer.setAttribute('id', this.id + '-autocomplete-list');
+          listContainer.setAttribute('class', 'autocomplete-items');
+          
+          this.parentNode.appendChild(listContainer);
+          
+          // Filter suggestions
+          const filtered = suggestions.filter(item => 
+            item.toLowerCase().includes(value)
+          ).slice(0, 5); // Limit to 5 suggestions
+          
+          filtered.forEach((suggestion, index) => {
+            const item = document.createElement('div');
+            item.innerHTML = suggestion;
+            
+            item.addEventListener('click', function() {
+              input.value = suggestion;
+              closeAllLists();
+              
+              // For SGP, update team values if this is a team input on first leg
+              if (autofillType === 'team') {
+                updateSGPTeams();
+              }
+            });
+            
+            listContainer.appendChild(item);
+          });
+        });
+        
+        input.addEventListener('keydown', function(e) {
+          let list = document.getElementById(this.id + '-autocomplete-list');
+          if (list) list = list.getElementsByTagName('div');
+          
+          if (e.keyCode === 40) { // Down arrow
+            currentFocus++;
+            addActive(list);
+          } else if (e.keyCode === 38) { // Up arrow
+            currentFocus--;
+            addActive(list);
+          } else if (e.keyCode === 13) { // Enter
+            e.preventDefault();
+            if (currentFocus > -1 && list) {
+              list[currentFocus].click();
+            }
+          }
+        });
+        
+        function addActive(list) {
+          if (!list) return;
+          removeActive(list);
+          if (currentFocus >= list.length) currentFocus = 0;
+          if (currentFocus < 0) currentFocus = list.length - 1;
+          list[currentFocus].classList.add('autocomplete-active');
+        }
+        
+        function removeActive(list) {
+          for (let i = 0; i < list.length; i++) {
+            list[i].classList.remove('autocomplete-active');
+          }
+        }
+        
+        function closeAllLists(element) {
+          const items = document.getElementsByClassName('autocomplete-items');
+          for (let i = 0; i < items.length; i++) {
+            if (element !== items[i] && element !== input) {
+              items[i].parentNode.removeChild(items[i]);
+            }
+          }
+        }
+        
+        document.addEventListener('click', function(e) {
+          closeAllLists(e.target);
+        });
+      });
     }
 
     function updateStatOptions(legId) {
