@@ -49,12 +49,12 @@ def index():
 # Explicitly serve service worker for PWA functionality
 @app.route('/service-worker.js')
 def service_worker():
-    return app.send_static_file('service-worker.js', mimetype='application/javascript')
+    return app.send_static_file('service-worker.js')
 
 # Serve manifest.json for PWA
 @app.route('/manifest.json')
 def manifest():
-    return app.send_static_file('manifest.json', mimetype='application/manifest+json')
+    return app.send_static_file('manifest.json')
 
 from routes.admin import admin_bp
 from routes.auth import auth_bp

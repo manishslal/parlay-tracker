@@ -55,8 +55,13 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // API requests - Network first, cache fallback
-  if (url.pathname.includes('/api/') || url.pathname.includes('/admin/')) {
+  // Skip chrome-extension requests
+  if (url.protocol === 'chrome-extension:') {
+    return;
+  }
+
+    // API and auth requests - Network first, cache fallback
+  if (url.pathname.includes('/api/') || url.pathname.includes('/admin/') || url.pathname.includes('/auth/')) {
     event.respondWith(
       fetch(request)
         .then((response) => {
@@ -64,12 +69,12 @@ self.addEventListener('fetch', (event) => {
           const responseClone = response.clone();
           
           // Cache successful responses
-          if (response.status === 200) {
+          if (response.status === 200 && request.url.startsWith('http') && url.origin === self.location.origin) {
             caches.open(DYNAMIC_CACHE)
               .then((cache) => {
                 cache.put(request, responseClone);
               });
-          }
+            }
           
           return response;
         })
@@ -89,7 +94,7 @@ self.addEventListener('fetch', (event) => {
           // Return cached version and update in background
           fetch(request)
             .then((response) => {
-              if (response.status === 200) {
+              if (response.status === 200 && request.url.startsWith('http') && url.origin === self.location.origin) {
                 caches.open(STATIC_CACHE)
                   .then((cache) => {
                     cache.put(request, response);
@@ -108,7 +113,7 @@ self.addEventListener('fetch', (event) => {
             const responseClone = response.clone();
             
             // Cache successful responses
-            if (response.status === 200) {
+            if (response.status === 200 && request.url.startsWith('http') && url.origin === self.location.origin) {
               caches.open(DYNAMIC_CACHE)
                 .then((cache) => {
                   cache.put(request, responseClone);

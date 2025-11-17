@@ -31,6 +31,14 @@
   <!-- App Version for Cache Busting -->
   <meta name="app-version" content="2.0.0">
   
+  <!-- DataTables CSS -->
+  <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/dataTables.tailwindcss.min.css">
+  
+  <!-- jQuery and DataTables JavaScript -->
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+  <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+  <script src="https://cdn.datatables.net/1.13.7/js/dataTables.tailwindcss.min.js"></script>
+  
   <style>
     :root {
       /* Dark mode colors (default) */
@@ -836,7 +844,7 @@
       background:linear-gradient(135deg, var(--primary) 0%, rgba(20, 13, 82, 0.7) 100%);
       color:#fff;
       margin:-1.5rem -1.5rem 1.125rem -1.5rem;padding:1rem 1.5rem;
-      border-radius:10px 10px 0 0;display:flex; flex-wrap: wrap;
+      border-radius:12px 12px 0 0;display:flex; flex-wrap: wrap;
       justify-content:space-between;align-items:flex-start;font-weight:bold;
       position:relative;
       cursor: pointer;
@@ -852,7 +860,7 @@
       background:linear-gradient(135deg, var(--primary) 0%, rgba(20, 13, 82, 0.7) 100%);
       color:#fff;
       margin:1.125rem -1.5rem -1.125rem -1.5rem;padding:0.375rem 1.5rem;
-      border-radius:0 0 10px 10px;display:flex;
+      border-radius:0 0 12px 12px;display:flex;
       justify-content:space-between;align-items:center;
       font-size:0.75rem;min-height:1.5rem;
       position: relative;
@@ -1020,7 +1028,7 @@
       position: relative;
       z-index: 1;
     }
-    table{width:100%;border-collapse:separate;border-spacing:0;}
+    table{width:100%;border-collapse:separate;border-spacing:0;border-radius:12px;overflow:hidden;}
     /* Reduce vertical padding significantly for tighter rows (0.375rem -> 0.25rem) */
     th,td{padding:0.25rem 0.375rem;border-bottom:1px solid var(--border);
       vertical-align:middle;text-align:left;}
@@ -1028,8 +1036,8 @@
     th:nth-child(1){padding-left:0.75rem !important;}
     td:nth-child(1){padding-left:0.75rem !important;}
     td { background: var(--surface); }
-    th:first-child { border-top-left-radius: 10px; }
-    th:last-child { border-top-right-radius: 10px; }
+    th:first-child { border-top-left-radius: 12px !important; }
+    th:last-child { border-top-right-radius: 12px !important; }
     /* Desktop body: Player column (3) - left aligned */
     td:nth-child(3){text-align:left !important;}
     /* Desktop body: Bet Type, Current, Target, Progress columns (4-7) - centered */
@@ -1041,8 +1049,8 @@
     thead th:nth-child(2),thead th:nth-child(3),thead th:nth-child(4),thead th:nth-child(5),thead th:nth-child(6){text-align:center !important;}
     tbody tr:last-child td { border-bottom: none; }
     /* Round table corners to match footer underneath */
-    tbody tr:last-child td:first-child { border-bottom-left-radius: 10px; }
-    tbody tr:last-child td:last-child { border-bottom-right-radius: 10px; }
+    tbody tr:last-child td:first-child { border-bottom-left-radius: 12px !important; }
+    tbody tr:last-child td:last-child { border-bottom-right-radius: 12px !important; }
     th{background:#2a2a2a;color:#fff;}
     
     /* Ensure table headers are white in light mode */
@@ -2790,13 +2798,22 @@ async function logoutToken() {
         });
     }
 
-    // Prefetch historical data in the background so it appears instantly on switch
-    (async function prefetchHistorical(){
-      try{
-        const r = await fetchWithAdminToken(histUrl);
-        if(r.ok){ cachedHistorical = await r.json(); console.log('Prefetched historical:', cachedHistorical); }
-      }catch(e){ console.warn('Prefetch historical failed', e); }
-    })();
+    // Prefetch historical data in the background AFTER main content loads
+    function prefetchHistorical(){
+      setTimeout(async () => {
+        try{
+          const r = await fetchWithAdminToken(histUrl);
+          if(r.ok){ cachedHistorical = await r.json(); console.log('Prefetched historical:', cachedHistorical); }
+        }catch(e){ console.warn('Prefetch historical failed', e); }
+      }, 2000); // Wait 2 seconds after page load before prefetching
+    }
+
+    // Start prefetching after initial page load
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', prefetchHistorical);
+    } else {
+      prefetchHistorical();
+    }
 
     function fmtType(stat, stat_add = null){
       const m={'passing_yards':'Pass Yds','passing_yards_alt':'Alt Pass Yds','receiving_yards':'Rec Yds','receiving_yards_alt':'Alt Rec Yds','rushing_yards':'Rush Yds','rushing_yards_alt':'Alt Rush Yds','rushing_receiving_yards':'Rush + Rec Yds','passing_rushing_yards':'Pass + Rush Yds','anytime_touchdown':'Anytime TD','anytime_td_scorer':'Anytime TD','passing_touchdowns':'Pass TDs','rushing_touchdowns':'Rush TDs','receptions':'Receptions','receptions_alt':'Alt Receptions','longest_reception':'Longest Rec','moneyline':'Moneyline','spread':'Spread','total_points':'Total Points','total_points_under':'Total Points Under','total_points_over':'Total Points Over','interceptions_thrown':'INTs Thrown'};
@@ -3687,6 +3704,8 @@ async function logoutToken() {
         const table=document.createElement('table');
         table.innerHTML=`
           <thead><tr>
+            <th style="display:none;"></th>
+            <th style="display:none;"></th>
             <th>Player</th><th>Bet Type</th><th>Current</th>
             <th>Target</th><th style="width:25%;">Progress</th><th>Status</th>
           </tr></thead>
@@ -4349,6 +4368,9 @@ async function logoutToken() {
       
       // Update tab count
       updateTabCount(container, sortedParlays.length);
+      
+      // Initialize DataTables on newly rendered tables
+      setTimeout(initializeDataTables, 100); // Small delay to ensure DOM is updated
     }
     
     // Update tab label with bet count
@@ -4946,6 +4968,45 @@ async function logoutToken() {
         }
       });
     }
+    
+    // Initialize DataTables on bet tables with custom options
+    function initializeDataTables() {
+      // Destroy existing DataTables first
+      $('table').each(function() {
+        const $table = $(this);
+        if ($.fn.DataTable.isDataTable($table)) {
+          $table.DataTable().destroy();
+        }
+      });
+      
+      // Initialize DataTables on all bet tables
+      $('table').each(function() {
+        const $table = $(this);
+        
+        // Initialize DataTable with options that preserve existing functionality
+        $table.DataTable({
+          paging: false,        // Keep all rows visible (preserve existing behavior)
+          searching: false,     // Disable search functionality (we have global search)
+          ordering: true,       // Enable column sorting
+          info: false,          // Hide "Showing X of Y entries" info
+          responsive: false,    // Disable DataTables responsive (we handle it with CSS)
+          autoWidth: false,     // Prevent auto width calculation that might break custom styling
+          columnDefs: [
+            { targets: [0, 1], orderable: false, searchable: false }, // Mobile columns (hidden by CSS)
+            { targets: [6], orderable: false, searchable: false }, // Progress column (no sorting)
+            { targets: [7], orderable: false, searchable: false }  // Status column (no sorting)
+          ],
+          initComplete: function() {
+            // DataTables styling removed since search is disabled
+          }
+        });
+      });
+    }
+    
+    // Initialize DataTables when document is ready
+    $(document).ready(function() {
+      initializeDataTables();
+    });
   </script>
 </body>
 </html>

@@ -8,7 +8,7 @@ auth_bp = Blueprint('auth', __name__, url_prefix='/auth')
 # Authentication Endpoints
 # ==========================================================================
 
-@auth_bp.route('/auth/register', methods=['POST'])
+@auth_bp.route('/register', methods=['POST'])
 @login_required
 def register() -> object:
 	"""Register a new user (admin only)"""
@@ -55,7 +55,7 @@ def login() -> object:
 	response.headers['Expires'] = '0'
 	return response, 200
 
-@auth_bp.route('/auth/logout', methods=['POST'])
+@auth_bp.route('/logout', methods=['POST'])
 @login_required
 def logout() -> object:
 	"""Logout current user"""
