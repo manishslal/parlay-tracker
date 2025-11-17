@@ -294,8 +294,25 @@ def archive_bet(bet_id: int) -> Any:
 @login_required
 def get_archived_bets() -> Any:
 	try:
-		# ...existing code...
-		return jsonify({})
+		bets = get_user_bets_query(current_user, is_archived=True).options(db.joinedload(Bet.bet_legs_rel)).all()
+		archived_parlays = []
+		for bet in bets:
+			parlay = bet.get_bet_data()
+			# Add database metadata
+			parlay['db_id'] = bet.id
+			parlay['user_id'] = bet.user_id
+			parlay['betting_site_id'] = bet.betting_site_id
+			parlay['bet_type'] = bet.bet_type
+			parlay['betting_site'] = bet.betting_site
+			parlay['status'] = bet.status
+			parlay['is_active'] = bet.is_active
+			parlay['is_archived'] = bet.is_archived
+			parlay['api_fetched'] = bet.api_fetched
+			parlay['created_at'] = bet.created_at
+			parlay['updated_at'] = bet.updated_at
+			parlay['bet_date'] = bet.bet_date
+			archived_parlays.append(parlay)
+		return jsonify({"archived": archived_parlays})
 	except Exception as e:
 		return jsonify({"error": str(e)}), 500
 
@@ -376,6 +393,7 @@ def historical():
 			# Add database metadata
 			parlay['db_id'] = bet.id
 			parlay['user_id'] = bet.user_id
+			parlay['betting_site_id'] = bet.betting_site_id
 			parlay['bet_type'] = bet.bet_type
 			parlay['betting_site'] = bet.betting_site
 			parlay['status'] = bet.status
