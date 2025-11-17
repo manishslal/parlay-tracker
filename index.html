@@ -2067,9 +2067,9 @@
                  (!parlay.legs || (Array.isArray(parlay.legs) && parlay.legs.every(leg => leg && typeof leg === 'object')));
         });
 
-        // Limit cache size to prevent QuotaExceededError
-        // Keep only the most recent 500 bets to stay within localStorage limits
-        const MAX_CACHE_SIZE = 500;
+        // Aggressive cache size limit to prevent QuotaExceededError
+        // Keep only the most recent 50 bets to ensure it fits in localStorage
+        const MAX_CACHE_SIZE = 50;
         let cacheDataToSave = validData;
         if (validData.length > MAX_CACHE_SIZE) {
           // Sort by most recent first (assuming higher db_id = more recent)
@@ -2086,7 +2086,7 @@
           data: cacheDataToSave
         };
 
-        // Try to save, but handle quota exceeded gracefully
+        // Try to save with very small cache size
         try {
           localStorage.setItem(HISTORICAL_CACHE_KEY, JSON.stringify(cacheData));
           localStorage.setItem(HISTORICAL_CACHE_META_KEY, JSON.stringify({
@@ -2097,38 +2097,18 @@
           console.log('✅ Historical cache saved:', cacheData.betCount, 'bets cached');
         } catch (storageError) {
           if (storageError.name === 'QuotaExceededError') {
-            // If still too big, reduce further
-            console.warn('⚠️ Cache still too large, reducing to 200 bets');
-            const reducedData = cacheDataToSave.slice(0, 200);
-            const reducedCacheData = {
-              ...cacheData,
-              betCount: reducedData.length,
-              data: reducedData
-            };
-
-            try {
-              localStorage.setItem(HISTORICAL_CACHE_KEY, JSON.stringify(reducedCacheData));
-              localStorage.setItem(HISTORICAL_CACHE_META_KEY, JSON.stringify({
-                timestamp: reducedCacheData.timestamp,
-                betCount: reducedCacheData.betCount,
-                totalAvailable: cacheData.totalAvailable
-              }));
-              console.log('✅ Reduced historical cache saved:', reducedCacheData.betCount, 'bets cached');
-            } catch (finalError) {
-              console.warn('❌ Unable to save cache even after reduction:', finalError);
-              // Clear cache entirely as last resort
-              clearHistoricalCache();
-            }
+            console.warn('⚠️ Cache quota exceeded even with', MAX_CACHE_SIZE, 'bets, disabling cache');
+            // Disable caching entirely by clearing and not saving
+            clearHistoricalCache();
+            console.log('🛑 Historical caching disabled due to storage quota');
           } else {
-            throw storageError;
+            console.warn('Failed to save historical cache:', storageError);
           }
         }
       } catch (e) {
         console.warn('Failed to save historical cache:', e);
       }
-    }
-    
-    function loadHistoricalCache() {
+    }    function loadHistoricalCache() {
       try {
         const cached = localStorage.getItem(HISTORICAL_CACHE_KEY);
         if (!cached) return null;
@@ -2164,9 +2144,45 @@
     }
     
     function clearHistoricalCache() {
-      localStorage.removeItem(HISTORICAL_CACHE_KEY);
-      localStorage.removeItem(HISTORICAL_CACHE_META_KEY);
-      console.log('🗑️ Historical cache cleared');
+      try {
+        // Clear both cache keys
+        localStorage.removeItem(HISTORICAL_CACHE_KEY);
+        localStorage.removeItem(HISTORICAL_CACHE_META_KEY);
+
+        // Also clear any other potential cache keys that might exist
+        const keysToRemove = [];
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          if (key && (key.includes('historical') || key.includes('parlay_tracker_historical'))) {
+            keysToRemove.push(key);
+          }
+        }
+        keysToRemove.forEach(key => localStorage.removeItem(key));
+
+        // Clear service worker caches for historical API endpoints
+        if ('caches' in window) {
+          caches.keys().then(names => {
+            names.forEach(name => {
+              caches.open(name).then(cache => {
+                // Remove cached historical API responses
+                cache.keys().then(requests => {
+                  requests.forEach(request => {
+                    if (request.url.includes('/api/historical') ||
+                        request.url.includes('/api/archived')) {
+                      cache.delete(request);
+                      console.log('🗑️ Cleared service worker cache for:', request.url);
+                    }
+                  });
+                });
+              });
+            });
+          });
+        }
+
+        console.log('🗑️ Historical cache cleared completely (localStorage + service worker)');
+      } catch (e) {
+        console.warn('Failed to clear historical cache:', e);
+      }
     }
     
     function getHistoricalCacheMeta() {
@@ -2646,7 +2662,7 @@
           }
         } else {
           cacheInfo.style.display = 'block';
-          cacheInfo.textContent = `🔄 No cached data - will fetch from server`;
+          cacheInfo.textContent = `🔄 No cached data - fetching fresh from server`;
         }
       } else {
         clearCacheBtn.style.display = 'none';
@@ -3278,34 +3294,33 @@ async function logoutToken() {
             render(cachedData, histSec);
             msg.textContent=`Using cached data: ${new Date().toLocaleTimeString()}`;
           } else {
-            // No cache - fetch from server
+            // No cache - fetch from server with cache busting
+            const histUrl = `${API_BASE}/historical?t=${Date.now()}`;
             const historicalResponse = await fetchWithAdminToken(histUrl);
             if(!historicalResponse.ok) throw new Error(`Historical data error: ${historicalResponse.status}`);
             const historical = await historicalResponse.json();
-            
+
             // Save to both memory and localStorage cache
             cachedHistorical = historical;
             saveHistoricalCache(historical);
-            
+
             console.log('Historical parlays fetched and cached:', historical);
             render(historical, histSec);
             msg.textContent=`Last updated: ${new Date().toLocaleTimeString()}`;
           }
         } else if(activeTab === 'archived') {
-          // Fetch archived bets
-          const archivedUrl = `${API_BASE}/api/archived`;
+          // Fetch archived bets with cache busting
+          const archivedUrl = `${API_BASE}/api/archived?t=${Date.now()}`;
           const archivedResponse = await fetchWithAdminToken(archivedUrl);
           if(!archivedResponse.ok) throw new Error(`Archived data error: ${archivedResponse.status}`);
           const archivedData = await archivedResponse.json();
           const archivedBets = archivedData.archived || [];
-          
+
           console.log('Archived bets:', archivedBets);
           const archSec = document.getElementById('archived-sections');
           render(archivedBets, archSec);
           msg.textContent=`Last updated: ${new Date().toLocaleTimeString()}`;
-        }
-        
-        // Update cache display after rendering
+        }        // Update cache display after rendering
         updateCacheDisplay();
       }catch(e){
         console.error('Error during update:', e);
