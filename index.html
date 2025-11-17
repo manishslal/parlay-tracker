@@ -2629,10 +2629,12 @@
     function updateCacheDisplay() {
       const activeTab = document.querySelector('.tab.active').dataset.tab;
       if (activeTab === 'historical') {
+        // Always show clear cache button on historical tab - it's always a valid operation
+        clearCacheBtn.style.display = 'inline-block';
+
         const meta = getHistoricalCacheMeta();
         const hasCache = loadHistoricalCache() !== null;
         if (meta || hasCache) {
-          clearCacheBtn.style.display = 'inline-block';
           cacheInfo.style.display = 'block';
           if (meta) {
             const cacheText = meta.totalAvailable && meta.totalAvailable > meta.betCount
@@ -2643,8 +2645,8 @@
             cacheInfo.textContent = `📦 Cached data available`;
           }
         } else {
-          clearCacheBtn.style.display = 'none';
-          cacheInfo.style.display = 'none';
+          cacheInfo.style.display = 'block';
+          cacheInfo.textContent = `🔄 No cached data - will fetch from server`;
         }
       } else {
         clearCacheBtn.style.display = 'none';
