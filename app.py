@@ -45,6 +45,17 @@ app = Flask(__name__, static_folder='.', static_url_path='')
 @app.route('/')
 def index():
     return app.send_static_file('index.html')
+
+# Explicitly serve service worker for PWA functionality
+@app.route('/service-worker.js')
+def service_worker():
+    return app.send_static_file('service-worker.js', mimetype='application/javascript')
+
+# Serve manifest.json for PWA
+@app.route('/manifest.json')
+def manifest():
+    return app.send_static_file('manifest.json', mimetype='application/manifest+json')
+
 from routes.admin import admin_bp
 from routes.auth import auth_bp
 from routes import bets_bp
