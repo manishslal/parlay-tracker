@@ -29,7 +29,7 @@ load_dotenv()
 
 # Import database models
 from models import db, User, Bet, BetLeg, Player
-from helpers.database import run_migrations_once, has_complete_final_data, save_final_results_to_bet, auto_move_completed_bets
+from helpers.database import run_migrations_once, has_complete_final_data, save_final_results_to_bet, auto_move_completed_bets, auto_move_bets_no_live_legs
 from helpers.enhanced_player_search import enhanced_player_search
 
 from helpers.utils import data_path, DATA_DIR
@@ -2264,6 +2264,13 @@ scheduler.add_job(
     trigger=IntervalTrigger(hours=24),
     id='team_name_standardization',
     name='Standardize team names in bet_legs to use team_name_short daily'
+)
+
+scheduler.add_job(
+    func=auto_move_bets_no_live_legs,
+    trigger=IntervalTrigger(minutes=5),
+    id='auto_move_no_live_legs',
+    name='Move bets with no live legs to historical every 5 minutes'
 )
 
 if __name__ == '__main__':

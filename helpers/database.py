@@ -204,3 +204,62 @@ def auto_move_completed_bets(user_id):
     except Exception as e:
         logging.error(f"Error in auto_move_completed_bets: {e}")
         db.session.rollback()
+
+def auto_move_bets_no_live_legs():
+    """Automatically move bets to historical when no legs have games in progress.
+    
+    This checks all live bets and moves them to historical if none of their legs
+    have games that are currently in progress (game_status != 'in_progress').
+    
+    This is different from auto_move_completed_bets which waits for games to be final.
+    This moves bets as soon as their games are over, even if not yet STATUS_FINAL.
+    """
+    try:
+        import logging
+        logging.info("[AUTO-MOVE-NO-LIVE] Checking for bets with no live legs")
+        
+        from models import Bet, BetLeg
+        
+        # Get all live bets
+        live_bets = Bet.query.filter_by(status='live', is_active=True).all()
+        
+        if not live_bets:
+            logging.info("[AUTO-MOVE-NO-LIVE] No live bets found")
+            return
+        
+        logging.info(f"[AUTO-MOVE-NO-LIVE] Checking {len(live_bets)} live bets")
+        
+        updated_count = 0
+        
+        for bet in live_bets:
+            # Get bet legs from database
+            bet_legs = BetLeg.query.filter(BetLeg.bet_id == bet.id).all()
+            
+            if not bet_legs:
+                continue
+            
+            # Check if any leg has a game currently in progress
+            has_live_game = False
+            for leg in bet_legs:
+                if leg.game_status == 'in_progress':
+                    has_live_game = True
+                    break
+            
+            # If no legs have live games, move to historical
+            if not has_live_game:
+                logging.info(f"[AUTO-MOVE-NO-LIVE] Bet {bet.id} has no live games - moving to historical")
+                bet.is_active = False  # Move to historical
+                bet.status = 'completed'  # Mark as completed
+                bet.api_fetched = 'Yes'  # Stop fetching
+                updated_count += 1
+        
+        # Commit all changes
+        if updated_count > 0:
+            db.session.commit()
+            logging.info(f"[AUTO-MOVE-NO-LIVE] Moved {updated_count} bets to historical")
+        else:
+            logging.info("[AUTO-MOVE-NO-LIVE] No bets needed moving")
+            
+    except Exception as e:
+        logging.error(f"[AUTO-MOVE-NO-LIVE] Error: {e}")
+        db.session.rollback()
