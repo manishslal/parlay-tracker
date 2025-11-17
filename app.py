@@ -2146,6 +2146,82 @@ def update_live_bet_legs():
             app.logger.error(f"[LIVE-UPDATE] Error in update_live_bet_legs: {e}")
             db.session.rollback()
 
+def standardize_bet_leg_team_names():
+    """Background job to standardize team names in bet_legs to use team_name_short from teams table.
+    
+    This runs periodically to ensure all bet_legs have consistent team names that match
+    the standardized team_name_short values from the teams table.
+    """
+    with app.app_context():
+        try:
+            app.logger.info("[TEAM-STANDARDIZE] Starting team name standardization check...")
+            
+            from models import Team
+            from migrate_standardize_team_names import find_team_name_short
+            
+            # Get all teams for mapping
+            teams = Team.query.all()
+            
+            # Create mapping dictionaries
+            name_to_short = {}
+            abbr_to_short = {}
+            
+            for team in teams:
+                if team.team_name:
+                    name_to_short[team.team_name.lower()] = team.team_name_short
+                if team.team_name_short:
+                    name_to_short[team.team_name_short.lower()] = team.team_name_short
+                if team.team_abbr:
+                    abbr_to_short[team.team_abbr.lower()] = team.team_name_short
+            
+            # Get all bet legs
+            bet_legs = BetLeg.query.all()
+            updated_count = 0
+            
+            for leg in bet_legs:
+                original_player_team = leg.player_team
+                original_home_team = leg.home_team
+                original_away_team = leg.away_team
+                
+                # Update player_team if it exists
+                if leg.player_team:
+                    new_player_team = find_team_name_short(leg.player_team, name_to_short, abbr_to_short)
+                    if new_player_team and new_player_team != leg.player_team:
+                        leg.player_team = new_player_team
+                
+                # Update home_team
+                if leg.home_team:
+                    new_home_team = find_team_name_short(leg.home_team, name_to_short, abbr_to_short)
+                    if new_home_team and new_home_team != leg.home_team:
+                        leg.home_team = new_home_team
+                
+                # Update away_team
+                if leg.away_team:
+                    new_away_team = find_team_name_short(leg.away_team, name_to_short, abbr_to_short)
+                    if new_away_team and new_away_team != leg.away_team:
+                        leg.away_team = new_away_team
+                
+                # Check if any updates were made
+                if (leg.player_team != original_player_team or
+                    leg.home_team != original_home_team or
+                    leg.away_team != original_away_team):
+                    
+                    try:
+                        db.session.commit()
+                        updated_count += 1
+                    except Exception as e:
+                        db.session.rollback()
+                        app.logger.error(f"[TEAM-STANDARDIZE] Error updating bet_leg {leg.id}: {e}")
+            
+            if updated_count > 0:
+                app.logger.info(f"[TEAM-STANDARDIZE] ✓ Standardized team names for {updated_count} bet legs")
+            else:
+                app.logger.info("[TEAM-STANDARDIZE] No bet legs needed team name standardization")
+                
+        except Exception as e:
+            app.logger.error(f"[TEAM-STANDARDIZE] Error in standardize_bet_leg_team_names: {e}")
+            db.session.rollback()
+
 # Schedule automated tasks
 scheduler.add_job(
     func=update_completed_bet_legs,
@@ -2159,6 +2235,13 @@ scheduler.add_job(
     trigger=IntervalTrigger(minutes=1),
     id='live_bet_updates',
     name='Update live bet legs with real-time data every minute'
+)
+
+scheduler.add_job(
+    func=standardize_bet_leg_team_names,
+    trigger=IntervalTrigger(hours=24),
+    id='team_name_standardization',
+    name='Standardize team names in bet_legs to use team_name_short daily'
 )
 
 if __name__ == '__main__':
