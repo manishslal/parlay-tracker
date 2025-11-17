@@ -3,7 +3,7 @@ from typing import Any
 from flask_login import login_required, current_user
 from models import db, Bet
 from services import get_user_bets_query, process_parlay_data, sort_parlays_by_date
-from helpers.database import has_complete_final_data, save_final_results_to_bet, auto_move_completed_bets, auto_move_bets_no_live_legs
+from helpers.database import has_complete_final_data, save_final_results_to_bet, auto_move_completed_bets, auto_move_bets_no_live_legs, auto_determine_leg_hit_status
 from app import app
 from functools import wraps
 import logging
@@ -364,6 +364,7 @@ def live():
 def todays():
 	auto_move_completed_bets(current_user.id)
 	auto_move_bets_no_live_legs()  # Also move bets with no live legs
+	auto_determine_leg_hit_status()  # Determine hit/miss status for legs
 	bets = get_user_bets_query(current_user, is_active=True, is_archived=False, status='pending').options(db.joinedload(Bet.bet_legs_rel)).all()
 	todays_parlays = [bet.to_dict_structured(use_live_data=True) for bet in bets]
 	processed = process_parlay_data(todays_parlays)
@@ -375,6 +376,7 @@ def todays():
 def historical():
 	try:
 		app.logger.info(f"[HISTORICAL] Starting historical bets request for user {current_user.id}")
+		auto_determine_leg_hit_status()  # Ensure hit/miss status is determined
 		bets = get_user_bets_query(current_user, is_active=False, is_archived=False).options(db.joinedload(Bet.bet_legs_rel)).all()
 		app.logger.info(f"[HISTORICAL] Found {len(bets)} historical bets")
 		

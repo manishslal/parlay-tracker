@@ -263,3 +263,73 @@ def auto_move_bets_no_live_legs():
     except Exception as e:
         logging.error(f"[AUTO-MOVE-NO-LIVE] Error: {e}")
         db.session.rollback()
+
+def auto_determine_leg_hit_status():
+    """Automatically determine and set is_hit status for bet legs that have achieved_value but no is_hit.
+    
+    This processes all bet legs where:
+    - achieved_value is not None (game data exists)
+    - is_hit is None (hit/miss status not determined)
+    
+    Determines hit/miss based on bet type and compares achieved_value vs target_value.
+    """
+    try:
+        import logging
+        logging.info("[AUTO-HIT-STATUS] Checking for legs needing hit status determination")
+        
+        from models import BetLeg
+        
+        # Find all legs with achieved_value but no is_hit status
+        legs_needing_status = BetLeg.query.filter(
+            BetLeg.achieved_value.isnot(None),
+            BetLeg.is_hit.is_(None)
+        ).all()
+        
+        if not legs_needing_status:
+            logging.info("[AUTO-HIT-STATUS] No legs need hit status determination")
+            return
+        
+        logging.info(f"[AUTO-HIT-STATUS] Processing {len(legs_needing_status)} legs")
+        
+        updated_count = 0
+        
+        for leg in legs_needing_status:
+            # Determine if the bet was hit based on bet type
+            is_hit = False
+            stat_type = leg.bet_type.lower() if leg.bet_type else ''
+            
+            if stat_type == 'moneyline':
+                # Moneyline: won if score_diff > 0
+                is_hit = leg.achieved_value > 0
+            elif stat_type == 'spread':
+                # Spread: won if (score_diff + spread) > 0
+                if leg.target_value is not None:
+                    is_hit = (leg.achieved_value + leg.target_value) > 0
+            else:
+                # Player props and other bets: compare achieved vs target
+                if leg.target_value is not None:
+                    # Check for over/under
+                    if leg.bet_line_type == 'under':
+                        is_hit = leg.achieved_value < leg.target_value
+                    else:  # 'over' or None (default to over)
+                        is_hit = leg.achieved_value >= leg.target_value
+            
+            # Update the leg
+            leg.is_hit = is_hit
+            # Also update status if it's still pending
+            if leg.status == 'pending' or leg.status is None:
+                leg.status = 'won' if is_hit else 'lost'
+            
+            logging.info(f"[AUTO-HIT-STATUS] Bet {leg.bet_id} Leg {leg.leg_order}: {leg.player_name} - {stat_type} - {'HIT' if is_hit else 'MISS'} (achieved: {leg.achieved_value}, target: {leg.target_value})")
+            updated_count += 1
+        
+        # Commit all changes
+        if updated_count > 0:
+            db.session.commit()
+            logging.info(f"[AUTO-HIT-STATUS] Updated hit status for {updated_count} legs")
+        else:
+            logging.info("[AUTO-HIT-STATUS] No legs were updated")
+            
+    except Exception as e:
+        logging.error(f"[AUTO-HIT-STATUS] Error: {e}")
+        db.session.rollback()

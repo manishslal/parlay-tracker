@@ -29,7 +29,7 @@ load_dotenv()
 
 # Import database models
 from models import db, User, Bet, BetLeg, Player
-from helpers.database import run_migrations_once, has_complete_final_data, save_final_results_to_bet, auto_move_completed_bets, auto_move_bets_no_live_legs
+from helpers.database import run_migrations_once, has_complete_final_data, save_final_results_to_bet, auto_move_completed_bets, auto_move_bets_no_live_legs, auto_determine_leg_hit_status
 from helpers.enhanced_player_search import enhanced_player_search
 
 from helpers.utils import data_path, DATA_DIR
@@ -2271,6 +2271,13 @@ scheduler.add_job(
     trigger=IntervalTrigger(minutes=5),
     id='auto_move_no_live_legs',
     name='Move bets with no live legs to historical every 5 minutes'
+)
+
+scheduler.add_job(
+    func=auto_determine_leg_hit_status,
+    trigger=IntervalTrigger(minutes=10),
+    id='auto_determine_hit_status',
+    name='Determine hit/miss status for legs with achieved values every 10 minutes'
 )
 
 if __name__ == '__main__':
