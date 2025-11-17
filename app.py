@@ -28,7 +28,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Import database models
-from models import db, User, Bet, BetLeg
+from models import db, User, Bet, BetLeg, Player
 from helpers.database import run_migrations_once, has_complete_final_data, save_final_results_to_bet, auto_move_completed_bets
 
 
@@ -37,31 +37,26 @@ from helpers.utils import data_path, DATA_DIR
 # Ensure data directory exists
 os.makedirs(DATA_DIR, exist_ok=True)
 
-# Log data directory contents on startup
-try:
-    data_files = os.listdir(DATA_DIR)
-    print(f"[STARTUP] Data directory ({DATA_DIR}) contains: {data_files}")
-    for fname in data_files:
-        fpath = os.path.join(DATA_DIR, fname)
-        if os.path.isfile(fpath):
-            size = os.path.getsize(fpath)
-            print(f"[STARTUP]   {fname}: {size} bytes")
-except Exception as e:
-    print(f"[STARTUP] Error listing data directory: {e}")
-
 # Flask app initialization and config
 app = Flask(__name__, static_folder='.', static_url_path='')
 
 # Register blueprints
+ # Serve index.html at root
+@app.route('/')
+def index():
+    return app.send_static_file('index.html')
 from routes.admin import admin_bp
 from routes.auth import auth_bp
 from routes import bets_bp
 app.register_blueprint(admin_bp)
 app.register_blueprint(auth_bp)
-app.register_blueprint(bets_bp)
+app.register_blueprint(bets_bp)  # No url_prefix, endpoints at root
 
 # Database configuration
-database_url = os.environ.get('DATABASE_URL', 'sqlite:///parlays.db')
+
+database_url = os.environ.get('DATABASE_URL')
+if not database_url:
+    raise RuntimeError("DATABASE_URL environment variable must be set for PostgreSQL connection.")
 if database_url.startswith('postgres://'):
     database_url = database_url.replace('postgres://', 'postgresql://', 1)
 if database_url.startswith('postgresql://'):
@@ -71,6 +66,17 @@ if database_url.startswith('postgresql://'):
         database_url += '?sslmode=require'
 app.config['SQLALCHEMY_DATABASE_URI'] = database_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
+    'pool_size': 10,  # Maximum number of connections in the pool
+    'max_overflow': 20,  # Maximum number of connections that can be created beyond pool_size
+    'pool_timeout': 30,  # Timeout for getting a connection from the pool
+    'pool_recycle': 3600,  # Recycle connections after 1 hour (helps with stale connections)
+    'pool_pre_ping': True,  # Enable connection health checks
+    'connect_args': {
+        'connect_timeout': 10,  # Connection timeout in seconds
+        'options': '-c statement_timeout=30000'  # Query timeout (30 seconds)
+    }
+}
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-secret-key-change-in-production')
 app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
@@ -123,17 +129,57 @@ def get_user_bets_query(user: Any, **filters: Any) -> Any:
                 query = query.filter(getattr(Bet, key) == value)
     return query
 
-try:
-    @app.before_first_request
-    def initialize_database():
-        run_migrations_once(app)
-except AttributeError:
-    run_migrations_once(app)
+
+def db_error_handler(f):
+    """Decorator to handle database connection errors gracefully."""
+    @wraps(f)
+    def wrapper(*args, **kwargs):
+        try:
+            return f(*args, **kwargs)
+        except Exception as e:
+            error_msg = str(e).lower()
+            if 'timeout' in error_msg or 'connection' in error_msg or 'ssl' in error_msg:
+                # Return a user-friendly error response
+                return jsonify({
+                    'error': 'Database temporarily unavailable. Please try again in a moment.',
+                    'details': 'Connection timeout - this is usually temporary'
+                }), 503
+            else:
+                # Re-raise other errors
+                raise
+    return wrapper
+
+
+def retry_db_operation(operation, max_retries=2, delay=1):
+    """Retry a database operation with exponential backoff."""
+    import time
+    
+    for attempt in range(max_retries + 1):
+        try:
+            return operation()
+        except Exception as e:
+            error_msg = str(e).lower()
+            if 'timeout' in error_msg or 'connection' in error_msg or 'ssl' in error_msg:
+                if attempt < max_retries:
+                    wait_time = delay * (2 ** attempt)  # Exponential backoff
+                    time.sleep(wait_time)
+                    continue
+                else:
+                    raise
+            else:
+                # Don't retry non-connection errors
+                raise
+    
+    return None
+
+
+# Directly run migrations after app and blueprints are set up
+run_migrations_once(app)
 
 # Setup Flask-Login
 login_manager = LoginManager()
 login_manager.init_app(app)
-login_manager.login_view = 'login_page'
+login_manager.login_view = 'auth.login'
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -292,7 +338,7 @@ def save_bet_to_db(user_id: int, bet_data: dict) -> dict:
     # --- ESPN API single bet update ---
 def update_bet_legs_for_bet(bet: Any) -> None:
     """Update bet legs for a single bet using ESPN API logic."""
-    bet_legs = bet.bet_legs_rel.order_by(BetLeg.leg_order).all()
+    bet_legs = db.session.query(BetLeg).filter(BetLeg.bet_id == bet.id).order_by(BetLeg.leg_order).all()
     needs_update = False
     for leg in bet_legs:
         # Only update if game is not final or stats missing
@@ -390,7 +436,7 @@ def save_final_results_to_bet(bet: Any, processed_data: List[dict]) -> bool:
             return False
         
         # Get BetLeg objects for this bet
-        bet_legs = bet.bet_legs_rel.order_by(BetLeg.leg_order).all()
+        bet_legs = db.session.query(BetLeg).filter(BetLeg.bet_id == bet.id).order_by(BetLeg.leg_order).all()
         
         # Update each leg with final results
         updated = False
@@ -679,7 +725,7 @@ def update_completed_bet_legs():
         
         for bet in completed_bets:
             # Get bet legs from database
-            bet_legs = bet.bet_legs_rel.order_by(BetLeg.leg_order).all()
+            bet_legs = db.session.query(BetLeg).filter(BetLeg.bet_id == bet.id).order_by(BetLeg.leg_order).all()
             
             # Check if any legs need updating (have STATUS_FINAL but no achieved_value or pending status)
             needs_update = False
@@ -988,7 +1034,7 @@ def normalize_bet_leg_team_names():
                             leg.status = leg_status
                             leg_updated = True
                             updated_status += 1
-                            app.logger.info(f"Set status={leg_status}, is_hit={leg.is_hit} for leg {i}: {leg.player_name or leg.team}")
+                            app.logger.info(f"Set status={leg_status}, is_hit={leg.is_hit} for leg: {leg.player_name or leg.team}")
         
         # Commit all changes
         if updated_home > 0 or updated_away > 0 or updated_player_team > 0 or updated_status > 0 or updated_sport > 0:
@@ -1464,7 +1510,7 @@ def _get_touchdowns(player_name, boxscore, scoring_plays=None):
 
 def calculate_bet_value(bet, game_data):
     """Calculate the current value for a bet based on game data."""
-    stat = bet["stat"].strip().lower()  # Normalize to lowercase for comparisons
+    stat = bet.get("stat", "").strip().lower() if bet.get("stat") else ""  # Normalize to lowercase for comparisons
     boxscore = game_data.get("boxscore", [])
     scoring_plays = game_data.get("scoring_plays", [])
     
@@ -1784,9 +1830,9 @@ def process_parlay_data(parlays):
                         bet_team = leg.get("team", "")
                         
                         # Normalize team names for comparison (case-insensitive, strip whitespace)
-                        bet_team_norm = bet_team.lower().strip()
-                        home_team_norm = home_team.lower().strip()
-                        away_team_norm = away_team.lower().strip()
+                        bet_team_norm = (bet_team or "").lower().strip()
+                        home_team_norm = (home_team or "").lower().strip()
+                        away_team_norm = (away_team or "").lower().strip()
                         
                         # Also check if one team name contains the other (e.g., "LA Chargers" vs "Los Angeles Chargers")
                         if bet_team_norm == home_team_norm or bet_team_norm in home_team_norm or home_team_norm in bet_team_norm:
@@ -1813,3 +1859,6 @@ def process_parlay_data(parlays):
         processed_parlays.append(processed_parlay)
     
     return processed_parlays
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=8000, debug=True)

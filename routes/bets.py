@@ -4,8 +4,28 @@ from flask_login import login_required, current_user
 from models import db, Bet
 from services import get_user_bets_query, process_parlay_data, sort_parlays_by_date
 from helpers.database import has_complete_final_data, save_final_results_to_bet, auto_move_completed_bets
+from functools import wraps
 
 bets_bp = Blueprint('bets', __name__)
+
+def db_error_handler(f):
+    """Decorator to handle database connection errors gracefully."""
+    @wraps(f)
+    def wrapper(*args, **kwargs):
+        try:
+            return f(*args, **kwargs)
+        except Exception as e:
+            error_msg = str(e).lower()
+            if 'timeout' in error_msg or 'connection' in error_msg or 'ssl' in error_msg:
+                # Return a user-friendly error response
+                return jsonify({
+                    'error': 'Database temporarily unavailable. Please try again in a moment.',
+                    'details': 'Connection timeout - this is usually temporary'
+                }), 503
+            else:
+                # Re-raise other errors
+                raise
+    return wrapper
 
 # API Endpoints
 
@@ -74,6 +94,7 @@ def bulk_unarchive_bets() -> Any:
 
 @bets_bp.route('/api/current_user', methods=['GET'])
 @login_required
+@db_error_handler
 def get_current_user() -> Any:
 	try:
 		# ...existing code...
@@ -81,40 +102,63 @@ def get_current_user() -> Any:
 	except Exception as e:
 		return jsonify({"error": str(e)}), 500
 
-@bets_bp.route('/api/users', methods=['GET'])
-@login_required
-def get_users() -> Any:
-	try:
-		# ...existing code...
-		return jsonify({})
-	except Exception as e:
-		return jsonify({"error": str(e)}), 500
+@bets_bp.route('/api/health/db', methods=['GET'])
+def db_health_check():
+    """Check database connection health."""
+    try:
+        # Simple query to test connection
+        db.session.execute(db.text('SELECT 1'))
+        return jsonify({'status': 'healthy', 'database': 'connected'}), 200
+    except Exception as e:
+        return jsonify({
+            'status': 'unhealthy', 
+            'database': 'disconnected',
+            'error': str(e)
+        }), 503
 
 # Page Routes
 
 @bets_bp.route("/live")
 @login_required
+@db_error_handler
 def live():
-	bets = get_user_bets_query(current_user, is_active=True, is_archived=False, status='live').all()
+	bets = get_user_bets_query(current_user, is_active=True, is_archived=False, status='live').options(db.joinedload(Bet.bet_legs_rel)).all()
 	live_parlays = [bet.to_dict_structured(use_live_data=True) for bet in bets]
 	processed = process_parlay_data(live_parlays)
 	return jsonify(sort_parlays_by_date(processed))
 
 @bets_bp.route("/todays")
 @login_required
+@db_error_handler
 def todays():
 	auto_move_completed_bets(current_user.id)
-	bets = get_user_bets_query(current_user, is_active=True, is_archived=False, status='pending').all()
+	bets = get_user_bets_query(current_user, is_active=True, is_archived=False, status='pending').options(db.joinedload(Bet.bet_legs_rel)).all()
 	todays_parlays = [bet.to_dict_structured(use_live_data=True) for bet in bets]
 	processed = process_parlay_data(todays_parlays)
 	return jsonify(sort_parlays_by_date(processed))
 
 @bets_bp.route("/historical")
 @login_required
+@db_error_handler
 def historical():
 	try:
-		bets = get_user_bets_query(current_user, is_active=False, is_archived=False).all()
-		historical_parlays = [bet.to_dict_structured(use_live_data=False) for bet in bets]
+		bets = get_user_bets_query(current_user, is_active=False, is_archived=False).options(db.joinedload(Bet.bet_legs_rel)).all()
+		historical_parlays = []
+		for bet in bets:
+			parlay = bet.get_bet_data()
+			# Add database metadata
+			parlay['db_id'] = bet.id
+			parlay['user_id'] = bet.user_id
+			parlay['bet_type'] = bet.bet_type
+			parlay['betting_site'] = bet.betting_site
+			parlay['status'] = bet.status
+			parlay['is_active'] = bet.is_active
+			parlay['is_archived'] = bet.is_archived
+			parlay['api_fetched'] = bet.api_fetched
+			parlay['created_at'] = bet.created_at
+			parlay['updated_at'] = bet.updated_at
+			parlay['bet_date'] = bet.bet_date
+			historical_parlays.append(parlay)
 		if not historical_parlays:
 			return jsonify([])
 		bets_with_results = []
@@ -160,17 +204,13 @@ def historical():
 
 @bets_bp.route("/stats")
 @login_required
+@db_error_handler
 def stats():
 	auto_move_completed_bets(current_user.id)
-	pending_bets = get_user_bets_query(current_user, status_filter='pending').all()
+	pending_bets = get_user_bets_query(current_user, status='pending').options(db.joinedload(Bet.bet_legs_rel)).all()
 	parlays = [bet.get_bet_data() for bet in pending_bets]
 	processed_parlays = process_parlay_data(parlays)
-	live_bets = get_user_bets_query(current_user, status_filter='live').all()
+	live_bets = get_user_bets_query(current_user, status='live').options(db.joinedload(Bet.bet_legs_rel)).all()
 	live_parlays = [bet.get_bet_data() for bet in live_bets]
 	processed_live = process_parlay_data(live_parlays)
 	return jsonify(sort_parlays_by_date(processed_live))
-from flask import Blueprint
-
-bets_bp = Blueprint('bets', __name__)
-
-# Add bet-related routes here

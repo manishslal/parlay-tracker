@@ -5,7 +5,10 @@ from helpers.utils import compute_parlay_returns_from_odds
 # Business logic for bets
 
 def process_parlay_data(parlays):
-    pass
+    if not parlays:
+        return []
+    # Add actual processing logic here if needed
+    return parlays
 
 def compute_and_persist_returns(force=False):
     """Compute missing returns for all Data files and persist them.

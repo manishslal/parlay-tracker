@@ -2,7 +2,7 @@ from flask import Blueprint, jsonify, request, session
 from flask_login import login_user, logout_user, login_required, current_user
 from models import db, User
 
-auth_bp = Blueprint('auth', __name__)
+auth_bp = Blueprint('auth', __name__, url_prefix='/auth')
 
 # ==========================================================================
 # Authentication Endpoints
@@ -34,7 +34,7 @@ def register() -> object:
 		db.session.rollback()
 		return jsonify({'error': 'Failed to create user'}), 500
 
-@auth_bp.route('/auth/login', methods=['POST'])
+@auth_bp.route('/login', methods=['POST'])
 def login() -> object:
 	"""Login with username/email and password (case-insensitive)"""
 	data = request.json
@@ -69,7 +69,7 @@ def logout() -> object:
 	response.set_cookie('remember_token', '', expires=0, path='/')
 	return response, 200
 
-@auth_bp.route('/auth/check', methods=['GET'])
+@auth_bp.route('/check', methods=['GET'])
 def check_auth() -> object:
 	"""Check if user is authenticated"""
 	if current_user.is_authenticated:
@@ -80,8 +80,3 @@ def check_auth() -> object:
 	response.headers['Pragma'] = 'no-cache'
 	response.headers['Expires'] = '0'
 	return response, 200
-from flask import Blueprint
-
-auth_bp = Blueprint('auth', __name__)
-
-# Add authentication routes here

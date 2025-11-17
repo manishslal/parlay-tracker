@@ -2053,17 +2053,23 @@
     
     function saveHistoricalCache(data) {
       try {
+        // Filter out invalid parlays before saving
+        const validData = data.filter(parlay => {
+          return parlay && typeof parlay === 'object' && 
+                 (!parlay.legs || (Array.isArray(parlay.legs) && parlay.legs.every(leg => leg && typeof leg === 'object')));
+        });
+        
         const cacheData = {
           timestamp: new Date().toISOString(),
-          betCount: data.length,
-          data: data
+          betCount: validData.length,
+          data: validData
         };
         localStorage.setItem(HISTORICAL_CACHE_KEY, JSON.stringify(cacheData));
         localStorage.setItem(HISTORICAL_CACHE_META_KEY, JSON.stringify({
           timestamp: cacheData.timestamp,
           betCount: cacheData.betCount
         }));
-        console.log('✅ Historical cache saved:', cacheData.betCount, 'bets');
+        console.log('✅ Historical cache saved:', cacheData.betCount, 'valid bets');
       } catch (e) {
         console.warn('Failed to save historical cache:', e);
       }
@@ -2075,8 +2081,19 @@
         if (!cached) return null;
         
         const cacheData = JSON.parse(cached);
-        console.log('📦 Historical cache loaded:', cacheData.betCount, 'bets from', new Date(cacheData.timestamp).toLocaleString());
-        return cacheData.data;
+        
+        // Validate that all parlays have valid legs arrays
+        const validData = cacheData.data.filter(parlay => {
+          return parlay && typeof parlay === 'object' && 
+                 (!parlay.legs || (Array.isArray(parlay.legs) && parlay.legs.every(leg => leg && typeof leg === 'object')));
+        });
+        
+        if (validData.length !== cacheData.data.length) {
+          console.warn('⚠️ Filtered out', cacheData.data.length - validData.length, 'invalid parlays from cache');
+        }
+        
+        console.log('📦 Historical cache loaded:', validData.length, 'valid bets from', new Date(cacheData.timestamp).toLocaleString());
+        return validData;
       } catch (e) {
         console.warn('Failed to load historical cache:', e);
         return null;
@@ -2783,7 +2800,7 @@ async function logoutToken() {
 
     function fmtType(stat, stat_add = null){
       const m={'passing_yards':'Pass Yds','passing_yards_alt':'Alt Pass Yds','receiving_yards':'Rec Yds','receiving_yards_alt':'Alt Rec Yds','rushing_yards':'Rush Yds','rushing_yards_alt':'Alt Rush Yds','rushing_receiving_yards':'Rush + Rec Yds','passing_rushing_yards':'Pass + Rush Yds','anytime_touchdown':'Anytime TD','anytime_td_scorer':'Anytime TD','passing_touchdowns':'Pass TDs','rushing_touchdowns':'Rush TDs','receptions':'Receptions','receptions_alt':'Alt Receptions','longest_reception':'Longest Rec','moneyline':'Moneyline','spread':'Spread','total_points':'Total Points','total_points_under':'Total Points Under','total_points_over':'Total Points Over','interceptions_thrown':'INTs Thrown'};
-      const baseName = m[stat]||stat.replace(/_/g,' ').replace(/\b\w/g,l=>l.toUpperCase());
+      const baseName = m[stat] || (stat ? stat.replace(/_/g,' ').replace(/\b\w/g,l=>l.toUpperCase()) : 'Unknown Stat');
       
       // Only add (U) suffix for under bets, over is default/implied
       if (stat_add === 'under') {
@@ -2814,8 +2831,7 @@ async function logoutToken() {
 
     // Format stat value for mobile display
     function formatStatForMobile(value, stat) {
-      if (stat === 'moneyline') return value;
-      if (stat === 'spread') return value;
+      if (!stat || stat === 'moneyline' || stat === 'spread') return value;
       
       // For numeric stats, add unit abbreviations
       if (stat.includes('yards')) return `${value} Yds`;
@@ -2853,8 +2869,8 @@ async function logoutToken() {
 
     function enhanceParlayName(parlay) {
       // If parlay doesn't have legs, return original name
-      if (!parlay.legs || parlay.legs.length === 0) {
-        return parlay.name;
+      if (!parlay.legs || !Array.isArray(parlay.legs) || parlay.legs.length === 0) {
+        return parlay.name || 'Unnamed Parlay';
       }
 
       // Get unique teams from all legs
@@ -2866,7 +2882,7 @@ async function logoutToken() {
 
       // Only proceed if exactly 2 teams are involved
       if (allTeams.size !== 2) {
-        return parlay.name;
+        return parlay.name || 'Unnamed Parlay';
       }
 
       // Get away and home teams from the first leg
@@ -2893,18 +2909,19 @@ async function logoutToken() {
       const matchup = `${awayAbbrev} @ ${homeAbbrev}`;
 
       // Check if the matchup or team names are already in the parlay name
-      const nameContainsMatchup = parlay.name.includes('@') || 
-                                   parlay.name.includes(awayAbbrev) || 
-                                   parlay.name.includes(homeAbbrev) ||
-                                   parlay.name.includes(away) ||
-                                   parlay.name.includes(home);
+      const parlayName = parlay.name || '';
+      const nameContainsMatchup = parlayName.includes('@') ||
+                                   parlayName.includes(awayAbbrev) ||
+                                   parlayName.includes(homeAbbrev) ||
+                                   parlayName.includes(away) ||
+                                   parlayName.includes(home);
 
       // If matchup info not already in name, append it
       if (!nameContainsMatchup) {
-        return `${parlay.name} - ${matchup}`;
+        return `${parlayName} - ${matchup}`;
       }
 
-      return parlay.name;
+      return parlayName;
     }
 
     // Player position mapping
@@ -3165,15 +3182,25 @@ async function logoutToken() {
         return;
       }
 
+      // Filter out invalid parlays that don't have proper legs structure
+      const validParlays = parlays.filter(parlay => {
+        return parlay && typeof parlay === 'object' && 
+               (!parlay.legs || (Array.isArray(parlay.legs) && parlay.legs.every(leg => leg && typeof leg === 'object')));
+      });
+
+      if (validParlays.length !== parlays.length) {
+        console.warn('Filtered out', parlays.length - validParlays.length, 'invalid parlays from render');
+      }
+
       // Check if this is the historical section
       const isHistoricalSection = container.id === 'historical-sections' || container.dataset.tab === 'historical';
       
       // Sort parlays by game date and time
-      const sortedParlays = [...parlays].sort((a, b) => {
+      const sortedParlays = [...validParlays].sort((a, b) => {
         // For historical: use earliest date (latest games first - descending)
         // For live: use latest date (earliest games first - ascending)
         const getRelevantDate = (parlay) => {
-          if (!parlay.legs || parlay.legs.length === 0) return new Date('9999-12-31');
+          if (!parlay.legs || !Array.isArray(parlay.legs) || parlay.legs.length === 0) return new Date('9999-12-31');
           
           const dates = parlay.legs
             .map(leg => leg.game_date)
@@ -3267,7 +3294,7 @@ async function logoutToken() {
         const displayName = parlay.name || enhanceParlayName(parlay);
         
         // Check if all legs are Hit AND all games are final (winning bet deserves trophy)
-        const allLegsComplete = parlay.legs && parlay.legs.length > 0 && 
+        const allLegsComplete = parlay.legs && Array.isArray(parlay.legs) && parlay.legs.length > 0 && 
           parlay.legs.every(leg => {
             // PRIORITY 1: Check database status for completed games (historical bets)
             if (leg.status === 'won') {
@@ -3373,7 +3400,7 @@ async function logoutToken() {
           }
         } else {
           // Desktop: show game_date in full format
-          if (parlay.legs && parlay.legs[0]) {
+          if (parlay.legs && Array.isArray(parlay.legs) && parlay.legs[0]) {
             // Get unique game dates from all legs
             const uniqueDates = [...new Set(parlay.legs.map(leg => leg.game_date))].filter(d => d);
             
@@ -3467,7 +3494,7 @@ async function logoutToken() {
         };
 
         // Determine if we should show scoreboards inline or with toggle
-        const isSingleBet = parlay.type === 'Single Bet' || parlay.legs.length === 1;
+        const isSingleBet = parlay.type === 'Single Bet' || (parlay.legs && Array.isArray(parlay.legs) && parlay.legs.length === 1);
         const isSGP = parlay.type === 'Same Game Parlay' || parlay.type === 'SGP';
         
         // Collect all games
@@ -3476,20 +3503,22 @@ async function logoutToken() {
           if (parlay.type !== 'SGP' && parlay.type !== 'Same Game Parlay') {
             // For non-SGPs, get unique games
             const uniqueGames = new Map();
-            parlay.legs.forEach(leg => {
-              const gameKey = `${leg.away}-${leg.home}`;
-              const game = parlay.games.find(g => 
-                g.teams.away === leg.away && g.teams.home === leg.home
-              );
-              if (game && !uniqueGames.has(gameKey)) {
-                uniqueGames.set(gameKey, game);
-              }
-            });
+            if (parlay.legs && Array.isArray(parlay.legs) && parlay.legs.length > 0) {
+              parlay.legs.forEach(leg => {
+                const gameKey = `${leg.away}-${leg.home}`;
+                const game = parlay.games.find(g => 
+                  g.teams.away === leg.away && g.teams.home === leg.home
+                );
+                if (game && !uniqueGames.has(gameKey)) {
+                  uniqueGames.set(gameKey, game);
+                }
+              });
+            }
             gamesToShow = Array.from(uniqueGames.values());
           } else {
             gamesToShow = parlay.games;
           }
-        } else if (parlay.legs && parlay.legs.length > 0) {
+        } else if (parlay.legs && Array.isArray(parlay.legs) && parlay.legs.length > 0) {
           // For historical bets without ESPN game data, create game objects from leg data
           const uniqueGames = new Map();
           parlay.legs.forEach(leg => {
@@ -3560,8 +3589,8 @@ async function logoutToken() {
 
         // Sort legs by status for Live Bets: "In Progress" → "Not Started" → "Hit"
         // Only sort for live bets tab, not historical
-        let legsToRender = parlay.legs;
-        if (!isHistoricalSection) {
+        let legsToRender = Array.isArray(parlay.legs) ? parlay.legs : [];
+        if (!isHistoricalSection && Array.isArray(parlay.legs)) {
           legsToRender = [...parlay.legs].sort((a, b) => {
             // Helper function to determine leg status
             const getLegStatus = (leg) => {

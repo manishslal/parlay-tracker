@@ -11,6 +11,8 @@ def run_migrations_once(app):
     """
     with app.app_context():
         try:
+            # Ensure all tables are created
+            db.create_all()
             inspector = inspect(db.engine)
             columns = [col['name'] for col in inspector.get_columns('users')]
             if 'user_role' not in columns:
@@ -57,7 +59,7 @@ def save_final_results_to_bet(bet: Any, processed_data: List[dict]) -> bool:
                 break
         if not matching_parlay:
             return False
-        bet_legs = bet.bet_legs_rel.order_by(BetLeg.leg_order).all()
+        bet_legs = db.session.query(BetLeg).filter(BetLeg.bet_id == bet.id).order_by(BetLeg.leg_order).all()
         updated = False
         for i, leg in enumerate(bet_data.get('legs', [])):
             if i < len(matching_parlay.get('legs', [])):
