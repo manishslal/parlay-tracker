@@ -4,6 +4,7 @@ from flask_login import login_required, current_user
 from models import db, Bet
 from services import get_user_bets_query, process_parlay_data, sort_parlays_by_date
 from helpers.database import has_complete_final_data, save_final_results_to_bet, auto_move_completed_bets
+from app import app
 from functools import wraps
 import logging
 import os
@@ -372,11 +373,30 @@ def todays():
 @db_error_handler
 def historical():
 	try:
+		app.logger.info(f"[HISTORICAL] Starting historical bets request for user {current_user.id}")
 		bets = get_user_bets_query(current_user, is_active=False, is_archived=False).options(db.joinedload(Bet.bet_legs_rel)).all()
-		historical_parlays = [bet.to_dict_structured(use_live_data=False) for bet in bets]
+		app.logger.info(f"[HISTORICAL] Found {len(bets)} historical bets")
+		
+		historical_parlays = []
+		for i, bet in enumerate(bets):
+			try:
+				bet_data = bet.to_dict_structured(use_live_data=False)
+				historical_parlays.append(bet_data)
+				if i < 3:  # Log first few bets
+					app.logger.debug(f"[HISTORICAL] Bet {bet.id}: {len(bet_data.get('legs', []))} legs")
+			except Exception as e:
+				app.logger.error(f"[HISTORICAL] Error processing bet {bet.id}: {e}")
+				continue
+		
+		app.logger.info(f"[HISTORICAL] Successfully processed {len(historical_parlays)} bets")
+		
 		# Historical bets don't need live processing - return data as-is
-		return jsonify(sort_parlays_by_date(historical_parlays))
+		sorted_data = sort_parlays_by_date(historical_parlays)
+		app.logger.info(f"[HISTORICAL] Successfully sorted {len(sorted_data)} bets")
+		
+		return jsonify(sorted_data)
 	except Exception as e:
+		app.logger.error(f"[HISTORICAL] Unexpected error: {e}", exc_info=True)
 		return jsonify({"error": str(e)}), 500
 
 @bets_bp.route("/stats")
