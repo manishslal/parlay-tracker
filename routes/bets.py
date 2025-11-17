@@ -65,28 +65,53 @@ def process_betslip_image(file):
                     'content': [
                         {
                             'type': 'text',
-                            'text': '''Extract betting information from this bet slip image. Return ONLY a valid JSON object with this exact structure. Do not include any markdown formatting, code blocks, or additional text:
+                            'text': '''Extract betting information from this bet slip image. You are an expert at reading sports betting slips. Return ONLY a valid JSON object with this exact structure. Do not include any markdown formatting, code blocks, or additional text.
+
+CRITICAL INSTRUCTIONS:
+- Look for the betting site name (DraftKings, FanDuel, BetMGM, Caesars, etc.)
+- Identify the bet type: "parlay" for multiple legs, "single" for one leg, "teaser" for adjusted spreads, "round_robin" for combinations
+- Extract the total wager amount and potential payout
+- Parse each betting leg carefully - these are the individual bets that make up the parlay/single
+
+FOR EACH LEG, identify:
+- Player name (for player props) or team name (for game bets)
+- The stat being bet on (points, rebounds, passing yards, total points, spread, moneyline, etc.)
+- The betting line (the number, like +4.5, -110, over 45.5, etc.)
+- Whether it's over/under for totals, or the direction for spreads
+- Individual leg odds if shown separately
+
+EXAMPLES of how to parse different bet types:
+
+Moneyline: "Los Angeles Lakers ML" → team: "Los Angeles Lakers", stat: "moneyline", line: 0
+Spread: "Boston Celtics -3.5" → team: "Boston Celtics", stat: "spread", line: -3.5
+Total: "Game Total Over 220.5" → team: "Game Total", stat: "total_points", line: 220.5, stat_add: "over"
+Player Prop: "LeBron James Over 25.5 Points" → player: "LeBron James", team: "Los Angeles Lakers", stat: "points", line: 25.5, stat_add: "over"
 
 {
-  "bet_site": "name of the betting site (e.g., DraftKings, FanDuel, etc.)",
+  "bet_site": "name of the betting site (e.g., DraftKings, FanDuel, Caesars, BetMGM)",
   "bet_type": "parlay|single|teaser|round_robin",
-  "total_odds": number (e.g., +150, -120),
-  "wager_amount": number (the amount wagered),
-  "potential_payout": number (total payout including wager),
-  "bet_date": "YYYY-MM-DD format",
+  "total_odds": "number like +150, -120, or the American odds format",
+  "wager_amount": "number like 10.00, 25.50 - the amount being wagered",
+  "potential_payout": "number like 35.00 - total amount you'd receive including wager",
+  "bet_date": "YYYY-MM-DD format if visible, otherwise omit",
   "legs": [
     {
-      "player": "Player name (if applicable)",
-      "team": "Team name",
-      "stat": "stat type (e.g., 'passing yards', 'points scored')",
-      "line": number (the betting line),
-      "stat_add": "over|under" (if applicable),
-      "odds": number (leg odds if shown)
+      "player": "Player name (ONLY for player props, otherwise omit this field)",
+      "team": "Team name or 'Game Total' for totals bets",
+      "stat": "stat type: 'moneyline', 'spread', 'total_points', 'passing_yards', 'points', 'rebounds', 'assists', etc.",
+      "line": "the betting line as a number: -3.5, +150, 25.5, 220.5, etc.",
+      "stat_add": "'over' or 'under' for totals/player props, omit for moneyline/spread",
+      "odds": "leg-specific odds if shown (like -110), otherwise omit"
     }
   ]
 }
 
-Return ONLY the JSON object, no other text or formatting.'''
+IMPORTANT: 
+- Only include fields that are clearly visible in the image
+- For team names, use the full name as shown (e.g., "Kansas City Chiefs", not "Chiefs")
+- For stats, be specific: "passing_yards" not "passing", "total_points" not "totals"
+- If a leg has both player and team, include both fields
+- Return ONLY the JSON object, no explanations or additional text.'''
                         },
                         {
                             'type': 'image_url',
