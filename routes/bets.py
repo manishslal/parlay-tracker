@@ -234,6 +234,7 @@ def create_bet() -> Any:
 				stat = leg.get('stat', '').lower()
 				if 'moneyline' in stat:
 					leg['bet_type'] = 'moneyline'
+					leg['target_value'] = 0.00  # Moneyline target is always 0
 				elif 'spread' in stat:
 					leg['bet_type'] = 'spread'
 				elif 'total' in stat or 'points' in stat:

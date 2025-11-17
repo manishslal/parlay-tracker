@@ -1146,7 +1146,7 @@
           stat: statValue,
           bet_type: statValue.includes('moneyline') || statValue.includes('spread') || statValue.includes('total') ? statValue : 'player_prop',
           bet_line_type: statAdd, // 'over' or 'under'
-          line: parseFloat(legCard.querySelector('.leg-target').value),
+          line: statValue === 'moneyline' ? 0 : parseFloat(legCard.querySelector('.leg-target').value), // Moneyline target is always 0
           sport: sport,
           game_info: `${awayTeam} @ ${homeTeam}`,
           odds: '-110', // Default odds for manual entry legs
