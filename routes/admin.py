@@ -59,3 +59,40 @@ def admin_export_files():
 		return jsonify({})
 	except Exception as e:
 		return jsonify({"error": str(e)}), 500
+
+@admin_bp.route('/admin/backfill_betting_site_id', methods=['POST'])
+@login_required
+def admin_backfill_betting_site_id():
+	try:
+		from models import db, Bet
+		from flask_login import current_user
+		
+		if not current_user.is_admin():
+			return jsonify({"error": "Admin access required"}), 403
+		
+		# Get all bets that don't have betting_site_id set
+		bets_to_update = Bet.query.filter(
+			db.or_(
+				Bet.betting_site_id.is_(None),
+				Bet.betting_site_id == ''
+			)
+		).all()
+		
+		updated_count = 0
+		for bet in bets_to_update:
+			bet_data = bet.get_bet_data()
+			bet_id = bet_data.get('bet_id') or bet_data.get('betting_site_id')
+			
+			if bet_id:
+				bet.betting_site_id = bet_id
+				updated_count += 1
+		
+		if updated_count > 0:
+			db.session.commit()
+		
+		return jsonify({
+			"message": f"Backfilled betting_site_id for {updated_count} bets",
+			"total_processed": len(bets_to_update)
+		})
+	except Exception as e:
+		return jsonify({"error": str(e)}), 500

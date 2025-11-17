@@ -2860,6 +2860,77 @@ async function logoutToken() {
       return value;
     }
 
+    // Normalize stat_type values to user-friendly display names
+    function normalizeStatType(statType) {
+      if (!statType) return statType;
+      
+      const statMap = {
+        // Passing stats
+        'passing_yards': 'Passing Yds',
+        'passing_yards_alt': 'Passing Yds',
+        'pass_attempts': 'Pass Attempts',
+        'pass_completions': 'Completions',
+        'passing_touchdowns': 'Pass TDs',
+        'interceptions_thrown': 'Interceptions',
+        'longest_pass_completion': 'Longest Pass',
+        
+        // Rushing stats
+        'rushing_yards': 'Rushing Yds',
+        'rushing_yards_alt': 'Rushing Yds',
+        'rushing_attempts': 'Rush Attempts',
+        'rushing_touchdowns': 'Rush TDs',
+        'longest_rush': 'Longest Rush',
+        
+        // Receiving stats
+        'receiving_yards': 'Receiving Yds',
+        'receiving_yards_alt': 'Receiving Yds',
+        'receptions': 'Receptions',
+        'receptions_alt': 'Receptions',
+        'receiving_touchdowns': 'Rec TDs',
+        'longest_reception': 'Longest Rec',
+        
+        // Combined stats
+        'rushing_receiving_yards': 'Rush + Rec Yds',
+        'passing_rushing_yards': 'Pass + Rush Yds',
+        
+        // Touchdown stats
+        'anytime_touchdown': 'Anytime TD',
+        'player_to_score_2_touchdowns': '2+ TDs',
+        'player_to_score_3_touchdowns': '3+ TDs',
+        'first_touchdown_scorer': '1st TD Scorer',
+        'last_touchdown_scorer': 'Last TD Scorer',
+        
+        // Defensive stats
+        'sacks': 'Sacks',
+        'tackles_assists': 'Tackles',
+        
+        // Kicking stats
+        'field_goals_made': 'FG Made',
+        'kicking_points': 'Kicking Pts',
+        
+        // Team props
+        'team_total_points': 'Team Total Pts',
+        'first_team_to_score': '1st Team to Score',
+        'last_team_to_score': 'Last Team to Score',
+        
+        // Game props
+        'total_points': 'Total Points',
+        'total_points_under': 'Total Points Under',
+        'total_points_over': 'Total Points Over',
+        'will_be_overtime': 'Overtime',
+        
+        // Moneyline/Spread (keep as-is)
+        'moneyline': 'Moneyline',
+        'spread': 'Spread',
+        
+        // Additional variants found in database
+        'anytime_td_scorer': 'Anytime TD Scorer',
+        'player_prop': 'Player Prop'
+      };
+      
+      return statMap[statType] || statType; // Fallback to original if not mapped
+    }
+
     // Calculate countdown to game start
     function getCountdown(startDateTime) {
       if (!startDateTime) return '';
@@ -4058,7 +4129,7 @@ async function logoutToken() {
               
               // Format for mobile display
               const playerOrTeam = playerDisplay; // Use the calculated playerDisplay
-              const statType = p.stat;
+              const statType = normalizeStatType(p.stat);
               const mobileCurrentDisplay = formatStatForMobile(currentDisplay, p.stat);
               const mobileTargetDisplay = formatStatForMobile(targetDisplay, p.stat);
               
@@ -4103,7 +4174,7 @@ async function logoutToken() {
                     </div>
                   </td>
                   <td>${playerCellHTML}</td>
-                  <td>${p.stat}</td>
+                  <td>${normalizeStatType(p.stat)}</td>
                   <td>${currentDisplay}</td>
                   <td>${targetDisplay}</td>
                   <td>${progressCol}</td>
@@ -4654,7 +4725,7 @@ async function logoutToken() {
           if (leg.player_name) {
             // Player prop
             legDescription = `<strong style="color: #2c3e50; font-size: 15px;">${leg.player_name}</strong> <span style="color: #666; font-size: 13px;">(${leg.team_name || 'N/A'})</span>`;
-            legDescription += `<br><span style="color: #555; font-size: 14px; font-weight: 500;">${leg.stat_type || 'N/A'} <span style="text-transform: uppercase; color: #667eea; font-weight: 600;">${leg.bet_line_type || ''}</span> ${leg.target_value || ''}</span>`;
+            legDescription += `<br><span style="color: #555; font-size: 14px; font-weight: 500;">${normalizeStatType(leg.stat_type) || 'N/A'} <span style="text-transform: uppercase; color: #667eea; font-weight: 600;">${leg.bet_line_type || ''}</span> ${leg.target_value || ''}</span>`;
           } else if (leg.bet_type === 'spread') {
             // Spread
             legDescription = `<strong style="color: #2c3e50; font-size: 15px;">${leg.team_name}</strong> <span style="color: #667eea; font-weight: 600; font-size: 14px;">${leg.target_value > 0 ? '+' : ''}${leg.target_value}</span>`;
