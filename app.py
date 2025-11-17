@@ -1,38 +1,16 @@
 # Define run_migrations_once before usage
-_migration_completed = False
-def run_migrations_once():
-    global _migration_completed
-    if _migration_completed:
-        return
-    with app.app_context():
-        try:
-            from sqlalchemy import inspect
-            inspector = inspect(db.engine)
-            columns = [col['name'] for col in inspector.get_columns('users')]
-            if 'user_role' not in columns:
-                print("[MIGRATION] Adding user_role column...")
-                db.session.execute(db.text("ALTER TABLE users ADD COLUMN user_role VARCHAR(20) DEFAULT 'user' NOT NULL"))
-                db.session.commit()
-                print("[MIGRATION] ✓ user_role column added")
-                from models import User
-                manish_user = User.query.filter_by(username='manishslal').first()
-                if manish_user:
-                    manish_user.user_role = 'admin'
-                    db.session.commit()
-                    print(f"[MIGRATION] ✓ Set {manish_user.username} as admin")
-                print("[MIGRATION] ✓ Migration completed")
-            else:
-                print("[MIGRATION] ✓ user_role column already exists")
-            _migration_completed = True
-        except Exception as e:
-            print(f"[MIGRATION] Migration check failed: {e}")
-            try:
-                db.session.rollback()
-            except Exception:
-                pass
-# app.py - Parlay Tracker Backend - Multi-User Edition
-# Force redeploy: 2025-11-01 00:00
-from flask import Flask, jsonify, send_from_directory, request, session, redirect, url_for
+from flask import Flask, jsonify, send_from_directory, request, session
+from flask_cors import CORS
+from flask_login import LoginManager, login_user, logout_user, login_required, current_user
+from apscheduler.schedulers.background import BackgroundScheduler
+from apscheduler.triggers.interval import IntervalTrigger
+import requests
+import os
+import time
+from datetime import datetime
+import json
+import atexit
+from flask import Flask, jsonify, send_from_directory, request, session
 from flask_cors import CORS
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from apscheduler.schedulers.background import BackgroundScheduler
@@ -49,12 +27,13 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Import database models
-from models import db, User, Bet, BetLeg, bet_users
+from models import db, User, Bet, BetLeg
+from helpers.database import run_migrations_once
 
 # Data directory for JSON fixtures
 DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
 
-def data_path(filename):
+def data_path(filename: str) -> str:
     return os.path.join(DATA_DIR, filename)
 
 # Ensure data directory exists
@@ -74,6 +53,14 @@ except Exception as e:
 
 # Flask app initialization and config
 app = Flask(__name__, static_folder='.', static_url_path='')
+
+# Register blueprints
+from routes.admin import admin_bp
+from routes.auth import auth_bp
+from routes import bets_bp
+app.register_blueprint(admin_bp)
+app.register_blueprint(auth_bp)
+app.register_blueprint(bets_bp)
 
 # Database configuration
 database_url = os.environ.get('DATABASE_URL', 'sqlite:///parlays.db')
@@ -97,7 +84,6 @@ db.init_app(app)
 
 from functools import wraps
 from helpers.utils import (
-    parse_american_odds,
     compute_parlay_returns_from_odds,
     sort_parlays_by_date,
     get_events,
@@ -106,7 +92,8 @@ from helpers.utils import (
     _get_touchdowns
 )
 
-def get_user_bets_query(user, **filters):
+from typing import Any
+def get_user_bets_query(user: Any, **filters: Any) -> Any:
     """
     Get bets for a user using array containment.
     This returns all bets the user has access to (owned + shared + watched).
@@ -138,15 +125,12 @@ def get_user_bets_query(user, **filters):
                 query = query.filter(getattr(Bet, key) == value)
     return query
 
-# Use before_first_request to run migrations (deprecated in Flask 2.3+, but works)
-# Alternative: Run in a background thread or use Flask-Migrate
 try:
     @app.before_first_request
     def initialize_database():
-        run_migrations_once()
+        run_migrations_once(app)
 except AttributeError:
-    # Flask 2.3+ removed before_first_request, run immediately but with flag protection
-    run_migrations_once()
+    run_migrations_once(app)
 
 # Setup Flask-Login
 login_manager = LoginManager()
@@ -168,34 +152,7 @@ def admin_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
-def auto_migrate_user_roles():
-    """Auto-migration: Add user_role column if it doesn't exist"""
-    try:
-        from sqlalchemy import inspect
-        inspector = inspect(db.engine)
-        columns = [col['name'] for col in inspector.get_columns('users')]
-        
-        if 'user_role' not in columns:
-            app.logger.info("Running auto-migration: Adding user_role column...")
-            db.session.execute(
-                db.text("ALTER TABLE users ADD COLUMN user_role VARCHAR(20) DEFAULT 'user' NOT NULL")
-            )
-            db.session.commit()
-            app.logger.info("✓ user_role column added")
-            
-            # Set manishslal as admin
-            manish_user = User.query.filter_by(username='manishslal').first()
-            if manish_user:
-                manish_user.user_role = 'admin'
-                db.session.commit()
-                app.logger.info(f"✓ Set {manish_user.username} as admin")
-            
-            app.logger.info("✓ Auto-migration completed")
-        else:
-            app.logger.info("✓ user_role column already exists")
-    except Exception as e:
-        app.logger.error(f"Auto-migration failed: {e}")
-        db.session.rollback()
+## Migration logic moved to helpers/database.py
 
 # Setup background scheduler for automated tasks
 scheduler = BackgroundScheduler()
@@ -205,7 +162,8 @@ scheduler.start()
 atexit.register(lambda: scheduler.shutdown())
 
 # Helper function to use database with JSON backup
-def get_user_bets_from_db(user_id, status_filter=None):
+from typing import Optional, List
+def get_user_bets_from_db(user_id: int, status_filter: Optional[Any] = None) -> List[Any]:
     """Get bets from database for a specific user, returns Bet objects"""
     try:
         query = Bet.query.filter_by(user_id=user_id)
@@ -220,7 +178,7 @@ def get_user_bets_from_db(user_id, status_filter=None):
         app.logger.error(f"Database error: {e}, falling back to JSON")
         return []
 
-def save_bet_to_db(user_id, bet_data):
+def save_bet_to_db(user_id: int, bet_data: dict) -> dict:
     """Save a bet to database with JSON backup and create BetLeg records"""
     from models import Team, Bet, BetLeg
 
@@ -234,7 +192,10 @@ def save_bet_to_db(user_id, bet_data):
     for existing_bet in user_bets:
         existing_data = existing_bet.get_bet_data()
         # ...existing code for duplicate detection...
-        # (fix indentation and remove stray try/except)
+            # Check for duplicate bets
+        if existing_data['wager'] == core_match['wager'] and existing_data['odds'] == core_match['odds']:
+                app.logger.info(f"[DUPLICATE CHECK] Bet already exists for user {user_id}.")
+                return existing_bet.to_dict()
 
         # --- NORMALIZATION AND SAVE LOGIC ---
         teams = Team.query.all()
@@ -331,7 +292,7 @@ def save_bet_to_db(user_id, bet_data):
             app.logger.error(f"[ESPN-UPDATE] Error updating bet legs for bet {bet.id}: {e}")
         return bet.to_dict()
     # --- ESPN API single bet update ---
-def update_bet_legs_for_bet(bet):
+def update_bet_legs_for_bet(bet: Any) -> None:
     """Update bet legs for a single bet using ESPN API logic."""
     bet_legs = bet.bet_legs_rel.order_by(BetLeg.leg_order).all()
     needs_update = False
@@ -391,7 +352,7 @@ def update_bet_legs_for_bet(bet):
         db.session.rollback()
         raise
 
-def has_complete_final_data(bet_data):
+def has_complete_final_data(bet_data: dict) -> bool:
     """Check if a bet has complete final data for all legs
     
     Returns True if all legs have final_value OR current stats saved (not None).
@@ -410,7 +371,8 @@ def has_complete_final_data(bet_data):
     return True
 
 
-def save_final_results_to_bet(bet, processed_data):
+from typing import List
+def save_final_results_to_bet(bet: Any, processed_data: List[dict]) -> bool:
     """Save final game results to bet data when games are completed
     
     This preserves final scores and outcomes so we don't lose data when ESPN
@@ -3559,7 +3521,7 @@ if __name__ == "__main__":
         app.logger.info("Database tables created/verified")
         
         # Run auto-migration for user_role column
-        auto_migrate_user_roles()
+        # Migration logic now handled by run_migrations_once(app) at startup
         
         # Update team data on startup (runs in background)
         update_team_data_on_startup()

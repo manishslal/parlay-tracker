@@ -1,6 +1,8 @@
 import re
-import json
 from datetime import datetime
+from typing import Any, List, Optional
+import requests
+import difflib
 
 def parse_american_odds(odds):
     """Parse American odds like +150 or -120 and return decimal multiplier (including stake)."""
@@ -136,8 +138,6 @@ def _get_touchdowns(player_name, boxscore, scoring_plays=None):
     if total_tds > 0:
         return total_tds
     if scoring_plays:
-        def _norm(s):
-            return re.sub(r"[^a-z0-9 ]+", "", (s or "").lower()).strip()
         player_norm = _norm(player_name)
         td_count = 0
         for play in scoring_plays:
