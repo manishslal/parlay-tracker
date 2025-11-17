@@ -6,9 +6,164 @@ from services import get_user_bets_query, process_parlay_data, sort_parlays_by_d
 from helpers.database import has_complete_final_data, save_final_results_to_bet, auto_move_completed_bets
 from functools import wraps
 import logging
+import os
+import requests
+from werkzeug.utils import secure_filename
 
 bets_bp = Blueprint('bets', __name__)
 logger = logging.getLogger(__name__)
+
+# Configuration for file uploads
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
+MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB
+
+def allowed_file(filename):
+    """Check if the file has an allowed extension."""
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+def process_betslip_image(file):
+    """Process a bet slip image using OpenAI Vision API."""
+    try:
+        # Read the file
+        file_content = file.read()
+        if len(file_content) > MAX_FILE_SIZE:
+            raise ValueError("File too large. Maximum size is 10MB.")
+        
+        # Get OpenAI API key from environment
+        api_key = os.environ.get('OPENAI_API_KEY')
+        if not api_key:
+            raise ValueError("OpenAI API key not configured on server")
+        
+        # Convert to base64
+        import base64
+        base64_image = base64.b64encode(file_content).decode('utf-8')
+        
+        # Determine MIME type
+        filename = secure_filename(file.filename).lower()
+        if filename.endswith('.png'):
+            mime_type = 'image/png'
+        elif filename.endswith('.jpg') or filename.endswith('.jpeg'):
+            mime_type = 'image/jpeg'
+        elif filename.endswith('.gif'):
+            mime_type = 'image/gif'
+        else:
+            mime_type = 'image/jpeg'  # default
+        
+        # Call OpenAI Vision API
+        headers = {
+            'Authorization': f'Bearer {api_key}',
+            'Content-Type': 'application/json'
+        }
+        
+        payload = {
+            'model': 'gpt-4-vision-preview',
+            'messages': [
+                {
+                    'role': 'user',
+                    'content': [
+                        {
+                            'type': 'text',
+                            'text': '''Extract betting information from this bet slip image. Return a JSON object with this exact structure:
+
+{
+  "bet_site": "name of the betting site (e.g., DraftKings, FanDuel, etc.)",
+  "bet_type": "parlay|single|teaser|round_robin",
+  "total_odds": number (e.g., +150, -120),
+  "wager_amount": number (the amount wagered),
+  "potential_payout": number (total payout including wager),
+  "bet_date": "YYYY-MM-DD format",
+  "legs": [
+    {
+      "player": "Player name (if applicable)",
+      "team": "Team name",
+      "stat": "stat type (e.g., 'passing yards', 'points scored')",
+      "line": number (the betting line),
+      "stat_add": "over|under" (if applicable),
+      "odds": number (leg odds if shown)
+    }
+  ]
+}
+
+Only include fields that are clearly visible in the image. If a field is not visible, omit it rather than guessing.'''
+                        },
+                        {
+                            'type': 'image_url',
+                            'image_url': {
+                                'url': f'data:{mime_type};base64,{base64_image}'
+                            }
+                        }
+                    ]
+                }
+            ],
+            'max_tokens': 1000
+        }
+        
+        response = requests.post(
+            'https://api.openai.com/v1/chat/completions',
+            headers=headers,
+            json=payload,
+            timeout=30
+        )
+        
+        if response.status_code != 200:
+            raise ValueError(f"OpenAI API error: {response.status_code} - {response.text}")
+        
+        result = response.json()
+        content = result['choices'][0]['message']['content']
+        
+        # Parse the JSON response
+        import json
+        extracted_data = json.loads(content)
+        
+        # Validate the structure
+        if not isinstance(extracted_data, dict):
+            raise ValueError("Invalid response format from OpenAI")
+        
+        # Ensure required fields have defaults
+        extracted_data.setdefault('bet_site', 'Unknown')
+        extracted_data.setdefault('bet_type', 'parlay')
+        extracted_data.setdefault('legs', [])
+        
+        return extracted_data
+        
+    except json.JSONDecodeError as e:
+        raise ValueError(f"Failed to parse OpenAI response as JSON: {e}")
+    except Exception as e:
+        logger.error(f"Error processing bet slip image: {e}")
+        raise
+
+def transform_extracted_bet_data(data):
+    """Transform frontend extracted bet data to internal format."""
+    # Map frontend field names to internal format
+    bet_data = {
+        'name': data.get('bet_name'),
+        'type': data.get('bet_type', 'parlay'),
+        'betting_site': data.get('bet_site', 'Unknown'),
+        'wager': data.get('wager_amount'),
+        'odds': data.get('total_odds'),
+        'payout': data.get('potential_payout'),
+        'placed_at': data.get('bet_date'),
+        'legs': []
+    }
+    
+    # Transform legs
+    for i, leg in enumerate(data.get('legs', [])):
+        transformed_leg = {
+            'leg_order': i,
+            'player': leg.get('player'),
+            'team': leg.get('team'),
+            'stat': leg.get('stat'),
+            'line': leg.get('line'),
+            'stat_add': leg.get('stat_add'),  # over/under
+            'odds': leg.get('odds')
+        }
+        
+        # Clean up empty values
+        transformed_leg = {k: v for k, v in transformed_leg.items() if v is not None and v != ''}
+        
+        bet_data['legs'].append(transformed_leg)
+    
+    return bet_data
 
 def db_error_handler(f):
     """Decorator to handle database connection errors gracefully."""
@@ -278,3 +433,66 @@ def stats():
 	live_parlays = [bet.get_bet_data() for bet in live_bets]
 	processed_live = process_parlay_data(live_parlays)
 	return jsonify(sort_parlays_by_date(processed_live))
+
+@bets_bp.route('/api/upload-betslip', methods=['POST'])
+@login_required
+def upload_betslip():
+	"""Upload and process a bet slip image using OCR."""
+	try:
+		if 'image' not in request.files:
+			return jsonify({'success': False, 'error': 'No image file provided'}), 400
+		
+		file = request.files['image']
+		if file.filename == '':
+			return jsonify({'success': False, 'error': 'No image file selected'}), 400
+		
+		if not file or not allowed_file(file.filename):
+			return jsonify({'success': False, 'error': 'Invalid file type. Please upload a PNG, JPG, or JPEG image.'}), 400
+		
+		# Process the image with OCR
+		try:
+			extracted_data = process_betslip_image(file)
+			return jsonify({
+				'success': True,
+				'data': extracted_data
+			})
+		except Exception as ocr_error:
+			logger.error(f"OCR processing failed: {ocr_error}")
+			return jsonify({
+				'success': False,
+				'error': f'Failed to process bet slip image: {str(ocr_error)}'
+			}), 500
+			
+	except Exception as e:
+		logger.error(f"Bet slip upload error: {e}")
+		return jsonify({'success': False, 'error': str(e)}), 500
+
+@bets_bp.route('/api/save-extracted-bet', methods=['POST'])
+@login_required
+def save_extracted_bet():
+	"""Save an extracted/edited bet from bet slip processing."""
+	try:
+		data = request.get_json()
+		if not data:
+			return jsonify({'success': False, 'error': 'No data provided'}), 400
+		
+		# Transform the frontend data to match our internal format
+		bet_data = transform_extracted_bet_data(data)
+		
+		# Validate required fields
+		if not bet_data.get('legs'):
+			return jsonify({'success': False, 'error': 'Bet must have at least one leg'}), 400
+		
+		# Save the bet
+		from app import save_bet_to_db
+		result = save_bet_to_db(current_user.id, bet_data)
+		
+		return jsonify({
+			'success': True,
+			'bet': result,
+			'message': 'Bet saved successfully'
+		})
+		
+	except Exception as e:
+		logger.error(f"Save extracted bet error: {e}")
+		return jsonify({'success': False, 'error': str(e)}), 500
