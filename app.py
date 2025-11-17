@@ -2267,14 +2267,14 @@ scheduler.add_job(
 )
 
 scheduler.add_job(
-    func=auto_move_bets_no_live_legs,
+    func=lambda: app.app_context().push() or auto_move_bets_no_live_legs(),
     trigger=IntervalTrigger(minutes=5),
     id='auto_move_no_live_legs',
     name='Move bets with no live legs to historical every 5 minutes'
 )
 
 scheduler.add_job(
-    func=auto_determine_leg_hit_status,
+    func=lambda: app.app_context().push() or auto_determine_leg_hit_status(),
     trigger=IntervalTrigger(minutes=10),
     id='auto_determine_hit_status',
     name='Determine hit/miss status for legs with achieved values every 10 minutes'
