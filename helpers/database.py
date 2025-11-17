@@ -205,6 +205,77 @@ def auto_move_completed_bets(user_id):
         logging.error(f"Error in auto_move_completed_bets: {e}")
         db.session.rollback()
 
+def auto_move_pending_to_live():
+    """Automatically move pending bets to appropriate status based on game states.
+    
+    - If any games are in progress: move to 'live' status
+    - If all games are final: move directly to 'completed' status and deactivate
+    """
+    try:
+        import logging
+        from datetime import date
+        logging.info("[AUTO-MOVE-PENDING] Checking for pending bets that need status updates")
+        
+        from models import Bet, BetLeg
+        
+        # Get all pending bets
+        pending_bets = Bet.query.filter_by(status='pending', is_active=True).all()
+        
+        if not pending_bets:
+            logging.info("[AUTO-MOVE-PENDING] No pending bets found")
+            return
+        
+        logging.info(f"[AUTO-MOVE-PENDING] Checking {len(pending_bets)} pending bets")
+        
+        updated_count = 0
+        today = date.today()
+        
+        for bet in pending_bets:
+            # Get bet legs from database
+            bet_legs = BetLeg.query.filter(BetLeg.bet_id == bet.id).all()
+            
+            if not bet_legs:
+                continue
+            
+            # Analyze game statuses
+            has_live_games = False
+            has_final_games = False
+            all_games_final = True
+            
+            for leg in bet_legs:
+                if leg.game_status == 'in_progress':
+                    has_live_games = True
+                    all_games_final = False
+                elif leg.game_status == 'STATUS_FINAL':
+                    has_final_games = True
+                else:
+                    # Game not started or unknown status
+                    all_games_final = False
+            
+            # Determine new status
+            if has_live_games:
+                # Has games in progress - move to live
+                logging.info(f"[AUTO-MOVE-PENDING] Bet {bet.id} has live games - moving to live status")
+                bet.status = 'live'
+                updated_count += 1
+            elif all_games_final and has_final_games:
+                # All games are final - move directly to completed
+                logging.info(f"[AUTO-MOVE-PENDING] Bet {bet.id} has all games final - moving to completed")
+                bet.status = 'completed'
+                bet.is_active = False  # Move to historical
+                updated_count += 1
+        
+        # Commit all changes
+        if updated_count > 0:
+            db.session.commit()
+            logging.info(f"[AUTO-MOVE-PENDING] Updated {updated_count} bets")
+        else:
+            logging.info("[AUTO-MOVE-PENDING] No bets needed updating")
+            
+    except Exception as e:
+        logging.error(f"[AUTO-MOVE-PENDING] Error: {e}")
+        db.session.rollback()
+
 def auto_move_bets_no_live_legs():
     """Automatically move bets to historical when no legs have games in progress.
     

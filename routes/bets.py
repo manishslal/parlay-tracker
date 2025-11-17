@@ -3,7 +3,7 @@ from typing import Any
 from flask_login import login_required, current_user
 from models import db, Bet
 from services import get_user_bets_query, process_parlay_data, sort_parlays_by_date
-from helpers.database import has_complete_final_data, save_final_results_to_bet, auto_move_completed_bets, auto_move_bets_no_live_legs, auto_determine_leg_hit_status
+from helpers.database import has_complete_final_data, save_final_results_to_bet, auto_move_completed_bets, auto_move_bets_no_live_legs, auto_determine_leg_hit_status, auto_move_pending_to_live
 from app import app
 from functools import wraps
 import logging
@@ -353,6 +353,7 @@ def db_health_check():
 @login_required
 @db_error_handler
 def live():
+	auto_move_pending_to_live()  # Move pending bets to live if their games started
 	auto_move_bets_no_live_legs()  # Move bets with no live legs to historical
 	auto_determine_leg_hit_status()  # Ensure hit/miss status is up to date
 	bets = get_user_bets_query(current_user, is_active=True, is_archived=False, status='live').options(db.joinedload(Bet.bet_legs_rel)).all()
@@ -364,6 +365,7 @@ def live():
 @login_required
 @db_error_handler
 def todays():
+	auto_move_pending_to_live()  # Move pending bets to live if their games started
 	auto_move_completed_bets(current_user.id)
 	auto_move_bets_no_live_legs()  # Also move bets with no live legs
 	auto_determine_leg_hit_status()  # Determine hit/miss status for legs
