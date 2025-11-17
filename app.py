@@ -233,6 +233,152 @@ def get_user_bets_from_db(user_id: int, status_filter: Optional[Any] = None) -> 
         app.logger.error(f"Database error: {e}, falling back to JSON")
         return []
 
+def populate_game_ids_for_bet(bet: Any) -> None:
+    """Populate ESPN game IDs for all bet legs in a bet that have game dates and team info."""
+    from helpers.espn_api import get_espn_games_with_ids_for_date
+    from datetime import datetime, timedelta
+    
+    bet_legs = db.session.query(BetLeg).filter(
+        BetLeg.bet_id == bet.id,
+        BetLeg.game_date.isnot(None),
+        BetLeg.away_team.isnot(None),
+        BetLeg.home_team.isnot(None),
+        (BetLeg.game_id.is_(None) | (BetLeg.game_id == ''))
+    ).all()
+    
+    if not bet_legs:
+        return  # No legs need game ID population
+    
+    app.logger.info(f"[GAME-ID-POPULATION] Populating game IDs for {len(bet_legs)} legs in bet {bet.id}")
+    
+    # Group legs by game date for efficiency
+    legs_by_date = {}
+    for leg in bet_legs:
+        date_key = leg.game_date
+        if date_key not in legs_by_date:
+            legs_by_date[date_key] = []
+        legs_by_date[date_key].append(leg)
+    
+    # Process each date
+    for game_date, legs in legs_by_date.items():
+        try:
+            # Get games with IDs for this date
+            games = get_espn_games_with_ids_for_date(game_date)
+            if not games:
+                app.logger.warning(f"[GAME-ID-POPULATION] No games found for date {game_date}")
+                continue
+            
+            # Create lookup map for faster matching
+            game_lookup = {}
+            for game_id, espn_away, espn_home in games:
+                # Normalize team names for matching
+                away_norm = espn_away.lower().strip()
+                home_norm = espn_home.lower().strip()
+                key = f"{away_norm}@{home_norm}"
+                game_lookup[key] = game_id
+                
+                # Also try reverse order
+                reverse_key = f"{home_norm}@{away_norm}"
+                game_lookup[reverse_key] = game_id
+            
+            # Match each leg to a game
+            for leg in legs:
+                away_norm = leg.away_team.lower().strip()
+                home_norm = leg.home_team.lower().strip()
+                key = f"{away_norm}@{home_norm}"
+                
+                if key in game_lookup:
+                    leg.game_id = game_lookup[key]
+                    app.logger.info(f"[GAME-ID-POPULATION] Set game_id {game_lookup[key]} for leg {leg.id} ({leg.away_team} @ {leg.home_team})")
+                else:
+                    app.logger.warning(f"[GAME-ID-POPULATION] No game match found for leg {leg.id}: {leg.away_team} @ {leg.home_team} on {game_date}")
+        
+        except Exception as e:
+            app.logger.error(f"[GAME-ID-POPULATION] Error processing date {game_date}: {e}")
+    
+    # Commit all changes
+    try:
+        db.session.commit()
+        app.logger.info(f"[GAME-ID-POPULATION] Successfully populated game IDs for bet {bet.id}")
+    except Exception as e:
+        app.logger.error(f"[GAME-ID-POPULATION] Error committing changes for bet {bet.id}: {e}")
+        db.session.rollback()
+
+def populate_player_data_for_bet(bet: Any) -> None:
+    """Populate player_id and player_position for all bet legs in a bet."""
+    from helpers.espn_api import search_espn_player
+    from models import Player
+    
+    bet_legs = db.session.query(BetLeg).filter(
+        BetLeg.bet_id == bet.id,
+        BetLeg.player_name.isnot(None),
+        BetLeg.player_name != 'Unknown',
+        BetLeg.player_id.is_(None)
+    ).all()
+    
+    if not bet_legs:
+        return  # No legs need player data population
+    
+    app.logger.info(f"[PLAYER-POPULATION] Populating player data for {len(bet_legs)} legs in bet {bet.id}")
+    
+    for leg in bet_legs:
+        try:
+            # First, try to find existing player by name
+            existing_player = Player.query.filter(
+                db.or_(
+                    Player.player_name == leg.player_name,
+                    Player.normalized_name == leg.player_name.lower().strip(),
+                    Player.display_name == leg.player_name
+                )
+            ).first()
+            
+            if existing_player:
+                # Use existing player
+                leg.player_id = existing_player.id
+                leg.player_position = existing_player.position
+                app.logger.info(f"[PLAYER-POPULATION] Found existing player {existing_player.player_name} (ID: {existing_player.id}) for leg {leg.id}")
+                continue
+            
+            # Player not found, search ESPN
+            app.logger.info(f"[PLAYER-POPULATION] Player {leg.player_name} not found locally, searching ESPN...")
+            espn_player_data = search_espn_player(leg.player_name, sport="football", league="nfl")
+            
+            if espn_player_data:
+                # Create new player record
+                new_player = Player(
+                    player_name=espn_player_data['player_name'],
+                    normalized_name=espn_player_data['player_name'].lower().strip(),
+                    display_name=espn_player_data['player_name'],
+                    sport=espn_player_data['sport'],
+                    position=espn_player_data['position'],
+                    jersey_number=espn_player_data['jersey_number'],
+                    current_team=espn_player_data['current_team'],
+                    team_abbreviation=espn_player_data['team_abbreviation'],
+                    espn_player_id=espn_player_data['espn_player_id']
+                )
+                
+                db.session.add(new_player)
+                db.session.flush()  # Get the ID
+                
+                # Update the bet leg
+                leg.player_id = new_player.id
+                leg.player_position = new_player.position
+                
+                app.logger.info(f"[PLAYER-POPULATION] Created new player {new_player.player_name} (ID: {new_player.id}, ESPN ID: {new_player.espn_player_id}) for leg {leg.id}")
+            else:
+                app.logger.warning(f"[PLAYER-POPULATION] Player {leg.player_name} not found on ESPN for leg {leg.id}")
+        
+        except Exception as e:
+            app.logger.error(f"[PLAYER-POPULATION] Error processing player {leg.player_name} for leg {leg.id}: {e}")
+    
+    # Commit all changes
+    try:
+        db.session.commit()
+        app.logger.info(f"[PLAYER-POPULATION] Successfully populated player data for bet {bet.id}")
+    except Exception as e:
+        app.logger.error(f"[PLAYER-POPULATION] Error committing changes for bet {bet.id}: {e}")
+        db.session.rollback()
+
 def save_bet_to_db(user_id: int, bet_data: dict) -> dict:
     """Save a bet to database with JSON backup and create BetLeg records"""
     from models import Team, Bet, BetLeg
@@ -252,10 +398,10 @@ def save_bet_to_db(user_id: int, bet_data: dict) -> dict:
                 app.logger.info(f"[DUPLICATE CHECK] Bet already exists for user {user_id}.")
                 return existing_bet.to_dict()
 
-        # --- NORMALIZATION AND SAVE LOGIC ---
-        teams = Team.query.all()
-        team_lookup = {}
-        for sport in ['NFL', 'NBA']:
+    # --- NORMALIZATION AND SAVE LOGIC ---
+    teams = Team.query.all()
+    team_lookup = {}
+    for sport in ['NFL', 'NBA']:
             sport_teams = [t for t in teams if t.sport == sport]
             abbr_to_nickname = {}
             name_to_nickname = {}
@@ -272,27 +418,32 @@ def save_bet_to_db(user_id: int, bet_data: dict) -> dict:
                 'name_to_nickname': name_to_nickname
             }
 
-        def normalize_team_name(team_str, sport):
-            if not team_str or not sport or sport not in team_lookup:
-                return team_str
-            lookup = team_lookup[sport]
-            team_lower = team_str.lower().strip()
-            team_upper = team_str.upper().strip()
-            if team_upper in lookup['abbr_to_nickname']:
-                return lookup['abbr_to_nickname'][team_upper]
-            if team_lower in lookup['name_to_nickname']:
-                return lookup['name_to_nickname'][team_lower]
-            for full_name, nickname in lookup['name_to_nickname'].items():
-                if full_name in team_lower or team_lower in full_name:
-                    return nickname
+    def normalize_team_name(team_str, sport):
+        if not team_str or not sport or sport not in team_lookup:
             return team_str
+        lookup = team_lookup[sport]
+        team_lower = team_str.lower().strip()
+        team_upper = team_str.upper().strip()
+        if team_upper in lookup['abbr_to_nickname']:
+            return lookup['abbr_to_nickname'][team_upper]
+        if team_lower in lookup['name_to_nickname']:
+            return lookup['name_to_nickname'][team_lower]
+        for full_name, nickname in lookup['name_to_nickname'].items():
+            if full_name in team_lower or team_lower in full_name:
+                return nickname
+        return team_str
 
-        bet = Bet(user_id=user_id)
-        bet.set_bet_data(bet_data)
-        db.session.add(bet)
-        db.session.flush()
+    bet = Bet(user_id=user_id)
+    import json
+    bet.bet_data = json.dumps(bet_data)
+    bet.is_active = True
+    bet.is_archived = False
+    bet.status = 'pending'
+    bet.api_fetched = 'No'
+    db.session.add(bet)
+    db.session.flush()
 
-        for leg_data in legs:
+    for leg_data in legs:
             game_date = None
             game_time = None
             if leg_data.get('game_date'):
@@ -319,7 +470,7 @@ def save_bet_to_db(user_id: int, bet_data: dict) -> dict:
                 sport=sport,
                 bet_type=leg_data.get('bet_type', 'player_prop'),
                 bet_line_type=leg_data.get('bet_line_type'),
-                target_value=leg_data.get('line'),
+                target_value=leg_data.get('line') or 0.0,
                 stat_type=leg_data.get('stat'),
                 status=leg_status,
                 leg_order=leg_data.get('leg_order', 0)
@@ -338,14 +489,27 @@ def save_bet_to_db(user_id: int, bet_data: dict) -> dict:
                 except (ValueError, AttributeError):
                     pass
             db.session.add(bet_leg)
-        db.session.commit()
-        backup_to_json(user_id)
-        # ESPN API update trigger
-        try:
-            update_bet_legs_for_bet(bet)
-        except Exception as e:
-            app.logger.error(f"[ESPN-UPDATE] Error updating bet legs for bet {bet.id}: {e}")
-        return bet.to_dict()
+    db.session.commit()
+    backup_to_json(user_id)
+    
+    # Populate ESPN game IDs for the newly created bet legs
+    try:
+        populate_game_ids_for_bet(bet)
+    except Exception as e:
+        app.logger.error(f"[GAME-ID-POPULATION] Error populating game IDs for bet {bet.id}: {e}")
+    
+    # Populate player data for the newly created bet legs
+    try:
+        populate_player_data_for_bet(bet)
+    except Exception as e:
+        app.logger.error(f"[PLAYER-POPULATION] Error populating player data for bet {bet.id}: {e}")
+    
+    # ESPN API update trigger
+    try:
+        update_bet_legs_for_bet(bet)
+    except Exception as e:
+        app.logger.error(f"[ESPN-UPDATE] Error updating bet legs for bet {bet.id}: {e}")
+    return bet.to_dict()
     # --- ESPN API single bet update ---
 def update_bet_legs_for_bet(bet: Any) -> None:
     """Update bet legs for a single bet using ESPN API logic."""
