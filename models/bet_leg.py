@@ -63,8 +63,82 @@ class BetLeg(db.Model):
     created_at = db.Column(db.DateTime, default=db.func.now())
     updated_at = db.Column(db.DateTime, default=db.func.now(), onupdate=db.func.now())
 
-    def to_dict(self):
+    def get_display_values(self):
+        """Calculate display values for Current and Progress fields for moneyline and spread bets."""
+        current_display = None
+        progress_display = None
+        progress_color = None
+        
+        # Only calculate for moneyline and spread bets
+        if self.stat_type and self.stat_type.lower() in ['moneyline', 'spread']:
+            # Determine bet team and opponent
+            bet_team = self.player_name or self.player_team or ''
+            is_home_bet = self.is_home_game
+            
+            # Get scores
+            home_score = self.home_score or 0
+            away_score = self.away_score or 0
+            
+            # Calculate score differential from bet team's perspective
+            if is_home_bet:
+                score_diff = home_score - away_score
+                bet_score = home_score
+                opp_score = away_score
+                opp_team = self.away_team
+            else:
+                score_diff = away_score - home_score
+                bet_score = away_score
+                opp_score = home_score
+                opp_team = self.home_team
+            
+            # Progress display: "BET_TEAM SCORE - OPP_SCORE OPP_TEAM"
+            progress_display = f"{bet_team} {bet_score} - {opp_score} {opp_team}"
+            
+            if self.stat_type.lower() == 'moneyline':
+                if self.status in ['won', 'lost']:
+                    # For completed games, show Win/Loss
+                    current_display = "Win" if self.status == 'won' else "Loss"
+                    progress_color = "green" if self.status == 'won' else "red"
+                elif self.status == 'pending' and self.home_score is not None and self.away_score is not None:
+                    # For pending games, show Up/Down
+                    if score_diff > 0:
+                        current_display = f"Up {score_diff}"
+                        progress_color = "green"
+                    elif score_diff < 0:
+                        current_display = f"Down {abs(score_diff)}"
+                        progress_color = "red"
+                    else:
+                        current_display = "Even"
+                        progress_color = "yellow"
+            
+            elif self.stat_type.lower() == 'spread':
+                spread_value = self.target_value or 0
+                if self.status in ['won', 'lost']:
+                    # For completed games, show the spread result
+                    current_display = f"{'+' if self.is_hit else '-'}{abs(spread_value)}"
+                    progress_color = "green" if self.status == 'won' else "red"
+                elif self.status == 'pending' and self.home_score is not None and self.away_score is not None:
+                    # For pending games, show current spread status
+                    # Positive spread_diff means covering, negative means not covering
+                    spread_diff = score_diff + spread_value
+                    if spread_diff > 0:
+                        current_display = f"+{spread_diff}"
+                        progress_color = "green"
+                    elif spread_diff < 0:
+                        current_display = f"{spread_diff}"
+                        progress_color = "red"
+                    else:
+                        current_display = "Push"
+                        progress_color = "yellow"
+        
         return {
+            'current_display': current_display,
+            'progress_display': progress_display,
+            'progress_color': progress_color
+        }
+
+    def to_dict(self):
+        base_dict = {
             'id': self.id,
             'bet_id': self.bet_id,
             'player_id': self.player_id,
@@ -116,4 +190,84 @@ class BetLeg(db.Model):
             'leg_order': self.leg_order,
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None,
+        }
+        
+        # Add display values for moneyline and spread bets
+        display_values = self.get_display_values()
+        base_dict.update(display_values)
+        
+        return base_dict
+
+    def get_display_values(self):
+        """Calculate display values for Current and Progress fields for moneyline and spread bets."""
+        current_display = None
+        progress_display = None
+        progress_color = None
+        
+        # Only calculate for moneyline and spread bets
+        if self.stat_type and self.stat_type.lower() in ['moneyline', 'spread']:
+            # Determine bet team and opponent
+            bet_team = self.player_name or self.player_team or ''
+            is_home_bet = self.is_home_game
+            
+            # Get scores
+            home_score = self.home_score or 0
+            away_score = self.away_score or 0
+            
+            # Calculate score differential from bet team's perspective
+            if is_home_bet:
+                score_diff = home_score - away_score
+                bet_score = home_score
+                opp_score = away_score
+                opp_team = self.away_team
+            else:
+                score_diff = away_score - home_score
+                bet_score = away_score
+                opp_score = home_score
+                opp_team = self.home_team
+            
+            # Progress display: "BET_TEAM SCORE - OPP_SCORE OPP_TEAM"
+            progress_display = f"{bet_team} {bet_score} - {opp_score} {opp_team}"
+            
+            if self.stat_type.lower() == 'moneyline':
+                if self.status in ['won', 'lost']:
+                    # For completed games, show Win/Loss
+                    current_display = "Win" if self.status == 'won' else "Loss"
+                    progress_color = "green" if self.status == 'won' else "red"
+                elif self.status == 'pending' and self.home_score is not None and self.away_score is not None:
+                    # For pending games, show Up/Down
+                    if score_diff > 0:
+                        current_display = f"Up {score_diff}"
+                        progress_color = "green"
+                    elif score_diff < 0:
+                        current_display = f"Down {abs(score_diff)}"
+                        progress_color = "red"
+                    else:
+                        current_display = "Even"
+                        progress_color = "yellow"
+            
+            elif self.stat_type.lower() == 'spread':
+                spread_value = self.target_value or 0
+                if self.status in ['won', 'lost']:
+                    # For completed games, show the spread result
+                    current_display = f"{'+' if self.is_hit else '-'}{abs(spread_value)}"
+                    progress_color = "green" if self.status == 'won' else "red"
+                elif self.status == 'pending' and self.home_score is not None and self.away_score is not None:
+                    # For pending games, show current spread status
+                    # Positive spread_diff means covering, negative means not covering
+                    spread_diff = score_diff + spread_value
+                    if spread_diff > 0:
+                        current_display = f"+{spread_diff}"
+                        progress_color = "green"
+                    elif spread_diff < 0:
+                        current_display = f"{spread_diff}"
+                        progress_color = "red"
+                    else:
+                        current_display = "Push"
+                        progress_color = "yellow"
+        
+        return {
+            'current_display': current_display,
+            'progress_display': progress_display,
+            'progress_color': progress_color
         }
