@@ -1,0 +1,27 @@
+[
+  {
+    "title": "Test Game ID Population",
+    "description": "Testing automated game ID population",
+    "wager": 100.0,
+    "odds": 2.0,
+    "sport": "NFL",
+    "legs": [
+      {
+        "away_team": "Chiefs",
+        "home_team": "Buccaneers",
+        "game_date": "2024-11-10",
+        "bet_type": "Moneyline",
+        "pick": "Chiefs",
+        "odds": 1.8
+      },
+      {
+        "away_team": "Eagles",
+        "home_team": "Commanders",
+        "game_date": "2024-11-10",
+        "bet_type": "Spread",
+        "pick": "Eagles -3.5",
+        "odds": 1.9
+      }
+    ]
+  }
+]

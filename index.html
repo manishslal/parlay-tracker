@@ -1040,11 +1040,11 @@
     th:last-child { border-top-right-radius: 12px !important; }
     /* Desktop body: Player column (3) - left aligned */
     td:nth-child(3){text-align:left !important;}
-    /* Desktop body: Bet Type, Current, Target, Progress columns (4-7) - centered */
+    /* Desktop body: Stat Type, Current, Target, Progress columns (4-7) - centered */
     td:nth-child(4),td:nth-child(5),td:nth-child(6),td:nth-child(7){text-align:center !important;}
     /* Desktop body: Status column (8) - centered */
     td:nth-child(8){text-align:center !important;}
-    /* Headers: Player (th1) - left, Bet Type through Status (th2-6) - centered */
+    /* Headers: Player (th1) - left, Stat Type through Status (th2-6) - centered */
     thead th:nth-child(1){text-align:left !important;}
     thead th:nth-child(2),thead th:nth-child(3),thead th:nth-child(4),thead th:nth-child(5),thead th:nth-child(6){text-align:center !important;}
     tbody tr:last-child td { border-bottom: none; }
@@ -3706,7 +3706,7 @@ async function logoutToken() {
           <thead><tr>
             <th style="display:none;"></th>
             <th style="display:none;"></th>
-            <th>Player</th><th>Bet Type</th><th>Current</th>
+            <th>Player</th><th>Stat Type</th><th>Current</th>
             <th>Target</th><th style="width:25%;">Progress</th><th>Status</th>
           </tr></thead>
           <tbody>
@@ -4058,7 +4058,7 @@ async function logoutToken() {
               
               // Format for mobile display
               const playerOrTeam = playerDisplay; // Use the calculated playerDisplay
-              const statType = fmtType(p.stat, statAdd);
+              const statType = p.stat_type;
               const mobileCurrentDisplay = formatStatForMobile(currentDisplay, p.stat);
               const mobileTargetDisplay = formatStatForMobile(targetDisplay, p.stat);
               
@@ -4103,7 +4103,7 @@ async function logoutToken() {
                     </div>
                   </td>
                   <td>${playerCellHTML}</td>
-                  <td>${fmtType(p.stat, statAdd)}</td>
+                  <td>${p.stat_type}</td>
                   <td>${currentDisplay}</td>
                   <td>${targetDisplay}</td>
                   <td>${progressCol}</td>
@@ -4118,7 +4118,7 @@ async function logoutToken() {
         
         const oddsText = parlay.odds || 'N/A';
         const wagerText = parlay.wager ? `$${parlay.wager}` : 'N/A';
-        const betIdText = parlay.bet_id || 'N/A';
+        const betIdText = parlay.betting_site_id || 'N/A';
         const siteText = parlay.betting_site || 'N/A';
         
         // Calculate winnings if bet won (all games final and all legs hit)
@@ -4850,7 +4850,7 @@ async function logoutToken() {
         }
         
         // Success!
-        alert(`✅ ${result.message}\n\nBet ID: ${result.bet.bet_id}`);
+        alert(`✅ ${result.message}\n\nBet ID: ${result.bet.betting_site_id}`);
         
         // Close modal and reset
         ocrModal.style.display = 'none';

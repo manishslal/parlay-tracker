@@ -30,7 +30,7 @@ load_dotenv()
 # Import database models
 from models import db, User, Bet, BetLeg, Player
 from helpers.database import run_migrations_once, has_complete_final_data, save_final_results_to_bet, auto_move_completed_bets
-
+from helpers.enhanced_player_search import enhanced_player_search
 
 from helpers.utils import data_path, DATA_DIR
 
@@ -343,9 +343,9 @@ def populate_player_data_for_bet(bet: Any) -> None:
                 app.logger.info(f"[PLAYER-POPULATION] Found existing player {existing_player.player_name} (ID: {existing_player.id}) for leg {leg.id}")
                 continue
             
-            # Player not found, search ESPN
-            app.logger.info(f"[PLAYER-POPULATION] Player {leg.player_name} not found locally, searching ESPN...")
-            espn_player_data = search_espn_player(leg.player_name, sport="football", league="nfl")
+            # Player not found, search ESPN with enhanced fallback strategies
+            app.logger.info(f"[PLAYER-POPULATION] Player {leg.player_name} not found locally, searching ESPN with enhanced strategies...")
+            espn_player_data = enhanced_player_search(leg.player_name, sport="football", league="nfl")
             
             if espn_player_data:
                 # Create new player record

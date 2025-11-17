@@ -50,7 +50,7 @@ def import_from_production():
         for bet in prod_bets:
             bets_data.append({
                 'user_id': bet.user_id,
-                'bet_id': bet.bet_id,
+                'betting_site_id': bet.betting_site_id,
                 'bet_type': bet.bet_type,
                 'betting_site': bet.betting_site,
                 'status': bet.status,

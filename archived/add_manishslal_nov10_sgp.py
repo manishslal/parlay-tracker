@@ -66,7 +66,7 @@ def add_nov10_sgp():
             # Create bet
             bet = Bet(user_id=manishslal.id)
             bet.set_bet_data(bet_data)
-            bet.bet_id = bet_id
+            bet.betting_site_id = bet_id
             bet.bet_type = 'SGP'
             bet.betting_site = 'PrizePicks'
             bet.status = 'pending'
