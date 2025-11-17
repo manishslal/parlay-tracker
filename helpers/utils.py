@@ -67,7 +67,7 @@ def compute_parlay_returns_from_odds(wager, parlay_odds=None, leg_odds_list=None
 
 def sort_parlays_by_date(parlays):
     def get_latest_date(parlay):
-        dates = [leg.get('game_date', '1900-01-01') for leg in parlay.get('legs', [])]
+        dates = [leg.get('game_date') or '1900-01-01' for leg in parlay.get('legs', []) if leg.get('game_date')]
         return max(dates) if dates else '1900-01-01'
     return sorted(parlays, key=get_latest_date, reverse=True)
 
