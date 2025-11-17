@@ -373,9 +373,9 @@ def todays():
 def historical():
 	try:
 		bets = get_user_bets_query(current_user, is_active=False, is_archived=False).options(db.joinedload(Bet.bet_legs_rel)).all()
-		historical_parlays = [bet.to_dict_structured(use_live_data=True) for bet in bets]
-		processed = process_parlay_data(historical_parlays)
-		return jsonify(sort_parlays_by_date(processed))
+		historical_parlays = [bet.to_dict_structured(use_live_data=False) for bet in bets]
+		# Historical bets don't need live processing - return data as-is
+		return jsonify(sort_parlays_by_date(historical_parlays))
 	except Exception as e:
 		return jsonify({"error": str(e)}), 500
 
