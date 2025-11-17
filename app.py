@@ -29,7 +29,7 @@ load_dotenv()
 
 # Import database models
 from models import db, User, Bet, BetLeg
-from helpers.database import run_migrations_once
+from helpers.database import run_migrations_once, has_complete_final_data, save_final_results_to_bet, auto_move_completed_bets
 
 
 from helpers.utils import data_path, DATA_DIR
