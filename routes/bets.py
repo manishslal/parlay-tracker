@@ -5,8 +5,10 @@ from models import db, Bet
 from services import get_user_bets_query, process_parlay_data, sort_parlays_by_date
 from helpers.database import has_complete_final_data, save_final_results_to_bet, auto_move_completed_bets
 from functools import wraps
+import logging
 
 bets_bp = Blueprint('bets', __name__)
+logger = logging.getLogger(__name__)
 
 def db_error_handler(f):
     """Decorator to handle database connection errors gracefully."""
@@ -33,9 +35,71 @@ def db_error_handler(f):
 @login_required
 def create_bet() -> Any:
 	try:
-		# ...existing code...
-		return jsonify({})
+		data = request.get_json()
+		if not data:
+			return jsonify({"error": "No data provided"}), 400
+		
+		# Standardize bet type values to match API format
+		bet_type_mapping = {
+			'parlay': 'Parlay',
+			'SGP': 'SGP', 
+			'single': 'Single Bet',
+			'teaser': 'Teaser'
+		}
+		
+		if 'type' in data:
+			data['type'] = bet_type_mapping.get(data['type'], data['type'])
+		
+		# Generate standardized bet name if not provided or if it's generic
+		if 'name' not in data or not data['name'] or data['name'].strip() == '':
+			leg_count = len(data.get('legs', []))
+			if data['type'] == 'SGP':
+				data['name'] = f"{leg_count} Leg SGP"
+			elif data['type'] == 'Parlay':
+				data['name'] = f"{leg_count} Pick Parlay"
+			elif data['type'] == 'Single Bet':
+				data['name'] = "Single Bet"
+			else:
+				data['name'] = f"{leg_count} Pick {data['type']}"
+		
+		# Ensure status is set properly
+		if 'status' not in data:
+			data['status'] = 'pending'
+		
+		# Standardize leg data format
+		if 'legs' in data:
+			for i, leg in enumerate(data['legs']):
+				# Standardize bet_type for legs
+				stat = leg.get('stat', '').lower()
+				if 'moneyline' in stat:
+					leg['bet_type'] = 'moneyline'
+				elif 'spread' in stat:
+					leg['bet_type'] = 'spread'
+				elif 'total' in stat or 'points' in stat:
+					leg['bet_type'] = 'total_points'
+				else:
+					leg['bet_type'] = 'player_prop'
+				
+				# Ensure required fields are present with correct names
+				if 'target_value' not in leg and 'line' in leg:
+					leg['target_value'] = leg['line']
+				if 'stat_type' not in leg and 'stat' in leg:
+					leg['stat_type'] = leg['stat']
+				if 'bet_line_type' not in leg and 'stat_add' in leg:
+					leg['bet_line_type'] = leg['stat_add']
+				
+				# Ensure leg_order is set
+				if 'leg_order' not in leg:
+					leg['leg_order'] = i
+		
+		# Save bet to database
+		from app import save_bet_to_db
+		result = save_bet_to_db(current_user.id, data)
+		
+		return jsonify(result), 201
+		
 	except Exception as e:
+		logger.error(f"Error creating bet: {e}")
 		return jsonify({"error": str(e)}), 500
 
 @bets_bp.route('/api/bets/<int:bet_id>', methods=['PUT'])

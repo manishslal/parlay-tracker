@@ -324,9 +324,9 @@
         <h2>Bet Information</h2>
         
         <div class="form-group">
-          <label for="bet-name">Bet Name <span class="required">*</span></label>
-          <input type="text" id="bet-name" placeholder="e.g., Sunday Night Special" required>
-          <div class="help-text">Give your bet a memorable name</div>
+          <label for="bet-name">Bet Name</label>
+          <input type="text" id="bet-name" placeholder="Optional custom name (leave blank for auto-generated)">
+          <div class="help-text">Optional: Give your bet a custom name, or leave blank for auto-generated name</div>
         </div>
 
         <div class="form-row">
@@ -804,9 +804,9 @@
       event.preventDefault();
       
       // Collect bet data with all required fields matching OCR structure
+      const betName = document.getElementById('bet-name').value.trim();
       const betData = {
         bet_id: document.getElementById('bet-id').value || `manual_${Date.now()}`,
-        name: document.getElementById('bet-name').value,
         type: document.getElementById('bet-type').value,
         betting_site: document.getElementById('betting-site').value,
         bet_date: document.getElementById('bet-date').value,
@@ -819,6 +819,11 @@
         source: 'manual',
         legs: []
       };
+      
+      // Only include name if user provided one
+      if (betName) {
+        betData.name = betName;
+      }
 
       // Collect legs
       const legCards = document.querySelectorAll('.leg-card');
