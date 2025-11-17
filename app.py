@@ -2162,17 +2162,27 @@ def standardize_bet_leg_team_names():
             # Get all teams for mapping
             teams = Team.query.all()
             
-            # Create mapping dictionaries
-            name_to_short = {}
-            abbr_to_short = {}
+            # Create sport-specific mapping dictionaries
+            nfl_name_to_short = {}
+            nfl_abbr_to_short = {}
+            nba_name_to_short = {}
+            nba_abbr_to_short = {}
             
             for team in teams:
-                if team.team_name:
-                    name_to_short[team.team_name.lower()] = team.team_name_short
-                if team.team_name_short:
-                    name_to_short[team.team_name_short.lower()] = team.team_name_short
-                if team.team_abbr:
-                    abbr_to_short[team.team_abbr.lower()] = team.team_name_short
+                if team.sport == 'NFL':
+                    if team.team_name:
+                        nfl_name_to_short[team.team_name.lower()] = team.team_name_short
+                    if team.team_name_short:
+                        nfl_name_to_short[team.team_name_short.lower()] = team.team_name_short
+                    if team.team_abbr:
+                        nfl_abbr_to_short[team.team_abbr.lower()] = team.team_name_short
+                elif team.sport == 'NBA':
+                    if team.team_name:
+                        nba_name_to_short[team.team_name.lower()] = team.team_name_short
+                    if team.team_name_short:
+                        nba_name_to_short[team.team_name_short.lower()] = team.team_name_short
+                    if team.team_abbr:
+                        nba_abbr_to_short[team.team_abbr.lower()] = team.team_name_short
             
             # Get all bet legs
             bet_legs = BetLeg.query.all()
@@ -2182,6 +2192,18 @@ def standardize_bet_leg_team_names():
                 original_player_team = leg.player_team
                 original_home_team = leg.home_team
                 original_away_team = leg.away_team
+                
+                # Choose the appropriate mapping based on the bet leg's sport
+                if leg.sport == 'NFL':
+                    name_to_short = nfl_name_to_short
+                    abbr_to_short = nfl_abbr_to_short
+                elif leg.sport == 'NBA':
+                    name_to_short = nba_name_to_short
+                    abbr_to_short = nba_abbr_to_short
+                else:
+                    # For unknown sports, try NFL first, then NBA
+                    name_to_short = {**nfl_name_to_short, **nba_name_to_short}
+                    abbr_to_short = {**nfl_abbr_to_short, **nba_abbr_to_short}
                 
                 # Update player_team if it exists
                 if leg.player_team:
