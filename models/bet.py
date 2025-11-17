@@ -103,6 +103,18 @@ class Bet(db.Model):
             # Add more fields as needed
         }
         
+        # Add name field for process_parlay_data compatibility
+        if self.bet_type == 'SGP':
+            result['name'] = f"{self.total_legs} Leg SGP"
+        elif self.bet_type == 'Parlay':
+            result['name'] = f"{self.total_legs} Pick Parlay"
+        else:
+            result['name'] = self.bet_type or 'Parlay'
+        
+        # Add aliases for process_parlay_data compatibility
+        result['odds'] = self.final_odds
+        result['returns'] = float(self.potential_winnings) if self.potential_winnings is not None else 0
+        
         # Include legs from database relationship
         if self.bet_legs_rel:
             result['legs'] = [leg.to_dict() for leg in sorted(self.bet_legs_rel, key=lambda x: x.leg_order or 0)]

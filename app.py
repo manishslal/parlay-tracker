@@ -2111,10 +2111,10 @@ def update_live_bet_legs():
                             if bet_leg and 'current' in leg_data:
                                 # Update current value if it changed
                                 new_current = leg_data.get('current')
-                                if new_current is not None and bet_leg.current_value != new_current:
-                                    bet_leg.current_value = float(new_current)
+                                if new_current is not None and bet_leg.achieved_value != new_current:
+                                    bet_leg.achieved_value = float(new_current)
                                     updated_legs += 1
-                                    app.logger.debug(f"[LIVE-UPDATE] Bet {bet.id} Leg {bet_leg.leg_order}: current_value = {new_current}")
+                                    app.logger.debug(f"[LIVE-UPDATE] Bet {bet.id} Leg {bet_leg.leg_order}: achieved_value = {new_current}")
                                 
                                 # Update game status if available
                                 if 'gameStatus' in leg_data and leg_data['gameStatus']:
