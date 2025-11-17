@@ -2100,6 +2100,16 @@
           console.warn('⚠️ Filtered out', cacheData.data.length - validData.length, 'invalid parlays from cache');
         }
         
+        // Ensure cache meta exists (for backward compatibility)
+        const existingMeta = getHistoricalCacheMeta();
+        if (!existingMeta) {
+          localStorage.setItem(HISTORICAL_CACHE_META_KEY, JSON.stringify({
+            timestamp: cacheData.timestamp,
+            betCount: validData.length
+          }));
+          console.log('📦 Created missing cache meta for existing cached data');
+        }
+        
         console.log('📦 Historical cache loaded:', validData.length, 'valid bets from', new Date(cacheData.timestamp).toLocaleString());
         return validData;
       } catch (e) {
@@ -2575,10 +2585,15 @@
       const activeTab = document.querySelector('.tab.active').dataset.tab;
       if (activeTab === 'historical') {
         const meta = getHistoricalCacheMeta();
-        if (meta) {
+        const hasCache = loadHistoricalCache() !== null;
+        if (meta || hasCache) {
           clearCacheBtn.style.display = 'inline-block';
           cacheInfo.style.display = 'block';
-          cacheInfo.textContent = `📦 Using cached data (${meta.betCount} bets) from ${new Date(meta.timestamp).toLocaleString()}`;
+          if (meta) {
+            cacheInfo.textContent = `📦 Using cached data (${meta.betCount} bets) from ${new Date(meta.timestamp).toLocaleString()}`;
+          } else {
+            cacheInfo.textContent = `📦 Cached data available`;
+          }
         } else {
           clearCacheBtn.style.display = 'none';
           cacheInfo.style.display = 'none';
