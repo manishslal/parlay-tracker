@@ -296,24 +296,9 @@ def archive_bet(bet_id: int) -> Any:
 def get_archived_bets() -> Any:
 	try:
 		bets = get_user_bets_query(current_user, is_archived=True).options(db.joinedload(Bet.bet_legs_rel)).all()
-		archived_parlays = []
-		for bet in bets:
-			parlay = bet.get_bet_data()
-			# Add database metadata
-			parlay['db_id'] = bet.id
-			parlay['user_id'] = bet.user_id
-			parlay['betting_site_id'] = bet.betting_site_id
-			parlay['bet_type'] = bet.bet_type
-			parlay['betting_site'] = bet.betting_site
-			parlay['status'] = bet.status
-			parlay['is_active'] = bet.is_active
-			parlay['is_archived'] = bet.is_archived
-			parlay['api_fetched'] = bet.api_fetched
-			parlay['created_at'] = bet.created_at
-			parlay['updated_at'] = bet.updated_at
-			parlay['bet_date'] = bet.bet_date
-			archived_parlays.append(parlay)
-		return jsonify({"archived": archived_parlays})
+		archived_parlays = [bet.to_dict_structured(use_live_data=True) for bet in bets]
+		processed = process_parlay_data(archived_parlays)
+		return jsonify({"archived": processed})
 	except Exception as e:
 		return jsonify({"error": str(e)}), 500
 
@@ -388,63 +373,9 @@ def todays():
 def historical():
 	try:
 		bets = get_user_bets_query(current_user, is_active=False, is_archived=False).options(db.joinedload(Bet.bet_legs_rel)).all()
-		historical_parlays = []
-		for bet in bets:
-			parlay = bet.get_bet_data()
-			# Add database metadata
-			parlay['db_id'] = bet.id
-			parlay['user_id'] = bet.user_id
-			parlay['betting_site_id'] = bet.betting_site_id
-			parlay['bet_type'] = bet.bet_type
-			parlay['betting_site'] = bet.betting_site
-			parlay['status'] = bet.status
-			parlay['is_active'] = bet.is_active
-			parlay['is_archived'] = bet.is_archived
-			parlay['api_fetched'] = bet.api_fetched
-			parlay['created_at'] = bet.created_at
-			parlay['updated_at'] = bet.updated_at
-			parlay['bet_date'] = bet.bet_date
-			historical_parlays.append(parlay)
-		if not historical_parlays:
-			return jsonify([])
-		bets_with_results = []
-		bets_needing_live_fetch = []
-		bets_needing_initial_fetch = []
-		bet_objects = {bet.id: bet for bet in bets}
-		for parlay in historical_parlays:
-			bet_obj = bet_objects.get(parlay.get('db_id'))
-			if bet_obj and bet_obj.api_fetched == 'No':
-				bets_needing_live_fetch.append(parlay)
-				continue
-			if has_complete_final_data(parlay):
-				bets_with_results.append(parlay)
-			else:
-				bets_needing_initial_fetch.append(parlay)
-		processed = []
-		bets_to_fetch = bets_needing_live_fetch + bets_needing_initial_fetch
-		if bets_to_fetch:
-			processed = process_parlay_data(bets_to_fetch)
-			for parlay in processed:
-				bet_obj = bet_objects.get(parlay.get('db_id'))
-				if bet_obj:
-					is_live_fetch = bet_obj.api_fetched == 'No'
-					if is_live_fetch:
-						all_finished = all(game.get('statusTypeName') == 'STATUS_FINAL' for game in parlay.get('games', []))
-						if all_finished:
-							save_final_results_to_bet(bet_obj, [parlay])
-							bet_obj.api_fetched = 'Yes'
-							bet_obj.status = 'completed'
-					else:
-						save_final_results_to_bet(bet_obj, [parlay])
-						bet_obj.api_fetched = 'Yes'
-			db.session.commit()
-		processed_with_results = []
-		for parlay in bets_with_results:
-			if 'games' not in parlay:
-				parlay['games'] = []
-			processed_with_results.append(parlay)
-		all_historical = processed_with_results + processed
-		return jsonify(sort_parlays_by_date(all_historical))
+		historical_parlays = [bet.to_dict_structured(use_live_data=True) for bet in bets]
+		processed = process_parlay_data(historical_parlays)
+		return jsonify(sort_parlays_by_date(processed))
 	except Exception as e:
 		return jsonify({"error": str(e)}), 500
 
@@ -454,10 +385,10 @@ def historical():
 def stats():
 	auto_move_completed_bets(current_user.id)
 	pending_bets = get_user_bets_query(current_user, status='pending').options(db.joinedload(Bet.bet_legs_rel)).all()
-	parlays = [bet.get_bet_data() for bet in pending_bets]
+	parlays = [bet.to_dict_structured(use_live_data=True) for bet in pending_bets]
 	processed_parlays = process_parlay_data(parlays)
 	live_bets = get_user_bets_query(current_user, status='live').options(db.joinedload(Bet.bet_legs_rel)).all()
-	live_parlays = [bet.get_bet_data() for bet in live_bets]
+	live_parlays = [bet.to_dict_structured(use_live_data=True) for bet in live_bets]
 	processed_live = process_parlay_data(live_parlays)
 	return jsonify(sort_parlays_by_date(processed_live))
 
