@@ -2877,7 +2877,10 @@ async function logoutToken() {
 
     // Normalize stat_type values to user-friendly display names
     function normalizeStatType(statType) {
-      if (!statType) return statType;
+      if (!statType) {
+        console.warn('normalizeStatType called with undefined/null statType:', statType);
+        return 'N/A';
+      }
       
       const statMap = {
         // Passing stats
