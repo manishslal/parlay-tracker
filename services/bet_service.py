@@ -1,6 +1,6 @@
 import json
 from helpers.utils import data_path
-from app import compute_parlay_returns_from_odds
+from helpers.utils import compute_parlay_returns_from_odds
 
 # Business logic for bets
 
