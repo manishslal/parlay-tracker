@@ -717,7 +717,7 @@ def update_completed_bet_legs():
     - Fetches final stats from ESPN
     - Updates achieved_value, status (won/lost), and final scores in bet_legs table
     
-    This runs periodically (every 5 minutes) to ensure completed bets get their final results.
+    This runs periodically (every 30 minutes) to ensure completed bets get their final results.
     """
     try:
         app.logger.info("[AUTO-UPDATE] Starting bet leg update check...")
@@ -1870,6 +1870,103 @@ def process_parlay_data(parlays):
         processed_parlays.append(processed_parlay)
     
     return processed_parlays
+
+def update_live_bet_legs():
+    """Background job to update live bet legs with real-time ESPN data.
+    
+    Finds all live/pending bets and updates their legs with current game data:
+    - Fetches live scores from ESPN API
+    - Updates current values for active bets
+    - Keeps live bets showing real-time data
+    
+    This runs every minute during active game times.
+    """
+    try:
+        app.logger.info("[LIVE-UPDATE] Starting live bet leg update check...")
+        
+        # Get all live and pending bets
+        live_bets = Bet.query.filter(Bet.status.in_(['live', 'pending'])).all()
+        
+        if not live_bets:
+            app.logger.info("[LIVE-UPDATE] No live/pending bets found")
+            return
+        
+        app.logger.info(f"[LIVE-UPDATE] Updating {len(live_bets)} live/pending bets")
+        
+        updated_bets = 0
+        updated_legs = 0
+        
+        for bet in live_bets:
+            try:
+                # Get bet data with live data fetching
+                bet_data = bet.to_dict_structured(use_live_data=True)
+                
+                # Process the bet data to get live updates
+                processed_bets = process_parlay_data([bet_data])
+                
+                if processed_bets and len(processed_bets) > 0:
+                    processed_bet = processed_bets[0]
+                    
+                    # Update bet legs in database with live data
+                    for leg_data in processed_bet.get('legs', []):
+                        # Find corresponding bet leg in database
+                        bet_leg = db.session.query(BetLeg).filter(
+                            BetLeg.bet_id == bet.id,
+                            BetLeg.leg_order == leg_data.get('leg_order', 0)
+                        ).first()
+                        
+                        if bet_leg and 'current' in leg_data:
+                            # Update current value if it changed
+                            new_current = leg_data.get('current')
+                            if new_current is not None and bet_leg.current_value != new_current:
+                                bet_leg.current_value = float(new_current)
+                                updated_legs += 1
+                                app.logger.debug(f"[LIVE-UPDATE] Bet {bet.id} Leg {bet_leg.leg_order}: current_value = {new_current}")
+                            
+                            # Update game status if available
+                            if 'gameStatus' in leg_data and leg_data['gameStatus']:
+                                if bet_leg.game_status != leg_data['gameStatus']:
+                                    bet_leg.game_status = leg_data['gameStatus']
+                                    app.logger.debug(f"[LIVE-UPDATE] Bet {bet.id} Leg {bet_leg.leg_order}: game_status = {leg_data['gameStatus']}")
+                            
+                            # Update scores if available
+                            if 'homeScore' in leg_data and leg_data['homeScore'] is not None:
+                                bet_leg.home_score = int(leg_data['homeScore'])
+                            if 'awayScore' in leg_data and leg_data['awayScore'] is not None:
+                                bet_leg.away_score = int(leg_data['awayScore'])
+                    
+                    updated_bets += 1
+                    
+            except Exception as e:
+                app.logger.error(f"[LIVE-UPDATE] Error updating live bet {bet.id}: {e}")
+                continue
+        
+        # Commit all changes
+        db.session.commit()
+        
+        if updated_legs > 0:
+            app.logger.info(f"[LIVE-UPDATE] ✓ Updated {updated_legs} legs across {updated_bets} live bets")
+        else:
+            app.logger.info("[LIVE-UPDATE] No live bet legs needed updating")
+            
+    except Exception as e:
+        app.logger.error(f"[LIVE-UPDATE] Error in update_live_bet_legs: {e}")
+        db.session.rollback()
+
+# Schedule automated tasks
+scheduler.add_job(
+    func=update_completed_bet_legs,
+    trigger=IntervalTrigger(minutes=30),
+    id='completed_bet_leg_updates',
+    name='Update completed bet legs with final results every 30 minutes'
+)
+
+scheduler.add_job(
+    func=update_live_bet_legs,
+    trigger=IntervalTrigger(minutes=1),
+    id='live_bet_updates',
+    name='Update live bet legs with real-time data every minute'
+)
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=8000, debug=True)

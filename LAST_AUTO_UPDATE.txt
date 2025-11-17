@@ -1,1 +1,1 @@
-Last auto-update: Initial setup
+Last auto-update: 2025-11-17 - Added 30-minute completed bet updates and 1-minute live bet updates
