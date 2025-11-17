@@ -4058,7 +4058,7 @@ async function logoutToken() {
               
               // Format for mobile display
               const playerOrTeam = playerDisplay; // Use the calculated playerDisplay
-              const statType = p.stat_type;
+              const statType = p.stat;
               const mobileCurrentDisplay = formatStatForMobile(currentDisplay, p.stat);
               const mobileTargetDisplay = formatStatForMobile(targetDisplay, p.stat);
               
@@ -4103,7 +4103,7 @@ async function logoutToken() {
                     </div>
                   </td>
                   <td>${playerCellHTML}</td>
-                  <td>${p.stat_type}</td>
+                  <td>${p.stat}</td>
                   <td>${currentDisplay}</td>
                   <td>${targetDisplay}</td>
                   <td>${progressCol}</td>
