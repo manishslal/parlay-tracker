@@ -316,8 +316,10 @@ def bulk_unarchive_bets() -> Any:
 @db_error_handler
 def get_current_user() -> Any:
 	try:
-		# ...existing code...
-		return jsonify({})
+		return jsonify({
+			'success': True,
+			'user': current_user.to_dict()
+		})
 	except Exception as e:
 		return jsonify({"error": str(e)}), 500
 

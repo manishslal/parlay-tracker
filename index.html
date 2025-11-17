@@ -2771,7 +2771,7 @@ async function logoutToken() {
   })
   .then(response => response.json())
   .then(data => {
-    if (data.success && data.user.is_admin) {
+    if (data.success && data.user && data.user.user_role === 'admin') {
       const adminItem = document.getElementById('admin-item');
       adminItem.style.display = 'flex';
       adminItem.addEventListener('click', function() {
