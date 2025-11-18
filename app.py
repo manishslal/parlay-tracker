@@ -389,7 +389,7 @@ def save_bet_to_db(user_id: int, bet_data: dict) -> dict:
 
     # --- DUPLICATE CHECK LOGIC ---
     legs = bet_data.get('legs', [])
-    core_fields = ['wager', 'payout', 'odds', 'placed_at']
+    core_fields = ['wager', 'potential_winnings', 'final_odds', 'bet_date']
     core_match = {f: bet_data.get(f) for f in core_fields}
 
     # Query all bets for user
@@ -398,7 +398,7 @@ def save_bet_to_db(user_id: int, bet_data: dict) -> dict:
         existing_data = existing_bet.get_bet_data()
         # ...existing code for duplicate detection...
             # Check for duplicate bets
-        if existing_data['wager'] == core_match['wager'] and existing_data['odds'] == core_match['odds']:
+        if existing_data['wager'] == core_match['wager'] and existing_data['final_odds'] == core_match['final_odds']:
                 app.logger.info(f"[DUPLICATE CHECK] Bet already exists for user {user_id}.")
                 return existing_bet.to_dict()
 
@@ -446,6 +446,13 @@ def save_bet_to_db(user_id: int, bet_data: dict) -> dict:
     bet.is_archived = False
     bet.status = 'pending'
     bet.api_fetched = 'No'
+    
+    # Set the individual database columns
+    bet.wager = bet_data.get('wager')
+    bet.potential_winnings = bet_data.get('potential_winnings')
+    bet.final_odds = bet_data.get('final_odds')
+    bet.bet_date = bet_data.get('bet_date')
+    
     db.session.add(bet)
     db.session.flush()
 

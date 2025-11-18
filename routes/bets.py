@@ -554,9 +554,9 @@ def transform_extracted_bet_data(data):
 	# Map frontend field names to internal format
 	transformed = {
 		'wager': float(data.get('wager_amount', 0)) if data.get('wager_amount') else None,
-		'payout': float(data.get('potential_payout', 0)) if data.get('potential_payout') else None,
-		'odds': data.get('total_odds'),
-		'placed_at': data.get('bet_date'),
+		'potential_winnings': float(data.get('potential_payout', 0)) if data.get('potential_payout') else None,
+		'final_odds': data.get('total_odds'),
+		'bet_date': data.get('bet_date'),
 		'betting_site_id': data.get('bet_site'),
 		'bet_type': data.get('bet_type', 'parlay'),
 		'legs': []
