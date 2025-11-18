@@ -539,12 +539,12 @@ class Bet(db.Model):
                         leg_dict['opponent'] = json_leg['opponent']
                     
                     # Always override with JSON data if available (structured DB may be incomplete)
-                    if json_leg.get('home'):
-                        leg_dict['homeTeam'] = json_leg['home']
-                        leg_dict['home'] = json_leg['home']
-                    if json_leg.get('away'):
-                        leg_dict['awayTeam'] = json_leg['away']
-                        leg_dict['away'] = json_leg['away']
+                    if json_leg.get('home_team'):
+                        leg_dict['homeTeam'] = json_leg['home_team']
+                        leg_dict['home'] = json_leg['home_team']
+                    if json_leg.get('away_team'):
+                        leg_dict['awayTeam'] = json_leg['away_team']
+                        leg_dict['away'] = json_leg['away_team']
                     if json_leg.get('game_date'):
                         leg_dict['game_date'] = json_leg['game_date']
                     

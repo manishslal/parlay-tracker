@@ -1762,14 +1762,14 @@ def calculate_bet_value(bet, game_data):
         
         # Simple Box Score Stats
         stat_map = {
-            "passing_yards": ("passing", "YDS"), "passing_yards_alt": ("passing", "YDS"),
+            "passing_yards": ("passing", "YDS"), "alt_passing_yards": ("passing", "YDS"),
             "pass_attempts": ("passing", "ATT"),
             "pass_completions": ("passing", "COMP"), "passing_touchdowns": ("passing", "TD"),
             "interceptions_thrown": ("passing", "INT"), "longest_pass_completion": ("passing", "LONG"),
-            "rushing_yards": ("rushing", "YDS"), "rushing_yards_alt": ("rushing", "YDS"),
+            "rushing_yards": ("rushing", "YDS"), "alt_rushing_yards": ("rushing", "YDS"),
             "rushing_attempts": ("rushing", "CAR"),
             "rushing_touchdowns": ("rushing", "TD"), "longest_rush": ("rushing", "LONG"),
-            "receiving_yards": ("receiving", "YDS"), "receiving_yards_alt": ("receiving", "YDS"),
+            "receiving_yards": ("receiving", "YDS"), "alt_receiving_yards": ("receiving", "YDS"),
             "receptions": ("receiving", "REC"), "receptions_alt": ("receiving", "REC"),
             "receiving_touchdowns": ("receiving", "TD"), "longest_reception": ("receiving", "LONG"),
             "sacks": ("defensive", "SACK"), "tackles_assists": ("defensive", "TOT"),
@@ -2038,26 +2038,18 @@ def process_parlay_data(parlays):
             app.logger.info(f"Game key: {game_key}")
             
             if game_key not in game_data_cache:
-                app.logger.info(f"Fetching {sport} game data for {game_key}")
                 game_data = fetch_game_details_from_espn(leg['game_date'], leg['away'], leg['home'], sport)
-                app.logger.info(f"Game data fetched: {game_data is not None}")
                 game_data_cache[game_key] = game_data
             else:
-                app.logger.info(f"Using cached game data for {game_key}")
+                game_data = game_data_cache[game_key]
             
-            if game_data_cache.get(game_key):
-                app.logger.info(f"Adding game data to parlay_games: {game_key}")
-                parlay_games[game_key] = game_data_cache[game_key]
-            else:
-                # Reduce log level for historical games without live data
-                app.logger.debug(f"No game data available for {game_key}")
+            if game_data:
+                parlay_games[game_key] = game_data
 
         for leg in parlay.get("legs", []):
-            app.logger.info(f"Processing leg in final stage: {leg}")
             sport = leg.get('sport', 'NFL')  # Get sport for this leg
             game_key = f"{leg['game_date']}_{sport}_{leg['away']}_{leg['home']}"
             game_data = parlay_games.get(game_key)
-            app.logger.info(f"Game data for {game_key}: {game_data is not None}")
             
             leg["parlay_name"] = parlay.get("name", "Unknown Bet")
 
@@ -2083,11 +2075,12 @@ def process_parlay_data(parlays):
                     if game_status:
                         leg["gameStatus"] = game_status
                     
-                    app.logger.info(f"Updated scores: {leg.get('away')} {away_score} @ {leg.get('home')} {home_score} - Status: {game_status}")
+                    # Update leg with ESPN game ID
+                    espn_game_id = game_data.get("espn_game_id")
+                    if espn_game_id:
+                        leg["gameId"] = str(espn_game_id)
                     
                     leg["current"] = calculate_bet_value(leg, game_data)
-                    app.logger.info(f"Calculated value for {leg.get('player', leg.get('team', 'Unknown'))} - {leg['stat']}: {leg['current']}")
-                    
                     # Add score differential for spread/moneyline bets
                     if leg["stat"] in ["spread", "moneyline"]:
                         home_team = game_data.get("teams", {}).get("home", "")
@@ -2164,33 +2157,43 @@ def update_live_bet_legs():
                     if processed_bets and len(processed_bets) > 0:
                         processed_bet = processed_bets[0]
                         
+                        # Get all bet legs ordered by leg_order
+                        bet_legs = db.session.query(BetLeg).filter(
+                            BetLeg.bet_id == bet.id
+                        ).order_by(BetLeg.leg_order).all()
+                        
                         # Update bet legs in database with live data
-                        for leg_data in processed_bet.get('legs', []):
-                            # Find corresponding bet leg in database
-                            bet_leg = db.session.query(BetLeg).filter(
-                                BetLeg.bet_id == bet.id,
-                                BetLeg.leg_order == leg_data.get('leg_order', 0)
-                            ).first()
-                            
-                            if bet_leg and 'current' in leg_data:
-                                # Update current value if it changed
-                                new_current = leg_data.get('current')
-                                if new_current is not None and bet_leg.achieved_value != new_current:
-                                    bet_leg.achieved_value = float(new_current)
-                                    updated_legs += 1
-                                    app.logger.debug(f"[LIVE-UPDATE] Bet {bet.id} Leg {bet_leg.leg_order}: achieved_value = {new_current}")
+                        processed_legs = processed_bet.get('legs', [])
+                        for i, leg_data in enumerate(processed_legs):
+                            if i < len(bet_legs):
+                                bet_leg = bet_legs[i]
                                 
-                                # Update game status if available
-                                if 'gameStatus' in leg_data and leg_data['gameStatus']:
-                                    if bet_leg.game_status != leg_data['gameStatus']:
-                                        bet_leg.game_status = leg_data['gameStatus']
-                                        app.logger.debug(f"[LIVE-UPDATE] Bet {bet.id} Leg {bet_leg.leg_order}: game_status = {leg_data['gameStatus']}")
-                                
-                                # Update scores if available
-                                if 'homeScore' in leg_data and leg_data['homeScore'] is not None:
-                                    bet_leg.home_score = int(leg_data['homeScore'])
-                                if 'awayScore' in leg_data and leg_data['awayScore'] is not None:
-                                    bet_leg.away_score = int(leg_data['awayScore'])
+                                if 'current' in leg_data:
+                                    # Update current value if it changed
+                                    new_current = leg_data.get('current')
+                                    if new_current is not None and bet_leg.achieved_value != new_current:
+                                        bet_leg.achieved_value = float(new_current)
+                                        updated_legs += 1
+                                        app.logger.debug(f"[LIVE-UPDATE] Bet {bet.id} Leg {bet_leg.leg_order}: achieved_value = {new_current}")
+                                    
+                                    # Update game status if available
+                                    if 'gameStatus' in leg_data and leg_data['gameStatus']:
+                                        if bet_leg.game_status != leg_data['gameStatus']:
+                                            bet_leg.game_status = leg_data['gameStatus']
+                                            app.logger.debug(f"[LIVE-UPDATE] Bet {bet.id} Leg {bet_leg.leg_order}: game_status = {leg_data['gameStatus']}")
+                                    
+                                    # Update scores if available
+                                    if 'homeScore' in leg_data and leg_data['homeScore'] is not None:
+                                        bet_leg.home_score = int(leg_data['homeScore'])
+                                    if 'awayScore' in leg_data and leg_data['awayScore'] is not None:
+                                        bet_leg.away_score = int(leg_data['awayScore'])
+                                    
+                                    # Update game_id if available
+                                    if 'gameId' in leg_data and leg_data['gameId']:
+                                        if bet_leg.game_id != leg_data['gameId']:
+                                            bet_leg.game_id = leg_data['gameId']
+                                            app.logger.debug(f"[LIVE-UPDATE] Bet {bet.id} Leg {bet_leg.leg_order}: game_id = {leg_data['gameId']}")
+
                         
                         updated_bets += 1
                         
