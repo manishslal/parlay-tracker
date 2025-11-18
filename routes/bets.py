@@ -548,3 +548,30 @@ def save_extracted_bet():
 	except Exception as e:
 		logger.error(f"Save extracted bet error: {e}")
 		return jsonify({'success': False, 'error': str(e)}), 500
+
+def transform_extracted_bet_data(data):
+	"""Transform frontend extracted bet data to internal format."""
+	# Map frontend field names to internal format
+	transformed = {
+		'wager': float(data.get('wager_amount', 0)) if data.get('wager_amount') else None,
+		'payout': float(data.get('potential_payout', 0)) if data.get('potential_payout') else None,
+		'odds': data.get('total_odds'),
+		'placed_at': data.get('bet_date'),
+		'betting_site_id': data.get('bet_site'),
+		'bet_type': data.get('bet_type', 'parlay'),
+		'legs': []
+	}
+	
+	# Transform legs
+	for leg in data.get('legs', []):
+		transformed_leg = {
+			'player_name': leg.get('player'),
+			'team_name': leg.get('team'),
+			'bet_type': leg.get('stat'),
+			'target_value': leg.get('line'),
+			'bet_line_type': 'over' if leg.get('stat_add') == 'over' else 'under' if leg.get('stat_add') == 'under' else None,
+			'odds': leg.get('odds')
+		}
+		transformed['legs'].append(transformed_leg)
+	
+	return transformed
