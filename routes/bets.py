@@ -583,10 +583,18 @@ def transform_extracted_bet_data(data):
 	
 	# Transform legs
 	for leg in data.get('legs', []):
+		# Determine the display bet type from the stat
+		stat = leg.get('stat', '')
+		display_bet_type = 'spread' if 'spread' in stat.lower() else \
+		                  'moneyline' if 'moneyline' in stat.lower() or stat.lower() == 'ml' else \
+		                  'total' if 'total' in stat.lower() or 'points' in stat.lower() else \
+		                  stat.lower()
+		
 		transformed_leg = {
 			'player_name': leg.get('player'),
 			'team_name': leg.get('team'),
-			'bet_type': leg.get('stat'),
+			'stat_type': leg.get('stat'),  # Frontend expects stat_type for display
+			'bet_type': display_bet_type,  # Frontend also checks bet_type for logic
 			'target_value': leg.get('line'),
 			'bet_line_type': 'over' if leg.get('stat_add') == 'over' else 'under' if leg.get('stat_add') == 'under' else None,
 			'odds': leg.get('odds')
