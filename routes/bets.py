@@ -590,6 +590,22 @@ def transform_extracted_bet_data(data):
 		                  'total' if 'total' in stat.lower() or 'points' in stat.lower() else \
 		                  stat.lower()
 		
+		# Determine home_team and away_team based on bet type
+		team_name = leg.get('team', '')
+		if team_name == 'Game Total' or display_bet_type == 'total':
+			# For totals, we don't have specific teams
+			home_team = 'Game Total'
+			away_team = 'Game Total'
+		elif display_bet_type == 'moneyline' or display_bet_type == 'spread':
+			# For game bets, try to split the team name or use defaults
+			home_team = team_name
+			away_team = 'TBD'  # We'll need to determine this from game data later
+		else:
+			# For player props, use the player's team
+			player_team = leg.get('team', '')
+			home_team = player_team
+			away_team = 'TBD'
+		
 		transformed_leg = {
 			'player_name': leg.get('player'),
 			'team_name': leg.get('team'),
@@ -598,9 +614,10 @@ def transform_extracted_bet_data(data):
 			'target_value': leg.get('line'),
 			'bet_line_type': 'over' if leg.get('stat_add') == 'over' else 'under' if leg.get('stat_add') == 'under' else None,
 			'odds': leg.get('odds'),
-			# Required BetLeg fields - provide defaults for OCR bets
-			'home_team': leg.get('team') if leg.get('team') != 'Game Total' else 'Game Total',
-			'away_team': 'TBD' if leg.get('team') != 'Game Total' else 'Game Total'
+			# Required BetLeg fields - provide proper defaults for OCR bets
+			'home_team': home_team,
+			'away_team': away_team,
+			'sport': 'NBA' if 'lakers' in team_name.lower() or 'celtics' in team_name.lower() else 'NFL'  # Default sport detection
 		}
 		transformed['legs'].append(transformed_leg)
 	
