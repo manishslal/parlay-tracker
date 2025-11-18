@@ -460,9 +460,9 @@ class Bet(db.Model):
                 'opponent': opponent,
                 'stat': bet_leg.bet_type,
                 'target': float(bet_leg.target_value) if bet_leg.target_value else 0,
-                # For live bets, set current to None to force ESPN API fetch
+                # For live bets, ALWAYS set current to None to force ESPN API fetch
                 # For historical bets, use calculated current_value
-                'current': current_value,
+                'current': None if use_live_data else current_value,
                 'status': bet_leg.status or 'pending',
                 'gameId': bet_leg.game_id or '',
                 'homeTeam': bet_leg.home_team,
