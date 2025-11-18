@@ -549,6 +549,25 @@ def save_extracted_bet():
 		logger.error(f"Save extracted bet error: {e}")
 		return jsonify({'success': False, 'error': str(e)}), 500
 
+@bets_bp.route('/api/users', methods=['GET'])
+@login_required
+def get_users():
+	"""Get list of all users for secondary bettor selection."""
+	try:
+		from models import User
+		users = User.query.filter_by(is_active=True).all()
+		user_list = [{
+			'id': user.id,
+			'username': user.username,
+			'email': user.email
+		} for user in users]
+		
+		return jsonify({'users': user_list})
+		
+	except Exception as e:
+		logger.error(f"Get users error: {e}")
+		return jsonify({'error': str(e)}), 500
+
 def transform_extracted_bet_data(data):
 	"""Transform frontend extracted bet data to internal format."""
 	# Map frontend field names to internal format
