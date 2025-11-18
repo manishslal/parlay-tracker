@@ -560,6 +560,7 @@ def save_bet_to_db(user_id: int, bet_data: dict, skip_duplicate_check: bool = Fa
             app.logger.error(f"[ESPN-UPDATE] Error updating bet legs for bet {bet.id}: {e}")
     
     # Return bet data directly without triggering database queries
+    from datetime import datetime
     return {
         'id': bet_id,
         'db_id': bet_id,
@@ -570,8 +571,8 @@ def save_bet_to_db(user_id: int, bet_data: dict, skip_duplicate_check: bool = Fa
         'wager': bet.wager,
         'original_odds': bet.original_odds,
         'total_legs': bet.total_legs,
-        'created_at': bet.created_at.isoformat() if bet.created_at else None,
-        'bet_date': bet.bet_date.isoformat() if bet.bet_date else None,
+        'created_at': bet.created_at.isoformat() if bet.created_at and hasattr(bet.created_at, 'isoformat') else datetime.now().isoformat(),
+        'bet_date': bet.bet_date,  # Already a string in the database
         'success': True,
         'message': 'Bet saved successfully'
     }
@@ -1370,7 +1371,7 @@ def initialize_parlay_files():
                         status = event['status']['type']['name']
                         if status == 'STATUS_FINAL':
                             continue
-                        elif status == 'STATUS_IN_PROGRESS':
+                        elif status in ['STATUS_IN_PROGRESS', 'STATUS_HALFTIME']:
                             any_game_active = True
                             all_games_complete = False
                             break
@@ -1559,7 +1560,7 @@ def process_parlays(current_parlays):
                     status = event['status']['type']['name']
                     if status == 'STATUS_FINAL':
                         continue
-                    elif status == 'STATUS_IN_PROGRESS':
+                    elif status in ['STATUS_IN_PROGRESS', 'STATUS_HALFTIME']:
                         any_game_active = True
                         all_games_complete = False
                         break

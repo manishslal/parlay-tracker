@@ -243,7 +243,7 @@ def auto_move_pending_to_live():
             all_games_final = True
             
             for leg in bet_legs:
-                if leg.game_status == 'in_progress':
+                if leg.game_status in ['STATUS_IN_PROGRESS', 'STATUS_HALFTIME']:
                     has_live_games = True
                     all_games_final = False
                 elif leg.game_status == 'STATUS_FINAL':
@@ -312,7 +312,7 @@ def auto_move_bets_no_live_legs():
             # Check if any leg has a game currently in progress
             has_live_game = False
             for leg in bet_legs:
-                if leg.game_status == 'in_progress':
+                if leg.game_status in ['STATUS_IN_PROGRESS', 'STATUS_HALFTIME']:
                     has_live_game = True
                     break
             
@@ -350,10 +350,11 @@ def auto_determine_leg_hit_status():
         
         from models import BetLeg
         
-        # Find all legs with achieved_value but no is_hit status
+        # Find all legs with achieved_value but no is_hit status AND game has finished
         legs_needing_status = BetLeg.query.filter(
             BetLeg.achieved_value.isnot(None),
-            BetLeg.is_hit.is_(None)
+            BetLeg.is_hit.is_(None),
+            BetLeg.game_status == 'STATUS_FINAL'  # Only process finished games
         ).all()
         
         if not legs_needing_status:

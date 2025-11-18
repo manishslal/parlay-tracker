@@ -5101,6 +5101,16 @@ async function logoutToken() {
         await authCheckPromise;
         console.log('Auth check complete, calling update()');
         update();
+        
+        // Auto-refresh live data every 30 seconds
+        setInterval(() => {
+          const activeTab = document.querySelector('.tab.active');
+          if (activeTab && activeTab.dataset.tab === 'current') {
+            console.log('Auto-refreshing live data...');
+            update();
+          }
+        }, 30000); // 30 seconds
+        
       } catch (error) {
         console.error('Skipping update due to auth error:', error);
       }
