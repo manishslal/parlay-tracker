@@ -4750,6 +4750,9 @@ async function logoutToken() {
     
     // Display extracted bet data
     function displayExtractedBet(data) {
+      console.log('displayExtractedBet called with data:', data);
+      console.log('Legs:', data.legs);
+      console.log('Legs length:', data.legs?.length);
       // Calculate missing odds or payout
       let odds = data.total_odds;
       let wager = data.wager_amount;
@@ -4818,33 +4821,44 @@ async function logoutToken() {
       legsList.innerHTML = '';
       
       if (data.legs && data.legs.length > 0) {
+        console.log('Processing', data.legs.length, 'legs');
         data.legs.forEach((leg, index) => {
+          console.log('Processing leg', index, ':', leg);
           const legDiv = document.createElement('div');
           legDiv.style.cssText = 'padding: 16px; margin-bottom: 12px; background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%); border: 2px solid #e0e0e0; border-radius: 10px; transition: border-color 0.2s;';
           legDiv.addEventListener('mouseenter', () => legDiv.style.borderColor = '#667eea');
           legDiv.addEventListener('mouseleave', () => legDiv.style.borderColor = '#e0e0e0');
           
           let legDescription = '';
-          if (leg.player_name) {
+          // Determine bet type from stat field
+          const stat = leg.stat || '';
+          const betType = stat.toLowerCase().includes('spread') ? 'spread' :
+                         stat.toLowerCase().includes('moneyline') || stat.toLowerCase() === 'ml' ? 'moneyline' :
+                         stat.toLowerCase().includes('total') || stat.toLowerCase().includes('points') ? 'total' :
+                         stat.toLowerCase();
+          
+          if (leg.player) {
             // Player prop
-            legDescription = `<strong style="color: #2c3e50; font-size: 15px;">${leg.player_name}</strong> <span style="color: #666; font-size: 13px;">(${leg.team_name || 'N/A'})</span>`;
-            legDescription += `<br><span style="color: #555; font-size: 14px; font-weight: 500;">${normalizeStatType(leg.stat_type) || 'N/A'} <span style="text-transform: uppercase; color: #667eea; font-weight: 600;">${leg.bet_line_type || ''}</span> ${leg.target_value || ''}</span>`;
-          } else if (leg.bet_type === 'spread') {
+            legDescription = `<strong style="color: #2c3e50; font-size: 15px;">${leg.player}</strong> <span style="color: #666; font-size: 13px;">(${leg.team || 'N/A'})</span>`;
+            legDescription += `<br><span style="color: #555; font-size: 14px; font-weight: 500;">${normalizeStatType(stat) || 'N/A'} <span style="text-transform: uppercase; color: #667eea; font-weight: 600;">${leg.stat_add || ''}</span> ${leg.line || ''}</span>`;
+          } else if (betType === 'spread') {
             // Spread
-            legDescription = `<strong style="color: #2c3e50; font-size: 15px;">${leg.team_name}</strong> <span style="color: #667eea; font-weight: 600; font-size: 14px;">${leg.target_value > 0 ? '+' : ''}${leg.target_value}</span>`;
-          } else if (leg.bet_type === 'moneyline') {
+            legDescription = `<strong style="color: #2c3e50; font-size: 15px;">${leg.team || 'N/A'}</strong> <span style="color: #667eea; font-weight: 600; font-size: 14px;">${leg.line > 0 ? '+' : ''}${leg.line || ''}</span>`;
+          } else if (betType === 'moneyline') {
             // Moneyline
-            legDescription = `<strong style="color: #2c3e50; font-size: 15px;">${leg.team_name}</strong> <span style="color: #667eea; font-weight: 600;">ML</span>`;
-          } else if (leg.bet_type === 'total') {
+            legDescription = `<strong style="color: #2c3e50; font-size: 15px;">${leg.team || 'N/A'}</strong> <span style="color: #667eea; font-weight: 600;">ML</span>`;
+          } else if (betType === 'total') {
             // Total
-            legDescription = `<span style="text-transform: uppercase; color: #667eea; font-weight: 600; font-size: 14px;">${leg.bet_line_type || ''}</span> <strong style="color: #2c3e50; font-size: 15px;">${leg.target_value || ''}</strong> <span style="color: #666;">points</span>`;
+            legDescription = `<span style="text-transform: uppercase; color: #667eea; font-weight: 600; font-size: 14px;">${leg.stat_add || ''}</span> <strong style="color: #2c3e50; font-size: 15px;">${leg.line || ''}</strong> <span style="color: #666;">points</span>`;
           }
+          
+          console.log('Leg description for leg', index, ':', legDescription);
           
           legDiv.innerHTML = `
             <div style="display: flex; justify-content: space-between; align-items: start;">
               <div style="flex: 1;">
                 <div style="font-size: 12px; color: #888; margin-bottom: 6px; font-weight: 500;">
-                  <span style="background: #667eea; color: white; padding: 2px 8px; border-radius: 4px; font-weight: 600;">${leg.sport || 'NFL'}</span>
+                  <span style="background: #667eea; color: white; padding: 2px 8px; border-radius: 4px; font-weight: 600;">NFL</span>
                   ${leg.game_info ? `<span style="margin-left: 8px;">${leg.game_info}</span>` : ''}
                   ${leg.game_date ? `<br><span style="color: #999; font-size: 11px;">${new Date(leg.game_date).toLocaleString()}</span>` : ''}
                 </div>
