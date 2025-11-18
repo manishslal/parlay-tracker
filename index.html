@@ -3868,6 +3868,8 @@ async function logoutToken() {
               const current = p.current ?? 0; // Handle undefined/null as 0
               const pct = p.target > 0 ? Math.min(100, Math.round(current / p.target * 100)) : 0;
               
+              let txt; // Declare txt variable to avoid 'txt is not defined' error
+              
               // Check if this is a spread or moneyline bet (no progress bar)
               const isSpreadOrML = p.stat === 'spread' || p.stat === 'moneyline';
               
