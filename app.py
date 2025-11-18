@@ -451,7 +451,21 @@ def save_bet_to_db(user_id: int, bet_data: dict, skip_duplicate_check: bool = Fa
     bet.wager = bet_data.get('wager')
     bet.potential_winnings = bet_data.get('potential_winnings')
     bet.final_odds = bet_data.get('final_odds')
-    bet.bet_date = bet_data.get('bet_date')
+    
+    # Handle bet_date - convert string to date object if needed
+    bet_date_value = bet_data.get('bet_date')
+    if bet_date_value:
+        if isinstance(bet_date_value, str):
+            try:
+                from datetime import datetime
+                bet.bet_date = datetime.strptime(bet_date_value, '%Y-%m-%d').date()
+            except ValueError:
+                # If parsing fails, use today's date
+                bet.bet_date = datetime.now().date()
+        else:
+            bet.bet_date = bet_date_value
+    else:
+        bet.bet_date = datetime.now().date()
     
     db.session.add(bet)
     db.session.flush()

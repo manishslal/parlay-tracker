@@ -610,25 +610,35 @@ def transform_extracted_bet_data(data):
 			home_team = player_team
 			away_team = 'TBD'
 		
+		# Set default game_date for all OCR bets (they typically don't include dates)
+		from datetime import datetime
+		default_game_date = datetime.now().strftime('%Y-%m-%d')
+		
+		# Better sport detection based on common NFL/NBA team names
+		nfl_teams = ['raiders', 'cowboys', 'chiefs', 'chargers', 'broncos', 'patriots', 'jets', 'giants', 'eagles', 'commanders', 'bears', 'lions', 'packers', 'vikings', 'falcons', 'panthers', 'saints', 'buccaneers', 'cardinals', 'rams', '49ers', 'seahawks', 'bengals', 'browns', 'steelers', 'ravens', 'bills', 'dolphins', 'texans', 'colts', 'jaguars', 'titans']
+		nba_teams = ['lakers', 'celtics', 'warriors', 'bulls', 'heat', 'knicks', 'nets', 'sixers', 'raptors', 'bucks', 'suns', 'nuggets', 'clippers', 'mavericks', 'thunder', 'jazz', 'blazers', 'kings', 'wizards', 'hornets', 'pelicans', 'grizzlies', 'hawks', 'cavaliers', 'pistons', 'pacers', 'magic', 'spurs', 'rockets', 'timberwolves']
+		
+		team_lower = team_name.lower()
+		sport = 'NFL'  # Default to NFL
+		if any(nfl_team in team_lower for nfl_team in nfl_teams):
+			sport = 'NFL'
+		elif any(nba_team in team_lower for nba_team in nba_teams):
+			sport = 'NBA'
+		
+		transformed_leg = {
+			'player_name': leg.get('player'),
+			'team_name': leg.get('team'),
+			'stat_type': leg.get('stat'),  # Frontend expects stat_type for display
+			'bet_type': display_bet_type,  # Frontend also checks bet_type for logic
+			'target_value': leg.get('line'),
+			'bet_line_type': 'over' if leg.get('stat_add') == 'over' else 'under' if leg.get('stat_add') == 'under' else None,
+			'odds': leg.get('odds'),
 			# Required BetLeg fields - provide proper defaults for OCR bets
-			# Set default game_date to today for OCR bets (they typically don't include dates)
-			from datetime import datetime
-			default_game_date = datetime.now().strftime('%Y-%m-%d')
-			
-			transformed_leg = {
-				'player_name': leg.get('player'),
-				'team_name': leg.get('team'),
-				'stat_type': leg.get('stat'),  # Frontend expects stat_type for display
-				'bet_type': display_bet_type,  # Frontend also checks bet_type for logic
-				'target_value': leg.get('line'),
-				'bet_line_type': 'over' if leg.get('stat_add') == 'over' else 'under' if leg.get('stat_add') == 'under' else None,
-				'odds': leg.get('odds'),
-				# Required BetLeg fields - provide proper defaults for OCR bets
-				'home_team': home_team,
-				'away_team': away_team,
-				'sport': 'NBA' if 'lakers' in team_name.lower() or 'celtics' in team_name.lower() else 'NFL',  # Default sport detection
-				'game_date': default_game_date  # Default to today for OCR bets
-			}
+			'home_team': home_team,
+			'away_team': away_team,
+			'sport': sport,
+			'game_date': default_game_date  # Default to today for OCR bets
+		}
 		transformed['legs'].append(transformed_leg)
 	
 	return transformed
