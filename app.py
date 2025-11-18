@@ -383,22 +383,22 @@ def populate_player_data_for_bet(bet: Any) -> None:
         app.logger.error(f"[PLAYER-POPULATION] Error committing changes for bet {bet.id}: {e}")
         db.session.rollback()
 
-def save_bet_to_db(user_id: int, bet_data: dict) -> dict:
+def save_bet_to_db(user_id: int, bet_data: dict, skip_duplicate_check: bool = False) -> dict:
     """Save a bet to database with JSON backup and create BetLeg records"""
     from models import Team, Bet, BetLeg
 
     # --- DUPLICATE CHECK LOGIC ---
     legs = bet_data.get('legs', [])
-    core_fields = ['wager', 'potential_winnings', 'final_odds', 'bet_date']
-    core_match = {f: bet_data.get(f) for f in core_fields}
+    if not skip_duplicate_check:
+        core_fields = ['wager', 'potential_winnings', 'final_odds', 'bet_date']
+        core_match = {f: bet_data.get(f) for f in core_fields}
 
-    # Query all bets for user
-    user_bets = Bet.query.filter_by(user_id=user_id).all()
-    for existing_bet in user_bets:
-        existing_data = existing_bet.get_bet_data()
-        # ...existing code for duplicate detection...
+        # Query all bets for user - limit to recent bets to avoid timeout
+        user_bets = Bet.query.filter_by(user_id=user_id).order_by(Bet.created_at.desc()).limit(100).all()
+        for existing_bet in user_bets:
+            existing_data = existing_bet.get_bet_data()
             # Check for duplicate bets
-        if existing_data['wager'] == core_match['wager'] and existing_data['final_odds'] == core_match['final_odds']:
+            if existing_data['wager'] == core_match['wager'] and existing_data['final_odds'] == core_match['final_odds']:
                 app.logger.info(f"[DUPLICATE CHECK] Bet already exists for user {user_id}.")
                 return existing_bet.to_dict()
 
@@ -455,6 +455,9 @@ def save_bet_to_db(user_id: int, bet_data: dict) -> dict:
     
     db.session.add(bet)
     db.session.flush()
+    
+    # Capture bet ID after flush for return value
+    bet_id = bet.id
 
     for leg_data in legs:
             game_date = None
@@ -506,24 +509,44 @@ def save_bet_to_db(user_id: int, bet_data: dict) -> dict:
     db.session.commit()
     backup_to_json(user_id)
     
-    # Populate ESPN game IDs for the newly created bet legs
-    try:
-        populate_game_ids_for_bet(bet)
-    except Exception as e:
-        app.logger.error(f"[GAME-ID-POPULATION] Error populating game IDs for bet {bet.id}: {e}")
+    # Skip expensive operations for OCR bets to avoid timeouts
+    if not skip_duplicate_check:
+        # Populate ESPN game IDs for the newly created bet legs
+        try:
+            populate_game_ids_for_bet(bet)
+        except Exception as e:
+            app.logger.error(f"[GAME-ID-POPULATION] Error populating game IDs for bet {bet.id}: {e}")
+        
+        # Populate player data for the newly created bet legs
+        try:
+            populate_player_data_for_bet(bet)
+        except Exception as e:
+            app.logger.error(f"[PLAYER-POPULATION] Error populating player data for bet {bet.id}: {e}")
     
-    # Populate player data for the newly created bet legs
-    try:
-        populate_player_data_for_bet(bet)
-    except Exception as e:
-        app.logger.error(f"[PLAYER-POPULATION] Error populating player data for bet {bet.id}: {e}")
+    # Skip expensive operations for OCR bets to avoid timeouts
+    if not skip_duplicate_check:
+        # ESPN API update trigger
+        try:
+            update_bet_legs_for_bet(bet)
+        except Exception as e:
+            app.logger.error(f"[ESPN-UPDATE] Error updating bet legs for bet {bet.id}: {e}")
     
-    # ESPN API update trigger
-    try:
-        update_bet_legs_for_bet(bet)
-    except Exception as e:
-        app.logger.error(f"[ESPN-UPDATE] Error updating bet legs for bet {bet.id}: {e}")
-    return bet.to_dict()
+    # Return bet data directly without triggering database queries
+    return {
+        'id': bet_id,
+        'db_id': bet_id,
+        'user_id': bet.user_id,
+        'betting_site': bet.betting_site,
+        'bet_type': bet.bet_type,
+        'status': bet.status,
+        'wager': bet.wager,
+        'original_odds': bet.original_odds,
+        'total_legs': bet.total_legs,
+        'created_at': bet.created_at.isoformat() if bet.created_at else None,
+        'bet_date': bet.bet_date.isoformat() if bet.bet_date else None,
+        'success': True,
+        'message': 'Bet saved successfully'
+    }
     # --- ESPN API single bet update ---
 def update_bet_legs_for_bet(bet: Any) -> None:
     """Update bet legs for a single bet using ESPN API logic."""
