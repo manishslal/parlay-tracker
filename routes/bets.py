@@ -489,6 +489,7 @@ def stats():
 
 @bets_bp.route('/api/upload-betslip', methods=['POST'])
 @login_required
+@db_error_handler
 def upload_betslip():
 	"""Upload and process a bet slip image using OCR."""
 	try:
@@ -609,19 +610,25 @@ def transform_extracted_bet_data(data):
 			home_team = player_team
 			away_team = 'TBD'
 		
-		transformed_leg = {
-			'player_name': leg.get('player'),
-			'team_name': leg.get('team'),
-			'stat_type': leg.get('stat'),  # Frontend expects stat_type for display
-			'bet_type': display_bet_type,  # Frontend also checks bet_type for logic
-			'target_value': leg.get('line'),
-			'bet_line_type': 'over' if leg.get('stat_add') == 'over' else 'under' if leg.get('stat_add') == 'under' else None,
-			'odds': leg.get('odds'),
 			# Required BetLeg fields - provide proper defaults for OCR bets
-			'home_team': home_team,
-			'away_team': away_team,
-			'sport': 'NBA' if 'lakers' in team_name.lower() or 'celtics' in team_name.lower() else 'NFL'  # Default sport detection
-		}
+			# Set default game_date to today for OCR bets (they typically don't include dates)
+			from datetime import datetime
+			default_game_date = datetime.now().strftime('%Y-%m-%d')
+			
+			transformed_leg = {
+				'player_name': leg.get('player'),
+				'team_name': leg.get('team'),
+				'stat_type': leg.get('stat'),  # Frontend expects stat_type for display
+				'bet_type': display_bet_type,  # Frontend also checks bet_type for logic
+				'target_value': leg.get('line'),
+				'bet_line_type': 'over' if leg.get('stat_add') == 'over' else 'under' if leg.get('stat_add') == 'under' else None,
+				'odds': leg.get('odds'),
+				# Required BetLeg fields - provide proper defaults for OCR bets
+				'home_team': home_team,
+				'away_team': away_team,
+				'sport': 'NBA' if 'lakers' in team_name.lower() or 'celtics' in team_name.lower() else 'NFL',  # Default sport detection
+				'game_date': default_game_date  # Default to today for OCR bets
+			}
 		transformed['legs'].append(transformed_leg)
 	
 	return transformed

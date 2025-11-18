@@ -506,8 +506,22 @@ def save_bet_to_db(user_id: int, bet_data: dict, skip_duplicate_check: bool = Fa
                 except (ValueError, AttributeError):
                     pass
             db.session.add(bet_leg)
-    db.session.commit()
-    backup_to_json(user_id)
+    
+    # Commit the transaction with error handling
+    try:
+        db.session.commit()
+        app.logger.info(f"Successfully committed bet {bet.id} with {len(legs)} legs")
+    except Exception as e:
+        db.session.rollback()
+        app.logger.error(f"Database commit failed: {str(e)}")
+        raise e
+    
+    # Backup to JSON with error handling
+    try:
+        backup_to_json(user_id)
+    except Exception as e:
+        app.logger.error(f"JSON backup failed: {str(e)}")
+        # Don't raise - backup failure shouldn't break the bet save
     
     # Skip expensive operations for OCR bets to avoid timeouts
     if not skip_duplicate_check:
@@ -1868,7 +1882,7 @@ def calculate_bet_value(bet, game_data):
 
 def fetch_game_details_from_espn(game_date, away_team, home_team, sport='NFL'):
     """Fetch detailed game data for a single game.
-    
+
     Args:
         game_date: Date string in YYYY-MM-DD format
         away_team: Away team name or abbreviation
@@ -1876,6 +1890,11 @@ def fetch_game_details_from_espn(game_date, away_team, home_team, sport='NFL'):
         sport: Sport code (NFL, NBA, MLB, NHL, etc.)
     """
     try:
+        # Handle None or empty game_date
+        if not game_date:
+            app.logger.debug(f"Skipping game data fetch - no game_date provided for {away_team} @ {home_team}")
+            return None
+
         app.logger.info(f"Fetching {sport} game details for {away_team} @ {home_team} on {game_date}")
         events = get_events(game_date, sport)
         app.logger.info(f"Found {len(events)} {sport} events for {game_date}")
