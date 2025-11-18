@@ -4625,6 +4625,9 @@ async function logoutToken() {
       ocrError.style.display = 'none';
       ocrResults.style.display = 'none';
       
+      // Prevent body scrolling when modal is open
+      document.body.style.overflow = 'hidden';
+      
       // Fetch users for autocomplete if not already loaded
       if (allUsers.length === 0) {
         fetchAllUsers();
@@ -4859,11 +4862,13 @@ async function logoutToken() {
     // Close modal handlers
     closeOcrModal.addEventListener('click', () => {
       ocrModal.style.display = 'none';
+      document.body.style.overflow = '';
       extractedBetData = null;
     });
     
     cancelOcr.addEventListener('click', () => {
       ocrModal.style.display = 'none';
+      document.body.style.overflow = '';
       extractedBetData = null;
     });
     
@@ -4871,6 +4876,7 @@ async function logoutToken() {
     ocrModal.addEventListener('click', (e) => {
       if (e.target === ocrModal) {
         ocrModal.style.display = 'none';
+        document.body.style.overflow = '';
         extractedBetData = null;
       }
     });
@@ -5023,6 +5029,7 @@ async function logoutToken() {
         
         // Close modal and reset
         ocrModal.style.display = 'none';
+        document.body.style.overflow = '';
         extractedBetData = null;
         selectedSecondaryBettors = [];
         renderSelectedBettors();
