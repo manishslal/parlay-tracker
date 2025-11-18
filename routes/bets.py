@@ -597,7 +597,10 @@ def transform_extracted_bet_data(data):
 			'bet_type': display_bet_type,  # Frontend also checks bet_type for logic
 			'target_value': leg.get('line'),
 			'bet_line_type': 'over' if leg.get('stat_add') == 'over' else 'under' if leg.get('stat_add') == 'under' else None,
-			'odds': leg.get('odds')
+			'odds': leg.get('odds'),
+			# Required BetLeg fields - provide defaults for OCR bets
+			'home_team': leg.get('team') if leg.get('team') != 'Game Total' else 'Game Total',
+			'away_team': 'TBD' if leg.get('team') != 'Game Total' else 'Game Total'
 		}
 		transformed['legs'].append(transformed_leg)
 	

@@ -468,13 +468,13 @@ def save_bet_to_db(user_id: int, bet_data: dict) -> dict:
                 except (ValueError, AttributeError):
                     pass
             sport = leg_data.get('sport', 'NFL')
-            team_value = leg_data.get('team')
+            team_value = leg_data.get('team_name')  # Use transformed field name
             if team_value:
                 team_value = normalize_team_name(team_value, sport)
             leg_status = leg_data.get('status', 'pending')
             bet_leg = BetLeg(
                 bet_id=bet.id,
-                player_name=leg_data.get('player') or team_value or 'Unknown',
+                player_name=leg_data.get('player_name') or team_value or 'Unknown',  # Use transformed field name
                 player_team=team_value,
                 home_team=leg_data.get('home_team', ''),
                 away_team=leg_data.get('away_team', ''),
@@ -483,8 +483,8 @@ def save_bet_to_db(user_id: int, bet_data: dict) -> dict:
                 sport=sport,
                 bet_type=leg_data.get('bet_type', 'player_prop'),
                 bet_line_type=leg_data.get('bet_line_type'),
-                target_value=leg_data.get('line') or 0.0,
-                stat_type=leg_data.get('stat'),
+                target_value=leg_data.get('target_value') or 0.0,  # Use transformed field name
+                stat_type=leg_data.get('stat_type'),  # Use transformed field name
                 status=leg_status,
                 game_status='STATUS_SCHEDULED',  # Initialize with scheduled status
                 leg_order=leg_data.get('leg_order', 0)
