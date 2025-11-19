@@ -3,7 +3,7 @@ from typing import Any
 from flask_login import login_required, current_user
 from models import db, Bet
 from services import get_user_bets_query, process_parlay_data, sort_parlays_by_date
-from helpers.database import has_complete_final_data, save_final_results_to_bet, auto_move_completed_bets, auto_move_bets_no_live_legs, auto_determine_leg_hit_status, auto_move_pending_to_live
+from helpers.database import has_complete_final_data, save_final_results_to_bet, auto_move_completed_bets, auto_move_pending_to_live
 # from app import app  # Removed to avoid circular import
 from functools import wraps
 import logging
@@ -420,6 +420,7 @@ def db_health_check():
 @login_required
 @db_error_handler
 def live():
+	from automation import auto_move_bets_no_live_legs, auto_determine_leg_hit_status
 	auto_move_pending_to_live()  # Move pending bets to live if their games started
 	auto_move_bets_no_live_legs()  # Move bets with no live legs to historical
 	auto_determine_leg_hit_status()  # Ensure hit/miss status is up to date
@@ -432,6 +433,7 @@ def live():
 @login_required
 @db_error_handler
 def todays():
+	from automation import auto_move_bets_no_live_legs, auto_determine_leg_hit_status
 	auto_move_pending_to_live()  # Move pending bets to live if their games started
 	auto_move_completed_bets(current_user.id)
 	auto_move_bets_no_live_legs()  # Also move bets with no live legs
@@ -446,6 +448,7 @@ def todays():
 @db_error_handler
 def historical():
 	from app import app  # Import here to avoid circular import
+	from automation import auto_determine_leg_hit_status
 	try:
 		app.logger.info(f"[HISTORICAL] Starting historical bets request for user {current_user.id}")
 		auto_determine_leg_hit_status()  # Ensure hit/miss status is determined
@@ -642,3 +645,23 @@ def transform_extracted_bet_data(data):
 		transformed['legs'].append(transformed_leg)
 	
 	return transformed
+
+@bets_bp.route('/issues')
+@login_required
+def issues():
+	"""Issues tracking page - only visible to user 'manishslal' (user.id = 1)"""
+	if current_user.id != 1:
+		return jsonify({"error": "Access denied"}), 403
+	
+	# For now, return a simple list of issues. This will be expanded later.
+	issues_list = [
+		"1. Historical bets API fetching automation - Not implemented yet",
+		"2. Player linking for bet_legs - Not implemented yet", 
+		"3. ESPN data population for historical games - Not implemented yet",
+		"4. Auto-move old bets to historical - Not implemented yet"
+	]
+	
+	return jsonify({
+		"issues": issues_list,
+		"total_issues": len(issues_list)
+	})

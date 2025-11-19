@@ -117,13 +117,54 @@ def save_final_results_to_bet(bet: Any, processed_data: List[dict]) -> bool:
 
 def auto_move_completed_bets(user_id):
     try:
-        from datetime import date
+        from datetime import date, datetime, timedelta
         today = date.today()
+        two_days_ago = today - timedelta(days=2)
+        
         from app import get_user_bets_from_db, process_parlay_data
         bets = get_user_bets_from_db(user_id, status_filter=['pending', 'live'])
         bet_data_list = [bet.to_dict_structured(use_live_data=True) for bet in bets]
         processed_data = process_parlay_data(bet_data_list)
         updated_count = 0
+        
+        # First pass: Check for bets with all games 2+ days in the past
+        for bet in bets[:]:  # Create a copy to avoid modification during iteration
+            bet_data = bet.to_dict_structured(use_live_data=False)  # Use stored data, not live
+            legs = bet_data.get('legs', [])
+            if not legs:
+                continue
+                
+            # Check if all game dates are 2+ days in the past
+            all_games_old = True
+            for leg in legs:
+                game_date_str = leg.get('game_date')
+                if game_date_str:
+                    try:
+                        # Parse the date (assuming format like "2024-10-27")
+                        game_date = datetime.strptime(game_date_str, '%Y-%m-%d').date()
+                        if game_date >= two_days_ago:
+                            all_games_old = False
+                            break
+                    except (ValueError, TypeError):
+                        # If date parsing fails, assume it's not old
+                        all_games_old = False
+                        break
+                else:
+                    # If no game date, assume it's not old
+                    all_games_old = False
+                    break
+            
+            # If all games are 2+ days old, move to historical
+            if all_games_old:
+                logging.info(f"Auto-moving old bet {bet.id} to historical (all games 2+ days old)")
+                bet.is_active = False
+                bet.status = 'completed'
+                bet.api_fetched = 'Yes'  # Mark as processed
+                updated_count += 1
+                # Remove from bets list so it doesn't get processed again
+                bets.remove(bet)
+        
+        # Second pass: Process remaining bets with live data (existing logic)
         for bet in bets:
             bet_data = bet.to_dict_structured(use_live_data=True)
             legs = bet_data.get('legs', [])
@@ -276,132 +317,4 @@ def auto_move_pending_to_live():
         logging.error(f"[AUTO-MOVE-PENDING] Error: {e}")
         db.session.rollback()
 
-def auto_move_bets_no_live_legs():
-    """Automatically move bets to historical when no legs have games in progress.
-    
-    This checks all live bets and moves them to historical if none of their legs
-    have games that are currently in progress (game_status != 'in_progress').
-    
-    This is different from auto_move_completed_bets which waits for games to be final.
-    This moves bets as soon as their games are over, even if not yet STATUS_FINAL.
-    """
-    try:
-        import logging
-        logging.info("[AUTO-MOVE-NO-LIVE] Checking for bets with no live legs")
-        
-        from models import Bet, BetLeg
-        
-        # Get all live bets
-        live_bets = Bet.query.filter_by(status='live', is_active=True).all()
-        
-        if not live_bets:
-            logging.info("[AUTO-MOVE-NO-LIVE] No live bets found")
-            return
-        
-        logging.info(f"[AUTO-MOVE-NO-LIVE] Checking {len(live_bets)} live bets")
-        
-        updated_count = 0
-        
-        for bet in live_bets:
-            # Get bet legs from database
-            bet_legs = BetLeg.query.filter(BetLeg.bet_id == bet.id).all()
-            
-            if not bet_legs:
-                continue
-            
-            # Check if any leg has a game currently in progress
-            has_live_game = False
-            for leg in bet_legs:
-                if leg.game_status in ['STATUS_IN_PROGRESS', 'STATUS_HALFTIME']:
-                    has_live_game = True
-                    break
-            
-            # If no legs have live games, move to historical
-            if not has_live_game:
-                logging.info(f"[AUTO-MOVE-NO-LIVE] Bet {bet.id} has no live games - moving to historical")
-                bet.is_active = False  # Move to historical
-                bet.status = 'completed'  # Mark as completed
-                bet.api_fetched = 'Yes'  # Stop fetching
-                updated_count += 1
-        
-        # Commit all changes
-        if updated_count > 0:
-            db.session.commit()
-            logging.info(f"[AUTO-MOVE-NO-LIVE] Moved {updated_count} bets to historical")
-        else:
-            logging.info("[AUTO-MOVE-NO-LIVE] No bets needed moving")
-            
-    except Exception as e:
-        logging.error(f"[AUTO-MOVE-NO-LIVE] Error: {e}")
-        db.session.rollback()
 
-def auto_determine_leg_hit_status():
-    """Automatically determine and set is_hit status for bet legs that have achieved_value but no is_hit.
-    
-    This processes all bet legs where:
-    - achieved_value is not None (game data exists)
-    - is_hit is None (hit/miss status not determined)
-    
-    Determines hit/miss based on bet type and compares achieved_value vs target_value.
-    """
-    try:
-        import logging
-        logging.info("[AUTO-HIT-STATUS] Checking for legs needing hit status determination")
-        
-        from models import BetLeg
-        
-        # Find all legs with achieved_value but no is_hit status AND game has finished
-        legs_needing_status = BetLeg.query.filter(
-            BetLeg.achieved_value.isnot(None),
-            BetLeg.is_hit.is_(None),
-            BetLeg.game_status == 'STATUS_FINAL'  # Only process finished games
-        ).all()
-        
-        if not legs_needing_status:
-            logging.info("[AUTO-HIT-STATUS] No legs need hit status determination")
-            return
-        
-        logging.info(f"[AUTO-HIT-STATUS] Processing {len(legs_needing_status)} legs")
-        
-        updated_count = 0
-        
-        for leg in legs_needing_status:
-            # Determine if the bet was hit based on bet type
-            is_hit = False
-            stat_type = leg.bet_type.lower() if leg.bet_type else ''
-            
-            if stat_type == 'moneyline':
-                # Moneyline: won if score_diff > 0
-                is_hit = leg.achieved_value > 0
-            elif stat_type == 'spread':
-                # Spread: won if (score_diff + spread) > 0
-                if leg.target_value is not None:
-                    is_hit = (leg.achieved_value + leg.target_value) > 0
-            else:
-                # Player props and other bets: compare achieved vs target
-                if leg.target_value is not None:
-                    # Check for over/under
-                    if leg.bet_line_type == 'under':
-                        is_hit = leg.achieved_value < leg.target_value
-                    else:  # 'over' or None (default to over)
-                        is_hit = leg.achieved_value >= leg.target_value
-            
-            # Update the leg
-            leg.is_hit = is_hit
-            # Also update status if it's still pending
-            if leg.status == 'pending' or leg.status is None:
-                leg.status = 'won' if is_hit else 'lost'
-            
-            logging.info(f"[AUTO-HIT-STATUS] Bet {leg.bet_id} Leg {leg.leg_order}: {leg.player_name} - {stat_type} - {'HIT' if is_hit else 'MISS'} (achieved: {leg.achieved_value}, target: {leg.target_value})")
-            updated_count += 1
-        
-        # Commit all changes
-        if updated_count > 0:
-            db.session.commit()
-            logging.info(f"[AUTO-HIT-STATUS] Updated hit status for {updated_count} legs")
-        else:
-            logging.info("[AUTO-HIT-STATUS] No legs were updated")
-            
-    except Exception as e:
-        logging.error(f"[AUTO-HIT-STATUS] Error: {e}")
-        db.session.rollback()

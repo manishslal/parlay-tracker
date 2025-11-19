@@ -1553,6 +1553,41 @@
       0% { transform: rotate(0deg); }
       100% { transform: rotate(360deg); }
     }
+    
+    /* Issues page styles */
+    .issues-list {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    
+    .issue-item {
+      display: flex;
+      margin-bottom: 15px;
+      padding: 15px;
+      background: #f8f9fa;
+      border-radius: 8px;
+      border-left: 4px solid #007bff;
+    }
+    
+    .issue-number {
+      font-weight: bold;
+      color: #007bff;
+      min-width: 30px;
+      margin-right: 15px;
+    }
+    
+    .issue-text {
+      flex: 1;
+      line-height: 1.4;
+    }
+    
+    .no-issues {
+      text-align: center;
+      padding: 40px;
+      color: #666;
+      font-style: italic;
+    }
   </style>
 </head>
 <body>
@@ -1610,6 +1645,7 @@
       <button class="tab active" data-tab="current">Live Bets</button>
       <button class="tab" data-tab="historical">Historical Bets</button>
       <button class="tab" data-tab="archived">Archived Bets</button>
+      <button class="tab" data-tab="issues" id="issues-tab" style="display:none">Issues</button>
     </div>
     <div class="button-container">
       <button id="refresh-button">Refresh Stats</button>
@@ -1759,6 +1795,7 @@
     <div id="parlay-sections" class="tab-content active" data-tab="current"></div>
     <div id="historical-sections" class="tab-content" data-tab="historical" style="display:none"></div>
     <div id="archived-sections" class="tab-content" data-tab="archived" style="display:none"></div>
+    <div id="issues-sections" class="tab-content" data-tab="issues" style="display:none"></div>
     
     <!-- Profile Page -->
     <div id="profile-page" style="display:none;">
@@ -2845,19 +2882,28 @@ async function logoutToken() {
   });
 })();
 
-// Check if user is admin and show admin menu
+// Check if user is admin and show admin menu, also show Issues tab for user ID 1
 (function setupAdmin(){
   fetch('/api/current_user', {
     credentials: 'include'
   })
   .then(response => response.json())
   .then(data => {
-    if (data.success && data.user && data.user.user_role === 'admin') {
-      const adminItem = document.getElementById('admin-item');
-      adminItem.style.display = 'flex';
-      adminItem.addEventListener('click', function() {
-        window.location.href = '/admin.html';
-      });
+    if (data.success && data.user) {
+      // Show admin menu for admin users
+      if (data.user.user_role === 'admin') {
+        const adminItem = document.getElementById('admin-item');
+        adminItem.style.display = 'flex';
+        adminItem.addEventListener('click', function() {
+          window.location.href = '/admin.html';
+        });
+      }
+      
+      // Show Issues tab for user ID 1 (manishslal)
+      if (data.user.id === 1) {
+        const issuesTab = document.getElementById('issues-tab');
+        issuesTab.style.display = 'inline-block';
+      }
     }
   })
   .catch(error => {
@@ -3323,12 +3369,53 @@ async function logoutToken() {
           const archSec = document.getElementById('archived-sections');
           render(archivedBets, archSec);
           msg.textContent=`Last updated: ${new Date().toLocaleTimeString()}`;
+        } else if(activeTab === 'issues') {
+          // Fetch issues data
+          const issuesUrl = `${API_BASE}/issues?t=${Date.now()}`;
+          const issuesResponse = await fetchWithAdminToken(issuesUrl);
+          if(!issuesResponse.ok) throw new Error(`Issues data error: ${issuesResponse.status}`);
+          const issuesData = await issuesResponse.json();
+          
+          console.log('Issues data:', issuesData);
+          const issuesSec = document.getElementById('issues-sections');
+          renderIssues(issuesData.issues || [], issuesSec);
+          msg.textContent=`Last updated: ${new Date().toLocaleTimeString()}`;
         }        // Update cache display after rendering
         updateCacheDisplay();
       }catch(e){
         console.error('Error during update:', e);
         msg.textContent=`Error loading data: ${e.message}`;
       }
+    }
+
+    function renderIssues(issues, container){
+      console.log('Render issues called with:', issues);
+      container.innerHTML = '';
+      
+      if (!Array.isArray(issues)) {
+        container.innerHTML = '<div class="error">Invalid issues data</div>';
+        return;
+      }
+      
+      if (issues.length === 0) {
+        container.innerHTML = '<div class="no-issues">No issues found</div>';
+        return;
+      }
+      
+      const issuesList = document.createElement('div');
+      issuesList.className = 'issues-list';
+      
+      issues.forEach((issue, index) => {
+        const issueItem = document.createElement('div');
+        issueItem.className = 'issue-item';
+        issueItem.innerHTML = `
+          <div class="issue-number">${index + 1}.</div>
+          <div class="issue-text">${issue}</div>
+        `;
+        issuesList.appendChild(issueItem);
+      });
+      
+      container.appendChild(issuesList);
     }
 
     async function loadHistorical(){

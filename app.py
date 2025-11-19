@@ -21,6 +21,11 @@ import os
 import time
 from datetime import datetime
 import json
+import logging
+
+# Configure logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
 import atexit
 
 # Load environment variables from .env file
@@ -29,7 +34,7 @@ load_dotenv()
 
 # Import database models
 from models import db, User, Bet, BetLeg, Player
-from helpers.database import run_migrations_once, has_complete_final_data, save_final_results_to_bet, auto_move_completed_bets, auto_move_bets_no_live_legs, auto_determine_leg_hit_status
+from helpers.database import run_migrations_once, has_complete_final_data, save_final_results_to_bet, auto_move_completed_bets, auto_move_pending_to_live
 from helpers.enhanced_player_search import enhanced_player_search
 
 from helpers.utils import data_path, DATA_DIR
@@ -215,7 +220,6 @@ def admin_required(f):
 
 # Setup background scheduler for automated tasks
 scheduler = BackgroundScheduler()
-scheduler.start()
 
 # Shut down scheduler on app exit
 atexit.register(lambda: scheduler.shutdown())
@@ -939,135 +943,6 @@ def auto_move_completed_bets(user_id):
         app.logger.error(f"Error auto-moving completed bets: {e}")
         db.session.rollback()
 
-def update_completed_bet_legs():
-    """Background job to automatically update bet legs when games become final.
-    
-    Finds all bets with status='completed' and checks their legs:
-    - If a leg's game_status changes to STATUS_FINAL for the first time
-    - Fetches final stats from ESPN
-    - Updates achieved_value, status (won/lost), and final scores in bet_legs table
-    
-    This runs periodically (every 30 minutes) to ensure completed bets get their final results.
-    """
-    with app.app_context():
-        try:
-            app.logger.info("[AUTO-UPDATE] Starting bet leg update check...")
-            
-            # Get all completed bets that might have pending leg updates
-            completed_bets = Bet.query.filter_by(status='completed').all()
-            
-            if not completed_bets:
-                app.logger.info("[AUTO-UPDATE] No completed bets found")
-                return
-            
-            app.logger.info(f"[AUTO-UPDATE] Checking {len(completed_bets)} completed bets")
-            
-            updated_bets = 0
-            updated_legs = 0
-            
-            for bet in completed_bets:
-                # Get bet legs from database
-                bet_legs = db.session.query(BetLeg).filter(BetLeg.bet_id == bet.id).order_by(BetLeg.leg_order).all()
-                
-                # Check if any legs need updating (have STATUS_FINAL but no achieved_value or pending status)
-                needs_update = False
-                for leg in bet_legs:
-                    if leg.game_status == 'STATUS_FINAL' and (leg.achieved_value is None or leg.status == 'pending'):
-                        needs_update = True
-                        break
-                
-                if not needs_update:
-                    continue
-                
-                try:
-                    # Get fresh data from ESPN for this bet
-                    bet_data = bet.to_dict_structured(use_live_data=True)
-                    processed_data = process_parlay_data([bet_data])
-                    
-                    if not processed_data:
-                        continue
-                    
-                    matching_parlay = processed_data[0]
-                    
-                    # Update each leg with final results
-                    for i, bet_leg in enumerate(bet_legs):
-                        # Skip if already processed
-                        if bet_leg.achieved_value is not None and bet_leg.status != 'pending':
-                            continue
-                        
-                        # Get processed leg data
-                        if i >= len(matching_parlay.get('legs', [])):
-                            continue
-                        
-                        processed_leg = matching_parlay['legs'][i]
-                        
-                        # Only process if game is final
-                        if processed_leg.get('gameStatus') != 'STATUS_FINAL':
-                            continue
-                        
-                        leg_updated = False
-                        
-                        # Update achieved_value from current stats
-                        if processed_leg.get('current') is not None and bet_leg.achieved_value is None:
-                            bet_leg.achieved_value = processed_leg['current']
-                            leg_updated = True
-                            app.logger.info(f"[AUTO-UPDATE] Bet {bet.id} Leg {i+1}: achieved_value = {processed_leg['current']}")
-                        
-                        # Update game status
-                        if bet_leg.game_status != 'STATUS_FINAL':
-                            bet_leg.game_status = 'STATUS_FINAL'
-                            leg_updated = True
-                        
-                        # Update final scores
-                        if processed_leg.get('homeScore') is not None:
-                            bet_leg.home_score = processed_leg['homeScore']
-                            bet_leg.away_score = processed_leg['awayScore']
-                            leg_updated = True
-                        
-                        # Calculate and save leg status (won/lost) based on bet type
-                        # Only update if status is pending/None AND is_hit is None (not already determined)
-                        if (bet_leg.status == 'pending' or bet_leg.status is None) and bet_leg.is_hit is None and bet_leg.achieved_value is not None:
-                            leg_status = 'lost'  # Default to lost
-                            stat_type = bet_leg.bet_type.lower()
-                            
-                            if stat_type == 'moneyline':
-                                # Moneyline: won if score_diff > 0
-                                leg_status = 'won' if bet_leg.achieved_value > 0 else 'lost'
-                            elif stat_type == 'spread':
-                                # Spread: won if (score_diff + spread) > 0
-                                if bet_leg.target_value is not None:
-                                    leg_status = 'won' if (bet_leg.achieved_value + bet_leg.target_value) > 0 else 'lost'
-                            else:
-                                # Player props: won if achieved_value >= target_value
-                                if bet_leg.target_value is not None:
-                                    # Check for over/under
-                                    if bet_leg.bet_line_type == 'under':
-                                        leg_status = 'won' if bet_leg.achieved_value < bet_leg.target_value else 'lost'
-                                    else:  # 'over' or None (default to over)
-                                        leg_status = 'won' if bet_leg.achieved_value >= bet_leg.target_value else 'lost'
-                            
-                            bet_leg.status = leg_status
-                            bet_leg.is_hit = True if leg_status == 'won' else False
-                            leg_updated = True
-                            app.logger.info(f"[AUTO-UPDATE] Bet {bet.id} Leg {i+1}: status = {leg_status}, is_hit = {bet_leg.is_hit}")
-                    
-                    if updated_legs > 0:
-                        updated_bets += 1
-                        
-                except Exception as e:
-                    app.logger.error(f"[AUTO-UPDATE] Error updating bet {bet.id}: {e}")
-                    continue
-            
-            # Commit all updates
-            if updated_legs > 0:
-                db.session.commit()
-                app.logger.info(f"[AUTO-UPDATE] ✓ Updated {updated_legs} legs across {updated_bets} bets")
-            else:
-                app.logger.info("[AUTO-UPDATE] No legs needed updating")
-                
-        except Exception as e:
-            app.logger.error(f"[AUTO-UPDATE] Error in update_completed_bet_legs: {e}")
-            db.session.rollback()
 
 def normalize_bet_leg_team_names():
     """Normalize team names in bet_legs table on startup.
@@ -2120,232 +1995,89 @@ def process_parlay_data(parlays):
     
     return processed_parlays
 
-def update_live_bet_legs():
-    """Background job to update live bet legs with real-time ESPN data.
-    
-    Finds all live/pending bets and updates their legs with current game data:
-    - Fetches live scores from ESPN API
-    - Updates current values for active bets
-    - Keeps live bets showing real-time data
-    
-    This runs every minute during active game times.
-    """
+
+
+# Import automations from automation package (after app is set up to avoid circular imports)
+from automation import (
+    update_live_bet_legs,
+    update_completed_bet_legs,
+    standardize_bet_leg_team_names,
+    auto_move_bets_no_live_legs,
+    auto_determine_leg_hit_status,
+    process_historical_bets_api
+)
+
+# Define wrapper functions for scheduler jobs
+def run_update_completed_bet_legs():
+    logger.info("[SCHEDULER] Running update_completed_bet_legs")
     with app.app_context():
-        try:
-            app.logger.info("[LIVE-UPDATE] Starting live bet leg update check...")
-            
-            # Get all live and pending bets
-            live_bets = Bet.query.filter(Bet.status.in_(['live', 'pending'])).all()
-            
-            if not live_bets:
-                app.logger.info("[LIVE-UPDATE] No live/pending bets found")
-                return
-            
-            app.logger.info(f"[LIVE-UPDATE] Updating {len(live_bets)} live/pending bets")
-            
-            updated_bets = 0
-            updated_legs = 0
-            
-            for bet in live_bets:
-                try:
-                    # Get bet data with live data fetching
-                    bet_data = bet.to_dict_structured(use_live_data=True)
-                    
-                    # Process the bet data to get live updates
-                    processed_bets = process_parlay_data([bet_data])
-                    
-                    if processed_bets and len(processed_bets) > 0:
-                        processed_bet = processed_bets[0]
-                        
-                        # Get all bet legs ordered by leg_order
-                        bet_legs = db.session.query(BetLeg).filter(
-                            BetLeg.bet_id == bet.id
-                        ).order_by(BetLeg.leg_order).all()
-                        
-                        # Update bet legs in database with live data
-                        processed_legs = processed_bet.get('legs', [])
-                        for i, leg_data in enumerate(processed_legs):
-                            if i < len(bet_legs):
-                                bet_leg = bet_legs[i]
-                                
-                                if 'current' in leg_data:
-                                    # Update current value if it changed
-                                    new_current = leg_data.get('current')
-                                    if new_current is not None and bet_leg.achieved_value != new_current:
-                                        bet_leg.achieved_value = float(new_current)
-                                        updated_legs += 1
-                                        app.logger.debug(f"[LIVE-UPDATE] Bet {bet.id} Leg {bet_leg.leg_order}: achieved_value = {new_current}")
-                                    
-                                    # Update game status if available
-                                    if 'gameStatus' in leg_data and leg_data['gameStatus']:
-                                        if bet_leg.game_status != leg_data['gameStatus']:
-                                            bet_leg.game_status = leg_data['gameStatus']
-                                            app.logger.debug(f"[LIVE-UPDATE] Bet {bet.id} Leg {bet_leg.leg_order}: game_status = {leg_data['gameStatus']}")
-                                    
-                                    # Update scores if available
-                                    if 'homeScore' in leg_data and leg_data['homeScore'] is not None:
-                                        bet_leg.home_score = int(leg_data['homeScore'])
-                                    if 'awayScore' in leg_data and leg_data['awayScore'] is not None:
-                                        bet_leg.away_score = int(leg_data['awayScore'])
-                                    
-                                    # Update game_id if available
-                                    if 'gameId' in leg_data and leg_data['gameId']:
-                                        if bet_leg.game_id != leg_data['gameId']:
-                                            bet_leg.game_id = leg_data['gameId']
-                                            app.logger.debug(f"[LIVE-UPDATE] Bet {bet.id} Leg {bet_leg.leg_order}: game_id = {leg_data['gameId']}")
+        update_completed_bet_legs()
 
-                        
-                        updated_bets += 1
-                        
-                except Exception as e:
-                    app.logger.error(f"[LIVE-UPDATE] Error updating live bet {bet.id}: {e}")
-                    continue
-            
-            # Commit all changes
-            db.session.commit()
-            
-            if updated_legs > 0:
-                app.logger.info(f"[LIVE-UPDATE] ✓ Updated {updated_legs} legs across {updated_bets} live bets")
-            else:
-                app.logger.info("[LIVE-UPDATE] No live bet legs needed updating")
-                
-        except Exception as e:
-            app.logger.error(f"[LIVE-UPDATE] Error in update_live_bet_legs: {e}")
-            db.session.rollback()
-
-def standardize_bet_leg_team_names():
-    """Background job to standardize team names in bet_legs to use team_name_short from teams table.
-    
-    This runs periodically to ensure all bet_legs have consistent team names that match
-    the standardized team_name_short values from the teams table.
-    """
+def run_update_live_bet_legs():
+    logger.info("[SCHEDULER] Running update_live_bet_legs")
     with app.app_context():
-        try:
-            app.logger.info("[TEAM-STANDARDIZE] Starting team name standardization check...")
-            
-            from models import Team
-            from migrate_standardize_team_names import find_team_name_short
-            
-            # Get all teams for mapping
-            teams = Team.query.all()
-            
-            # Create sport-specific mapping dictionaries
-            nfl_name_to_short = {}
-            nfl_abbr_to_short = {}
-            nba_name_to_short = {}
-            nba_abbr_to_short = {}
-            
-            for team in teams:
-                if team.sport == 'NFL':
-                    if team.team_name:
-                        nfl_name_to_short[team.team_name.lower()] = team.team_name_short
-                    if team.team_name_short:
-                        nfl_name_to_short[team.team_name_short.lower()] = team.team_name_short
-                    if team.team_abbr:
-                        nfl_abbr_to_short[team.team_abbr.lower()] = team.team_name_short
-                elif team.sport == 'NBA':
-                    if team.team_name:
-                        nba_name_to_short[team.team_name.lower()] = team.team_name_short
-                    if team.team_name_short:
-                        nba_name_to_short[team.team_name_short.lower()] = team.team_name_short
-                    if team.team_abbr:
-                        nba_abbr_to_short[team.team_abbr.lower()] = team.team_name_short
-            
-            # Get all bet legs
-            bet_legs = BetLeg.query.all()
-            updated_count = 0
-            
-            for leg in bet_legs:
-                original_player_team = leg.player_team
-                original_home_team = leg.home_team
-                original_away_team = leg.away_team
-                
-                # Choose the appropriate mapping based on the bet leg's sport
-                if leg.sport == 'NFL':
-                    name_to_short = nfl_name_to_short
-                    abbr_to_short = nfl_abbr_to_short
-                elif leg.sport == 'NBA':
-                    name_to_short = nba_name_to_short
-                    abbr_to_short = nba_abbr_to_short
-                else:
-                    # For unknown sports, try NFL first, then NBA
-                    name_to_short = {**nfl_name_to_short, **nba_name_to_short}
-                    abbr_to_short = {**nfl_abbr_to_short, **nba_abbr_to_short}
-                
-                # Update player_team if it exists
-                if leg.player_team:
-                    new_player_team = find_team_name_short(leg.player_team, name_to_short, abbr_to_short)
-                    if new_player_team and new_player_team != leg.player_team:
-                        leg.player_team = new_player_team
-                
-                # Update home_team
-                if leg.home_team:
-                    new_home_team = find_team_name_short(leg.home_team, name_to_short, abbr_to_short)
-                    if new_home_team and new_home_team != leg.home_team:
-                        leg.home_team = new_home_team
-                
-                # Update away_team
-                if leg.away_team:
-                    new_away_team = find_team_name_short(leg.away_team, name_to_short, abbr_to_short)
-                    if new_away_team and new_away_team != leg.away_team:
-                        leg.away_team = new_away_team
-                
-                # Check if any updates were made
-                if (leg.player_team != original_player_team or
-                    leg.home_team != original_home_team or
-                    leg.away_team != original_away_team):
-                    
-                    try:
-                        db.session.commit()
-                        updated_count += 1
-                    except Exception as e:
-                        db.session.rollback()
-                        app.logger.error(f"[TEAM-STANDARDIZE] Error updating bet_leg {leg.id}: {e}")
-            
-            if updated_count > 0:
-                app.logger.info(f"[TEAM-STANDARDIZE] ✓ Standardized team names for {updated_count} bet legs")
-            else:
-                app.logger.info("[TEAM-STANDARDIZE] No bet legs needed team name standardization")
-                
-        except Exception as e:
-            app.logger.error(f"[TEAM-STANDARDIZE] Error in standardize_bet_leg_team_names: {e}")
-            db.session.rollback()
+        update_live_bet_legs()
 
-# Schedule automated tasks
-scheduler.add_job(
-    func=update_completed_bet_legs,
-    trigger=IntervalTrigger(minutes=30),
-    id='completed_bet_leg_updates',
-    name='Update completed bet legs with final results every 30 minutes'
-)
+def run_standardize_bet_leg_team_names():
+    logger.info("[SCHEDULER] Running standardize_bet_leg_team_names")
+    with app.app_context():
+        standardize_bet_leg_team_names()
 
-scheduler.add_job(
-    func=update_live_bet_legs,
-    trigger=IntervalTrigger(minutes=1),
-    id='live_bet_updates',
-    name='Update live bet legs with real-time data every minute'
-)
+def run_auto_move_bets_no_live_legs():
+    logger.info("[SCHEDULER] Running auto_move_bets_no_live_legs")
+    with app.app_context():
+        auto_move_bets_no_live_legs()
 
-scheduler.add_job(
-    func=standardize_bet_leg_team_names,
-    trigger=IntervalTrigger(hours=24),
-    id='team_name_standardization',
-    name='Standardize team names in bet_legs to use team_name_short daily'
-)
-
-scheduler.add_job(
-    func=lambda: app.app_context().push() or auto_move_bets_no_live_legs(),
-    trigger=IntervalTrigger(minutes=5),
-    id='auto_move_no_live_legs',
-    name='Move bets with no live legs to historical every 5 minutes'
-)
-
-scheduler.add_job(
-    func=lambda: app.app_context().push() or auto_determine_leg_hit_status(),
-    trigger=IntervalTrigger(minutes=10),
-    id='auto_determine_hit_status',
-    name='Determine hit/miss status for legs with achieved values every 10 minutes'
-)
+def run_auto_determine_leg_hit_status():
+    logger.info("[SCHEDULER] Running auto_determine_leg_hit_status")
+    with app.app_context():
+        auto_determine_leg_hit_status()
 
 if __name__ == '__main__':
+    # Schedule automated tasks
+    scheduler.add_job(
+        func=run_update_completed_bet_legs,
+        trigger=IntervalTrigger(minutes=30),
+        id='completed_bet_leg_updates',
+        name='Update completed bet legs with final results every 30 minutes'
+    )
+
+    scheduler.add_job(
+        func=run_update_live_bet_legs,
+        trigger=IntervalTrigger(minutes=1),
+        id='live_bet_updates',
+        name='Update live bet legs with real-time data every minute'
+    )
+
+    scheduler.add_job(
+        func=run_standardize_bet_leg_team_names,
+        trigger=IntervalTrigger(hours=24),
+        id='team_name_standardization',
+        name='Standardize team names in bet_legs to use team_name_short daily'
+    )
+
+    scheduler.add_job(
+        func=run_auto_move_bets_no_live_legs,
+        trigger=IntervalTrigger(minutes=5),
+        id='auto_move_no_live_legs',
+        name='Move bets with no live legs to historical every 5 minutes'
+    )
+
+    scheduler.add_job(
+        func=run_auto_determine_leg_hit_status,
+        trigger=IntervalTrigger(minutes=10),
+        id='auto_determine_hit_status',
+        name='Determine hit/miss status for legs with achieved values every 10 minutes'
+    )
+
+    scheduler.add_job(
+        func=process_historical_bets_api,
+        trigger=IntervalTrigger(hours=1),
+        id='historical_bet_processing',
+        name='Process historical bets with ESPN API data and update status hourly'
+    )
+
+    # Start the scheduler after adding all jobs
+    scheduler.start()
+
     app.run(host='0.0.0.0', port=8000, debug=True)
