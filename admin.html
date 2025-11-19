@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Bet Tracker</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg: #0a0e27;
+            --primary: #ffcc00;
+            --text: #e5e5e5;
+            --card-bg: #12172e;
+            --success: #4caf50;
+            --error: #f44336;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            color: var(--primary);
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .admin-section {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 30px;
+            margin-bottom: 30px;
+            border: 2px solid rgba(255, 204, 0, 0.2);
+        }
+
+        .admin-section h2 {
+            color: var(--primary);
+            margin-bottom: 15px;
+            font-size: 24px;
+        }
+
+        .admin-section p {
+            margin-bottom: 20px;
+            color: var(--text);
+            line-height: 1.6;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, var(--primary) 0%, #ff9500 100%);
+            color: #000;
+            border: none;
+            padding: 15px 30px;
+            font-size: 16px;
+            font-weight: 600;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            display: inline-block;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(255, 204, 0, 0.4);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .status {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 8px;
+            display: none;
+        }
+
+        .status.success {
+            background: rgba(76, 175, 80, 0.2);
+            border: 2px solid var(--success);
+            color: var(--success);
+        }
+
+        .status.error {
+            background: rgba(244, 67, 54, 0.2);
+            border: 2px solid var(--error);
+            color: var(--error);
+        }
+
+        .status.info {
+            background: rgba(255, 204, 0, 0.2);
+            border: 2px solid var(--primary);
+            color: var(--primary);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .stat-card {
+            background: rgba(255, 204, 0, 0.1);
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .stat-card .label {
+            font-size: 14px;
+            color: var(--text);
+            opacity: 0.7;
+            margin-bottom: 5px;
+        }
+
+        .stat-card .value {
+            font-size: 32px;
+            font-weight: bold;
+            color: var(--primary);
+        }
+
+        .details-list {
+            max-height: 400px;
+            overflow-y: auto;
+            margin-top: 20px;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 15px;
+            border-radius: 8px;
+        }
+
+        .detail-item {
+            padding: 10px;
+            border-bottom: 1px solid rgba(255, 204, 0, 0.2);
+            margin-bottom: 10px;
+        }
+
+        .detail-item:last-child {
+            border-bottom: none;
+        }
+
+        .detail-item strong {
+            color: var(--primary);
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-bottom: 20px;
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .back-link:hover {
+            text-decoration: underline;
+        }
+
+        .spinner {
+            border: 3px solid rgba(255, 204, 0, 0.3);
+            border-top: 3px solid var(--primary);
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+            vertical-align: middle;
+            margin-left: 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="/" class="back-link">← Back to Home</a>
+        
+        <h1>⚙️ Admin Tools</h1>
+
+        <!-- Fix Pending Legs Section -->
+        <div class="admin-section">
+            <h2>🔧 Fix Pending Bet Legs</h2>
+            <p>
+                This tool will search ESPN API for all bet legs with status='pending' and:
+            </p>
+            <ul style="margin-left: 20px; margin-bottom: 20px; line-height: 1.8;">
+                <li>Update <strong>game_id</strong> (ESPN game ID) if missing</li>
+                <li>Update <strong>achieved_value</strong> for completed games</li>
+                <li>Update <strong>status</strong> (won/lost) based on achieved vs target values</li>
+                <li>Update <strong>is_hit</strong> (True/False) based on status</li>
+            </ul>
+            
+            <button class="btn" id="fix-pending-btn" onclick="fixPendingLegs()">
+                🚀 Fix All Pending Legs
+            </button>
+
+            <div id="fix-status" class="status"></div>
+
+            <div id="fix-stats" style="display: none;">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="label">Total Pending</div>
+                        <div class="value" id="stat-total">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="label">Fixed</div>
+                        <div class="value" id="stat-fixed">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="label">Skipped</div>
+                        <div class="value" id="stat-skipped">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="label">Errors</div>
+                        <div class="value" id="stat-errors">0</div>
+                    </div>
+                </div>
+
+                <div id="fix-details" class="details-list"></div>
+            </div>
+        </div>
+
+        <!-- Normalize Team Names Section -->
+        <div class="admin-section">
+            <h2>🏈 Normalize Team Names</h2>
+            <p>
+                Fix spread/moneyline bets showing abbreviations (e.g., "CHI") instead of team nicknames (e.g., "Bears").
+                This will convert all existing bet legs to display team nicknames.
+            </p>
+            
+            <button class="btn" id="normalize-teams-btn" onclick="normalizeTeamNames()">
+                🔄 Normalize Team Names
+            </button>
+
+            <div id="normalize-status" class="status"></div>
+            
+            <div id="normalize-changes" style="display: none; margin-top: 20px;">
+                <h3 style="color: var(--primary); margin-bottom: 10px;">Changes Made:</h3>
+                <div id="normalize-list" class="details-list"></div>
+            </div>
+        </div>
+
+        <!-- Compute Returns Section -->
+        <div class="admin-section">
+            <h2>💰 Compute Returns</h2>
+            <p>
+                Recalculate and update profit/loss returns for all completed bets.
+            </p>
+            
+            <button class="btn" id="compute-returns-btn" onclick="computeReturns()">
+                📊 Compute Returns
+            </button>
+
+            <div id="returns-status" class="status"></div>
+        </div>
+
+        <!-- Update Teams Section -->
+        <div class="admin-section">
+            <h2>🔄 Update Team Data</h2>
+            <p>
+                Manually trigger team data normalization and abbreviation updates.
+            </p>
+            
+            <button class="btn" id="update-teams-btn" onclick="updateTeams()">
+                🔄 Update Teams
+            </button>
+
+            <div id="teams-status" class="status"></div>
+        </div>
+    </div>
+
+    <script>
+        async function fixPendingLegs() {
+            const btn = document.getElementById('fix-pending-btn');
+            const statusDiv = document.getElementById('fix-status');
+            const statsDiv = document.getElementById('fix-stats');
+            const detailsDiv = document.getElementById('fix-details');
+            
+            // Reset UI
+            btn.disabled = true;
+            btn.innerHTML = '🚀 Fixing... <span class="spinner"></span>';
+            statusDiv.style.display = 'block';
+            statusDiv.className = 'status info';
+            statusDiv.innerHTML = '⏳ Querying ESPN API for all pending legs... This may take a while.';
+            statsDiv.style.display = 'none';
+            detailsDiv.innerHTML = '';
+            
+            try {
+                const response = await fetch('/admin/fix_pending_legs', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    credentials: 'include'
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    statusDiv.className = 'status success';
+                    statusDiv.innerHTML = `✅ ${data.message}`;
+                    
+                    // Show stats
+                    statsDiv.style.display = 'block';
+                    document.getElementById('stat-total').textContent = data.stats.total_pending;
+                    document.getElementById('stat-fixed').textContent = data.stats.fixed;
+                    document.getElementById('stat-skipped').textContent = data.stats.skipped;
+                    document.getElementById('stat-errors').textContent = data.stats.errors;
+                    
+                    // Show details
+                    if (data.details && data.details.length > 0) {
+                        detailsDiv.innerHTML = data.details.map(leg => `
+                            <div class="detail-item">
+                                <strong>Leg ${leg.leg_id}</strong> (Bet ${leg.bet_id})<br>
+                                Player: ${leg.player || 'N/A'}<br>
+                                Game: ${leg.game}<br>
+                                Date: ${leg.game_date || 'N/A'}<br>
+                                Changes: ${leg.changes.join(', ')}
+                            </div>
+                        `).join('');
+                    }
+                } else {
+                    statusDiv.className = 'status error';
+                    statusDiv.innerHTML = `❌ Error: ${data.error || 'Unknown error'}`;
+                }
+            } catch (error) {
+                statusDiv.className = 'status error';
+                statusDiv.innerHTML = `❌ Error: ${error.message}`;
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '🚀 Fix All Pending Legs';
+            }
+        }
+
+        async function normalizeTeamNames() {
+            const btn = document.getElementById('normalize-teams-btn');
+            const statusDiv = document.getElementById('normalize-status');
+            const changesDiv = document.getElementById('normalize-changes');
+            const changesList = document.getElementById('normalize-list');
+            
+            btn.disabled = true;
+            btn.innerHTML = '🔄 Normalizing... <span class="spinner"></span>';
+            statusDiv.style.display = 'block';
+            statusDiv.className = 'status info';
+            statusDiv.innerHTML = '⏳ Normalizing team names...';
+            
+            try {
+                const response = await fetch('/admin/normalize_team_names', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    credentials: 'include'
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    statusDiv.className = 'status success';
+                    statusDiv.innerHTML = `✅ ${data.message}`;
+                    
+                    // Show changes if any were made
+                    if (data.changes && data.changes.length > 0) {
+                        changesDiv.style.display = 'block';
+                        changesList.innerHTML = data.changes.map(change => 
+                            `<div class="detail-item">${change}</div>`
+                        ).join('');
+                    }
+                } else {
+                    statusDiv.className = 'status error';
+                    statusDiv.innerHTML = `❌ Error: ${data.error}`;
+                }
+            } catch (error) {
+                statusDiv.className = 'status error';
+                statusDiv.innerHTML = `❌ Error: ${error.message}`;
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '🔄 Normalize Team Names';
+            }
+        }
+
+        async function computeReturns() {
+            const btn = document.getElementById('compute-returns-btn');
+            const statusDiv = document.getElementById('returns-status');
+            
+            btn.disabled = true;
+            btn.innerHTML = '📊 Computing... <span class="spinner"></span>';
+            statusDiv.style.display = 'block';
+            statusDiv.className = 'status info';
+            statusDiv.innerHTML = '⏳ Computing returns...';
+            
+            try {
+                const response = await fetch('/admin/compute_returns', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ force: false }),
+                    credentials: 'include'
+                });
+                
+                const data = await response.json();
+                
+                if (!data.error) {
+                    statusDiv.className = 'status success';
+                    statusDiv.innerHTML = `✅ Returns computed successfully!`;
+                } else {
+                    statusDiv.className = 'status error';
+                    statusDiv.innerHTML = `❌ Error: ${data.error}`;
+                }
+            } catch (error) {
+                statusDiv.className = 'status error';
+                statusDiv.innerHTML = `❌ Error: ${error.message}`;
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '📊 Compute Returns';
+            }
+        }
+
+        async function updateTeams() {
+            const btn = document.getElementById('update-teams-btn');
+            const statusDiv = document.getElementById('teams-status');
+            
+            btn.disabled = true;
+            btn.innerHTML = '🔄 Updating... <span class="spinner"></span>';
+            statusDiv.style.display = 'block';
+            statusDiv.className = 'status info';
+            statusDiv.innerHTML = '⏳ Updating team data...';
+            
+            try {
+                const response = await fetch('/admin/update_teams', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    credentials: 'include'
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    statusDiv.className = 'status success';
+                    statusDiv.innerHTML = `✅ ${data.message || 'Teams updated successfully!'}`;
+                } else {
+                    statusDiv.className = 'status error';
+                    statusDiv.innerHTML = `❌ Error: ${data.error || 'Unknown error'}`;
+                }
+            } catch (error) {
+                statusDiv.className = 'status error';
+                statusDiv.innerHTML = `❌ Error: ${error.message}`;
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '🔄 Update Teams';
+            }
+        }
+    </script>
+</body>
+</html>

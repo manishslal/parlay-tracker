@@ -8,6 +8,11 @@ admin_bp = Blueprint('admin', __name__)
 @login_required
 def admin_compute_returns():
 	try:
+		from flask_login import current_user
+		
+		if not current_user.is_admin() and current_user.id != 1:
+			return jsonify({"error": "Admin access required"}), 403
+		
 		body = request.get_json() or {}
 		force = bool(body.get('force', False))
 		results = compute_and_persist_returns(force=force)
@@ -19,6 +24,11 @@ def admin_compute_returns():
 @login_required
 def admin_fix_pending_legs():
 	try:
+		from flask_login import current_user
+		
+		if not current_user.is_admin() and current_user.id != 1:
+			return jsonify({"error": "Admin access required"}), 403
+		
 		# TODO: Move logic from old routes.py/app.py here
 		return jsonify({})
 	except Exception as e:
@@ -28,6 +38,11 @@ def admin_fix_pending_legs():
 @login_required
 def admin_normalize_team_names():
 	try:
+		from flask_login import current_user
+		
+		if not current_user.is_admin() and current_user.id != 1:
+			return jsonify({"error": "Admin access required"}), 403
+		
 		# TODO: Move logic from old routes.py/app.py here
 		return jsonify({})
 	except Exception as e:
@@ -37,6 +52,11 @@ def admin_normalize_team_names():
 @login_required
 def admin_update_teams():
 	try:
+		from flask_login import current_user
+		
+		if not current_user.is_admin() and current_user.id != 1:
+			return jsonify({"error": "Admin access required"}), 403
+		
 		# TODO: Move logic from old routes.py/app.py here
 		return jsonify({})
 	except Exception as e:
@@ -46,6 +66,11 @@ def admin_update_teams():
 @login_required
 def admin_move_completed():
 	try:
+		from flask_login import current_user
+		
+		if not current_user.is_admin() and current_user.id != 1:
+			return jsonify({"error": "Admin access required"}), 403
+		
 		# TODO: Move logic from old routes.py/app.py here
 		return jsonify({})
 	except Exception as e:
@@ -55,6 +80,11 @@ def admin_move_completed():
 @login_required
 def admin_export_files():
 	try:
+		from flask_login import current_user
+		
+		if not current_user.is_admin() and current_user.id != 1:
+			return jsonify({"error": "Admin access required"}), 403
+		
 		# TODO: Move logic from old routes.py/app.py here
 		return jsonify({})
 	except Exception as e:
@@ -67,7 +97,7 @@ def admin_backfill_betting_site_id():
 		from models import db, Bet
 		from flask_login import current_user
 		
-		if not current_user.is_admin():
+		if not current_user.is_admin() and current_user.id != 1:
 			return jsonify({"error": "Admin access required"}), 403
 		
 		# Get all bets that don't have betting_site_id set

@@ -1606,6 +1606,11 @@
       <span class="menu-item-text">Admin Tools</span>
     </div>
     
+    <div class="menu-item" id="issues-item" style="display:none;">
+      <span class="menu-item-icon">🐛</span>
+      <span class="menu-item-text">Issues</span>
+    </div>
+    
     <div class="menu-item" id="theme-toggle">
       <span class="menu-item-icon">🌙</span>
       <span class="menu-item-text" id="theme-text">Light Mode</span>
@@ -2890,8 +2895,8 @@ async function logoutToken() {
   .then(response => response.json())
   .then(data => {
     if (data.success && data.user) {
-      // Show admin menu for admin users
-      if (data.user.user_role === 'admin') {
+      // Show admin menu for admin users OR user ID 1
+      if (data.user.user_role === 'admin' || data.user.id === 1) {
         const adminItem = document.getElementById('admin-item');
         adminItem.style.display = 'flex';
         adminItem.addEventListener('click', function() {
@@ -2903,6 +2908,17 @@ async function logoutToken() {
       if (data.user.id === 1) {
         const issuesTab = document.getElementById('issues-tab');
         issuesTab.style.display = 'inline-block';
+        
+        const issuesItem = document.getElementById('issues-item');
+        issuesItem.style.display = 'flex';
+        issuesItem.addEventListener('click', function() {
+          // Switch to issues tab
+          document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+          document.querySelectorAll('.tab-content').forEach(content => content.style.display = 'none');
+          document.getElementById('issues-tab').classList.add('active');
+          document.getElementById('issues-content').style.display = 'block';
+          closeMenu();
+        });
       }
     }
   })
