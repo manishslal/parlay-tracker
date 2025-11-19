@@ -7,4 +7,3 @@ from .bet import Bet
 from .bet_leg import BetLeg
 from .player import Player
 from .team import Team
-# models package init
