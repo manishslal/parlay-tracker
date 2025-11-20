@@ -10,12 +10,8 @@ import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from datetime import datetime, timezone
-from typing import List, Dict, Any, Optional, TYPE_CHECKING
+from typing import List, Dict, Any, Optional
 import logging
-
-if TYPE_CHECKING:
-    from models import Bet, BetLeg, Player
-    from app import db
 
 logger = logging.getLogger(__name__)
 
@@ -31,85 +27,89 @@ def process_historical_bets_api():
     
     Any failures are logged to the Issues page.
     """
-    try:
-        logger.info("[HISTORICAL-API] Starting historical bet API processing")
-        
-        # Get all historical bets that haven't been API fetched
-        historical_bets = Bet.query.filter_by(
-            is_active=False, 
-            is_archived=False,
-            api_fetched=None
-        ).options(db.joinedload(Bet.bet_legs_rel)).all()
-        
-        if not historical_bets:
-            logger.info("[HISTORICAL-API] No historical bets need API processing")
-            return
-        
-        logger.info(f"[HISTORICAL-API] Processing {len(historical_bets)} historical bets")
-        
-        processed_count = 0
-        issues = []
-        
-        for bet in historical_bets:
-            try:
-                logger.info(f"[HISTORICAL-API] Processing bet {bet.id}")
-                
-                # Get bet legs
-                bet_legs = bet.bet_legs_rel
-                if not bet_legs:
-                    issues.append(f"Bet {bet.id}: No legs found")
-                    continue
-                
-                # Process each leg
-                all_legs_processed = True
-                for leg in bet_legs:
-                    try:
-                        # Step 3a: Link player to bet_leg
-                        if not _link_player_to_leg(leg, issues):
+    from app import app, db
+    from models import Bet, BetLeg, Player
+    
+    with app.app_context():
+        try:
+            logger.info("[HISTORICAL-API] Starting historical bet API processing")
+            
+            # Get all historical bets that haven't been API fetched
+            historical_bets = Bet.query.filter_by(
+                is_active=False, 
+                is_archived=False,
+                api_fetched='No'
+            ).options(db.joinedload(Bet.bet_legs_rel)).all()
+            
+            if not historical_bets:
+                logger.info("[HISTORICAL-API] No historical bets need API processing")
+                return
+            
+            logger.info(f"[HISTORICAL-API] Processing {len(historical_bets)} historical bets")
+            
+            processed_count = 0
+            issues = []
+            
+            for bet in historical_bets:
+                try:
+                    logger.info(f"[HISTORICAL-API] Processing bet {bet.id}")
+                    
+                    # Get bet legs
+                    bet_legs = bet.bet_legs_rel
+                    if not bet_legs:
+                        issues.append(f"Bet {bet.id}: No legs found")
+                        continue
+                    
+                    # Process each leg
+                    all_legs_processed = True
+                    for leg in bet_legs:
+                        try:
+                            # Step 3a: Link player to bet_leg
+                            if not _link_player_to_leg(leg, db, issues):
+                                all_legs_processed = False
+                                continue
+                            
+                            # Step 3d: Fetch ESPN data for the leg
+                            if not _fetch_espn_data_for_leg(leg, issues):
+                                all_legs_processed = False
+                                continue
+                            
+                            # Step 3e: Set game status and hit status
+                            _update_leg_status(leg)
+                            
+                        except Exception as e:
+                            logger.error(f"[HISTORICAL-API] Error processing leg {leg.id} in bet {bet.id}: {e}")
+                            issues.append(f"Bet {bet.id}, Leg {leg.id}: Processing error - {str(e)}")
                             all_legs_processed = False
-                            continue
+                    
+                    # Step 3f: If all legs processed successfully, mark bet as complete
+                    if all_legs_processed:
+                        bet.api_fetched = 'Yes'
+                        bet.last_api_update = datetime.now(timezone.utc)
+                        processed_count += 1
+                        logger.info(f"[HISTORICAL-API] Successfully processed bet {bet.id}")
+                    else:
+                        logger.warning(f"[HISTORICAL-API] Bet {bet.id} had processing issues")
                         
-                        # Step 3d: Fetch ESPN data for the leg
-                        if not _fetch_espn_data_for_leg(leg, issues):
-                            all_legs_processed = False
-                            continue
-                        
-                        # Step 3e: Set game status and hit status
-                        _update_leg_status(leg)
-                        
-                    except Exception as e:
-                        logger.error(f"[HISTORICAL-API] Error processing leg {leg.id} in bet {bet.id}: {e}")
-                        issues.append(f"Bet {bet.id}, Leg {leg.id}: Processing error - {str(e)}")
-                        all_legs_processed = False
-                
-                # Step 3f: If all legs processed successfully, mark bet as complete
-                if all_legs_processed:
-                    bet.api_fetched = 'Yes'
-                    bet.last_api_update = datetime.now(timezone.utc)
-                    processed_count += 1
-                    logger.info(f"[HISTORICAL-API] Successfully processed bet {bet.id}")
-                else:
-                    logger.warning(f"[HISTORICAL-API] Bet {bet.id} had processing issues")
-                
-            except Exception as e:
-                logger.error(f"[HISTORICAL-API] Error processing bet {bet.id}: {e}")
-                issues.append(f"Bet {bet.id}: General processing error - {str(e)}")
-        
-        # Commit all changes
-        db.session.commit()
-        
-        # Log issues to the Issues page
-        if issues:
-            _log_issues_to_page(issues)
-        
-        logger.info(f"[HISTORICAL-API] Completed processing {processed_count} bets with {len(issues)} issues")
-        
-    except Exception as e:
-        logger.error(f"[HISTORICAL-API] Fatal error: {e}")
-        db.session.rollback()
+                except Exception as e:
+                    logger.error(f"[HISTORICAL-API] Error processing bet {bet.id}: {e}")
+                    issues.append(f"Bet {bet.id}: General processing error - {str(e)}")
+            
+            # Commit all changes
+            db.session.commit()
+            
+            # Log issues to the Issues page
+            if issues:
+                _log_issues_to_page(issues)
+            
+            logger.info(f"[HISTORICAL-API] Completed processing {processed_count} bets with {len(issues)} issues")
+            
+        except Exception as e:
+            logger.error(f"[HISTORICAL-API] Fatal error: {e}")
+            db.session.rollback()
 
 
-def _link_player_to_leg(leg, issues):
+def _link_player_to_leg(leg, db, issues):
     """
     Step 3a: Link player to bet_leg by matching names.
     
@@ -148,13 +148,13 @@ def _fetch_espn_data_for_leg(leg, issues):
     """
     try:
         # Import ESPN helper functions
-        from helpers import nfl_data
+        from helpers import espn_api
         
         # Get game data from ESPN
-        game_data = nfl_data.get_espn_game_data(
+        game_data = espn_api.get_espn_game_data(
             leg.home_team, 
             leg.away_team, 
-            leg.game_date,
+            leg.game_date.strftime('%Y-%m-%d') if hasattr(leg.game_date, 'strftime') else str(leg.game_date),
             leg.player_name if leg.player_name else None
         )
         

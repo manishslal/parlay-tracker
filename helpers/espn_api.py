@@ -163,6 +163,90 @@ def search_espn_player(player_name: str, sport: str = "football", league: str = 
         print(f"Error searching ESPN for player {player_name}: {e}")
         return None
 
+def get_espn_game_data(home_team: str, away_team: str, game_date: str, player_name: str = None) -> dict:
+    """
+    Fetch comprehensive ESPN game data for a specific game
+    
+    Args:
+        home_team: Home team name
+        away_team: Away team name  
+        game_date: Game date in YYYY-MM-DD format
+        player_name: Player name for player props (optional)
+    
+    Returns:
+        Dictionary with game data or None if not found
+    """
+    try:
+        # Convert date format
+        date_obj = datetime.strptime(game_date, '%Y-%m-%d')
+        espn_date = date_obj.strftime('%Y%m%d')
+        
+        url = f"https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?dates={espn_date}"
+        headers = {'User-Agent': 'Mozilla/5.0'}
+        response = requests.get(url, headers=headers, timeout=10)
+        
+        if response.status_code != 200:
+            return None
+        
+        data = response.json()
+        events = data.get('events', [])
+        
+        for event in events:
+            game_id = event.get('id')
+            competitions = event.get('competitions', [])
+            if not competitions:
+                continue
+            
+            competition = competitions[0]
+            competitors = competition.get('competitors', [])
+            
+            if len(competitors) < 2:
+                continue
+            
+            home_competitor = next((c for c in competitors if c.get('homeAway') == 'home'), None)
+            away_competitor = next((c for c in competitors if c.get('homeAway') == 'away'), None)
+            
+            if not home_competitor or not away_competitor:
+                continue
+            
+            espn_home = home_competitor.get('team', {}).get('displayName', '')
+            espn_away = away_competitor.get('team', {}).get('displayName', '')
+            
+            # Match teams (case-insensitive partial match)
+            home_match = home_team.lower() in espn_home.lower() or espn_home.lower() in home_team.lower()
+            away_match = away_team.lower() in espn_away.lower() or espn_away.lower() in away_team.lower()
+            
+            if home_match and away_match:
+                home_score = int(home_competitor.get('score', 0))
+                away_score = int(away_competitor.get('score', 0))
+                
+                # Determine if player is home or away (simplified - would need better player team lookup)
+                is_home_game = None
+                achieved_value = None
+                
+                if player_name:
+                    # For now, return None for player stats - would need player stats API integration
+                    # This is a placeholder for future player stats fetching
+                    achieved_value = None
+                    is_home_game = None
+                else:
+                    # For team bets, determine home/away based on team names
+                    is_home_game = None  # Not applicable for team bets
+                
+                return {
+                    'game_id': game_id,
+                    'home_score': home_score,
+                    'away_score': away_score,
+                    'is_home_game': is_home_game,
+                    'achieved_value': achieved_value
+                }
+        
+        return None
+        
+    except Exception as e:
+        print(f"Error fetching ESPN game data: {e}")
+        return None
+
 def get_espn_player_details(player_id: str, sport: str = "football", league: str = "nfl") -> dict:
     """
     Get detailed player information from ESPN
