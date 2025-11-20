@@ -2033,6 +2033,12 @@ def run_auto_determine_leg_hit_status():
     with app.app_context():
         auto_determine_leg_hit_status()
 
+def run_process_historical_bets_api():
+    logger.info("[SCHEDULER] Running process_historical_bets_api")
+    with app.app_context():
+        from automation.historical_bet_processing import process_historical_bets_api
+        process_historical_bets_api()
+
 if __name__ == '__main__':
     # Schedule automated tasks
     scheduler.add_job(
@@ -2071,7 +2077,7 @@ if __name__ == '__main__':
     )
 
     scheduler.add_job(
-        func=process_historical_bets_api,
+        func=run_process_historical_bets_api,
         trigger=IntervalTrigger(hours=1),
         id='historical_bet_processing',
         name='Process historical bets with ESPN API data and update status hourly'
