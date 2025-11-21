@@ -25,7 +25,12 @@ class User(db.Model, UserMixin):
     
     def check_password(self, password):
         """Verify password against hash"""
-        return bcrypt.checkpw(password.encode('utf-8'), self.password_hash.encode('utf-8'))
+        try:
+            return bcrypt.checkpw(password.encode('utf-8'), self.password_hash.encode('utf-8'))
+        except ValueError:
+            # Invalid hash format - this user needs password reset
+            print(f"WARNING: User {self.username} has invalid password hash format")
+            return False
     
     def is_admin(self):
         """Check if user has admin role"""
