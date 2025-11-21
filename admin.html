@@ -282,6 +282,22 @@
 
             <div id="teams-status" class="status"></div>
         </div>
+
+        <!-- Process Historical Bets Section -->
+        <div class="admin-section">
+            <h2>📊 Process Historical Bets</h2>
+            <p>
+                Manually trigger the historical bet processing system to fetch ESPN data for completed bets.
+                This will update bet legs with game results, player stats, and determine win/loss status.
+                Normally runs automatically every hour, but can be triggered manually here.
+            </p>
+            
+            <button class="btn" id="process-historical-btn" onclick="processHistoricalBets()">
+                🚀 Process Historical Bets
+            </button>
+
+            <div id="historical-status" class="status"></div>
+        </div>
     </div>
 
     <script>
@@ -466,6 +482,43 @@
             } finally {
                 btn.disabled = false;
                 btn.innerHTML = '🔄 Update Teams';
+            }
+        }
+
+        async function processHistoricalBets() {
+            const btn = document.getElementById('process-historical-btn');
+            const statusDiv = document.getElementById('historical-status');
+            
+            btn.disabled = true;
+            btn.innerHTML = '🚀 Processing... <span class="spinner"></span>';
+            statusDiv.style.display = 'block';
+            statusDiv.className = 'status info';
+            statusDiv.innerHTML = '⏳ Processing historical bets with ESPN API... This may take several minutes.';
+            
+            try {
+                const response = await fetch('/admin/process_historical_bets', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    credentials: 'include'
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    statusDiv.className = 'status success';
+                    statusDiv.innerHTML = `✅ ${data.message}`;
+                } else {
+                    statusDiv.className = 'status error';
+                    statusDiv.innerHTML = `❌ Error: ${data.error || 'Unknown error'}`;
+                }
+            } catch (error) {
+                statusDiv.className = 'status error';
+                statusDiv.innerHTML = `❌ Error: ${error.message}`;
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '🚀 Process Historical Bets';
             }
         }
     </script>

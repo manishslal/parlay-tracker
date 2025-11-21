@@ -90,39 +90,23 @@ def admin_export_files():
 	except Exception as e:
 		return jsonify({"error": str(e)}), 500
 
-@admin_bp.route('/admin/backfill_betting_site_id', methods=['POST'])
+@admin_bp.route('/admin/process_historical_bets', methods=['POST'])
 @login_required
-def admin_backfill_betting_site_id():
+def admin_process_historical_bets():
 	try:
-		from models import db, Bet
 		from flask_login import current_user
 		
 		if not current_user.is_admin() and current_user.id != 1:
 			return jsonify({"error": "Admin access required"}), 403
 		
-		# Get all bets that don't have betting_site_id set
-		bets_to_update = Bet.query.filter(
-			db.or_(
-				Bet.betting_site_id.is_(None),
-				Bet.betting_site_id == ''
-			)
-		).all()
+		from automation.historical_bet_processing import process_historical_bets_api
 		
-		updated_count = 0
-		for bet in bets_to_update:
-			bet_data = bet.get_bet_data()
-			bet_id = bet_data.get('bet_id') or bet_data.get('betting_site_id')
-			
-			if bet_id:
-				bet.betting_site_id = bet_id
-				updated_count += 1
-		
-		if updated_count > 0:
-			db.session.commit()
+		# Process historical bets
+		process_historical_bets_api()
 		
 		return jsonify({
-			"message": f"Backfilled betting_site_id for {updated_count} bets",
-			"total_processed": len(bets_to_update)
+			"success": True,
+			"message": "Historical bet processing completed successfully"
 		})
 	except Exception as e:
 		return jsonify({"error": str(e)}), 500
