@@ -204,7 +204,15 @@ def fetch_game_details_from_espn(game_date, away_team, home_team, sport='NFL'):
                 sport_path = sport_map.get(sport.upper(), 'football/nfl')
                 summary_url = f"https://site.api.espn.com/apis/site/v2/sports/{sport_path}/summary?event={ev['id']}"
                 logger.info(f"Fetching {sport} summary for event {ev['id']}: {summary_url}")
-                summary = requests.get(summary_url, timeout=8).json()
+                
+                try:
+                    # Try with SSL verification first
+                    summary = requests.get(summary_url, timeout=8, verify=True).json()
+                except requests.exceptions.SSLError:
+                    # Retry without SSL verification
+                    logger.warning(f"SSL error fetching {sport} summary, retrying without SSL verification...")
+                    summary = requests.get(summary_url, timeout=8, verify=False).json()
+                
                 # summary may use camelCase keys
                 s_box = summary.get("boxscore") or summary.get("boxScore") or {}
                 boxscore_players = s_box.get("players") or []
@@ -264,6 +272,30 @@ def process_parlay_data(parlays):
             
             if game_data:
                 parlay_games[game_key] = game_data
+            else:
+                # Create a minimal game object from leg data when ESPN API fails
+                # This ensures games array is populated even if ESPN is unreachable
+                game_data = {
+                    "espn_game_id": leg.get("gameId", ""),
+                    "teams": {
+                        "away": leg.get("away", ""),
+                        "home": leg.get("home", ""),
+                        "away_abbr": "",
+                        "home_abbr": ""
+                    },
+                    "startTime": "",
+                    "startDateTime": leg.get("game_date", ""),
+                    "game_date": leg.get("game_date", ""),
+                    "statusTypeName": "unknown",  # Will be updated by automation
+                    "period": 0,
+                    "clock": "00:00",
+                    "score": {"away": 0, "home": 0},
+                    "boxscore": [],
+                    "scoring_plays": [],
+                    "leaders": []
+                }
+                parlay_games[game_key] = game_data
+                logger.info(f"Created fallback game object for {game_key} due to ESPN API unavailability")
 
         for leg in parlay.get("legs", []):
             # Fix target value for moneyline bets (should be 0, not None)

@@ -88,8 +88,19 @@ def get_events(date_str, sport='NFL'):
     sport_path = sport_map.get(sport.upper(), 'football/nfl')
     url = f"https://site.api.espn.com/apis/site/v2/sports/{sport_path}/scoreboard?dates={d}"
     try:
-        data = requests.get(url, timeout=10).json()
+        # Try with SSL verification first
+        data = requests.get(url, timeout=10, verify=True).json()
         return data.get("events", [])
+    except requests.exceptions.SSLError as ssl_err:
+        logger.warning(f"SSL error fetching ESPN API for {d}: {ssl_err}. Retrying without SSL verification...")
+        try:
+            # Retry without SSL verification as fallback
+            data = requests.get(url, timeout=10, verify=False).json()
+            logger.info(f"Successfully fetched ESPN data without SSL verification for {d}")
+            return data.get("events", [])
+        except Exception as e:
+            logger.warning(f"Failed to fetch events from ESPN API for {d} (even without SSL verification): {e}")
+            return []
     except Exception as e:
         logger.warning(f"Failed to fetch events from ESPN API for {d}: {e}")
         return []
