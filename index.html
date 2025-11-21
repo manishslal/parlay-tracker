@@ -3527,12 +3527,33 @@ async function logoutToken() {
     async function update(){
       msg.textContent='Fetching data...';
       try{
-        // Clear the server-side cache to get fresh ESPN data
+        // Clear ALL caches to get fresh data (same as login)
+        // 1. Clear backend server-side cache
         try {
           await fetchWithAdminToken(`${API_BASE}/api/cache-bust`, { method: 'POST' });
-          console.log('✅ Server cache cleared, fetching fresh stats...');
+          console.log('✅ Server cache cleared');
         } catch (e) {
           console.warn('Could not clear server cache:', e);
+        }
+        
+        // 2. Clear frontend in-memory caches
+        cachedLive = null;
+        cachedHistorical = null;
+        console.log('✅ Frontend memory caches cleared');
+        
+        // 3. Clear localStorage caches
+        clearHistoricalCache();
+        console.log('✅ LocalStorage cache cleared');
+        
+        // 4. Clear service worker caches
+        if ('caches' in window) {
+          try {
+            const cacheNames = await caches.keys();
+            await Promise.all(cacheNames.map(name => caches.delete(name)));
+            console.log(`✅ Cleared ${cacheNames.length} service worker caches`);
+          } catch (e) {
+            console.warn('Could not clear service worker caches:', e);
+          }
         }
         
         // First process any new parlays
@@ -3567,28 +3588,20 @@ async function logoutToken() {
           render(combinedParlays, sec);
           msg.textContent=`Last updated: ${new Date().toLocaleTimeString()}`;
         } else if(activeTab === 'historical') {
-          // Try localStorage cache first
-          const cachedData = loadHistoricalCache();
-          if (cachedData) {
-            console.log('Using localStorage cached historical data');
-            cachedHistorical = cachedData;
-            render(cachedData, histSec);
-            msg.textContent=`Using cached data: ${new Date().toLocaleTimeString()}`;
-          } else {
-            // No cache - fetch from server with cache busting
-            const histUrl = `${API_BASE}/historical?t=${Date.now()}`;
-            const historicalResponse = await fetchWithAdminToken(histUrl);
-            if(!historicalResponse.ok) throw new Error(`Historical data error: ${historicalResponse.status}`);
-            const historical = await historicalResponse.json();
+          // Always fetch fresh data (don't use localStorage cache)
+          // This ensures we get the same fresh data as login does
+          const histUrl = `${API_BASE}/historical?t=${Date.now()}`;
+          const historicalResponse = await fetchWithAdminToken(histUrl);
+          if(!historicalResponse.ok) throw new Error(`Historical data error: ${historicalResponse.status}`);
+          const historical = await historicalResponse.json();
 
-            // Save to both memory and localStorage cache
-            cachedHistorical = historical;
-            saveHistoricalCache(historical);
+          // Save to both memory and localStorage cache
+          cachedHistorical = historical;
+          saveHistoricalCache(historical);
 
-            console.log('Historical parlays fetched and cached:', historical);
-            render(historical, histSec);
-            msg.textContent=`Last updated: ${new Date().toLocaleTimeString()}`;
-          }
+          console.log('Historical parlays fetched (fresh):', historical);
+          render(historical, histSec);
+          msg.textContent=`Last updated: ${new Date().toLocaleTimeString()}`;
         } else if(activeTab === 'archived') {
           // Fetch archived bets with cache busting
           const archivedUrl = `${API_BASE}/api/archived?t=${Date.now()}`;
