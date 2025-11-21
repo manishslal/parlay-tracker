@@ -114,8 +114,17 @@ def _link_player_to_leg(leg, db, issues):
     Step 3a: Link player to bet_leg by matching names.
     
     Returns True if successful, False otherwise.
+    
+    Note: Team prop bets (moneyline, spread, total_points) should NOT have player_ids.
+    Only player prop bets (player_prop, passing_yards, etc.) should be linked.
     """
     from models import Player
+    
+    # Skip team prop bets - these don't need player linking
+    # Team props have stat_type in: moneyline, spread, total_points
+    if leg.stat_type and leg.stat_type.lower() in ['moneyline', 'spread', 'total_points']:
+        logger.debug(f"[HISTORICAL-API] Skipping team prop leg {leg.id} (stat_type={leg.stat_type}) - no player linking needed")
+        return True  # Success, but no linking needed
     
     if not leg.player_name:
         return True  # Not a player bet, no linking needed
