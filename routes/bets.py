@@ -599,17 +599,29 @@ def transform_extracted_bet_data(data):
 		
 		# Determine home_team and away_team based on bet type
 		team_name = leg.get('team', '')
+		player_name = leg.get('player')
+		
 		if team_name == 'Game Total' or display_bet_type == 'total':
 			# For totals, we don't have specific teams
 			home_team = 'Game Total'
 			away_team = 'Game Total'
+			player_team = 'Game Total'
 		elif display_bet_type == 'moneyline' or display_bet_type == 'spread':
-			# For game bets, try to split the team name or use defaults
+			# For game bets, we need to identify both teams
+			# For now, set the bet team as home and opponent as TBD - this will be resolved by ESPN API
 			home_team = team_name
-			away_team = 'TBD'  # We'll need to determine this from game data later
+			away_team = 'TBD'  # Will be resolved by game matching
+			player_team = team_name  # For game bets, player_team is the bet team
 		else:
-			# For player props, use the player's team
-			player_team = leg.get('team', '')
+			# For player props, the team_name should be the player's team
+			# If OCR extracted something wrong like "Total", we need better logic
+			if player_name and team_name and team_name.lower() not in ['total', 'game total']:
+				player_team = team_name
+			else:
+				# Try to extract team from player name context or use a default
+				player_team = 'TBD'  # Will be resolved by player data population
+			
+			# For player props, we don't know the game teams yet
 			home_team = player_team
 			away_team = 'TBD'
 		
@@ -628,19 +640,27 @@ def transform_extracted_bet_data(data):
 		elif any(nba_team in team_lower for nba_team in nba_teams):
 			sport = 'NBA'
 		
+		# Set target_value appropriately based on bet type
+		if display_bet_type == 'moneyline':
+			target_value = 'Win'  # Moneyline bets target a win
+		else:
+			target_value = leg.get('line')
+		
 		transformed_leg = {
-			'player_name': leg.get('player'),
-			'team_name': leg.get('team'),
+			'player_name': player_name,
+			'team_name': team_name,
 			'stat_type': leg.get('stat'),  # Frontend expects stat_type for display
 			'bet_type': display_bet_type,  # Frontend also checks bet_type for logic
-			'target_value': leg.get('line'),
+			'target_value': target_value,
 			'bet_line_type': 'over' if leg.get('stat_add') == 'over' else 'under' if leg.get('stat_add') == 'under' else None,
 			'odds': leg.get('odds'),
 			# Required BetLeg fields - provide proper defaults for OCR bets
 			'home_team': home_team,
 			'away_team': away_team,
+			'player_team': player_team,  # Add player_team for proper assignment
 			'sport': sport,
-			'game_date': default_game_date  # Default to today for OCR bets
+			'game_date': default_game_date,  # Default to today for OCR bets
+			'status': 'pending'  # Set default status for OCR bets
 		}
 		transformed['legs'].append(transformed_leg)
 	
