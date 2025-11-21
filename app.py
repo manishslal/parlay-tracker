@@ -2039,51 +2039,50 @@ def run_process_historical_bets_api():
         from automation.historical_bet_processing import process_historical_bets_api
         process_historical_bets_api()
 
+# Schedule automated tasks (moved outside if __name__ == '__main__' so it runs on Render)
+scheduler.add_job(
+    func=run_update_completed_bet_legs,
+    trigger=IntervalTrigger(minutes=30),
+    id='completed_bet_leg_updates',
+    name='Update completed bet legs with final results every 30 minutes'
+)
+
+scheduler.add_job(
+    func=run_update_live_bet_legs,
+    trigger=IntervalTrigger(minutes=1),
+    id='live_bet_updates',
+    name='Update live bet legs with real-time data every minute'
+)
+
+scheduler.add_job(
+    func=run_standardize_bet_leg_team_names,
+    trigger=IntervalTrigger(hours=24),
+    id='team_name_standardization',
+    name='Standardize team names in bet_legs to use team_name_short daily'
+)
+
+scheduler.add_job(
+    func=run_auto_move_bets_no_live_legs,
+    trigger=IntervalTrigger(minutes=5),
+    id='auto_move_no_live_legs',
+    name='Move bets with no live legs to historical every 5 minutes'
+)
+
+scheduler.add_job(
+    func=run_auto_determine_leg_hit_status,
+    trigger=IntervalTrigger(minutes=10),
+    id='auto_determine_hit_status',
+    name='Determine hit/miss status for legs with achieved values every 10 minutes'
+)
+
+scheduler.add_job(
+    func=run_process_historical_bets_api,
+    trigger=IntervalTrigger(hours=1),
+    id='historical_bet_processing',
+    name='Process historical bets with ESPN API data and update status hourly'
+)
+
+# Start the scheduler
+scheduler.start()
+
 if __name__ == '__main__':
-    # Schedule automated tasks
-    scheduler.add_job(
-        func=run_update_completed_bet_legs,
-        trigger=IntervalTrigger(minutes=30),
-        id='completed_bet_leg_updates',
-        name='Update completed bet legs with final results every 30 minutes'
-    )
-
-    scheduler.add_job(
-        func=run_update_live_bet_legs,
-        trigger=IntervalTrigger(minutes=1),
-        id='live_bet_updates',
-        name='Update live bet legs with real-time data every minute'
-    )
-
-    scheduler.add_job(
-        func=run_standardize_bet_leg_team_names,
-        trigger=IntervalTrigger(hours=24),
-        id='team_name_standardization',
-        name='Standardize team names in bet_legs to use team_name_short daily'
-    )
-
-    scheduler.add_job(
-        func=run_auto_move_bets_no_live_legs,
-        trigger=IntervalTrigger(minutes=5),
-        id='auto_move_no_live_legs',
-        name='Move bets with no live legs to historical every 5 minutes'
-    )
-
-    scheduler.add_job(
-        func=run_auto_determine_leg_hit_status,
-        trigger=IntervalTrigger(minutes=10),
-        id='auto_determine_hit_status',
-        name='Determine hit/miss status for legs with achieved values every 10 minutes'
-    )
-
-    scheduler.add_job(
-        func=run_process_historical_bets_api,
-        trigger=IntervalTrigger(hours=1),
-        id='historical_bet_processing',
-        name='Process historical bets with ESPN API data and update status hourly'
-    )
-
-    # Start the scheduler after adding all jobs
-    scheduler.start()
-
-    app.run(host='0.0.0.0', port=8000, debug=True)
