@@ -144,10 +144,13 @@ class Bet(db.Model):
                         game_status = leg.get('game_status') or leg.get('gameStatus') or 'STATUS_SCHEDULED'
                         
                         # Create mock game object with scores
+                        # Use full team names for matching with leg data
                         mock_game = {
                             'teams': {
-                                'home': home_abbr,  # Use abbreviation instead of full name
-                                'away': away_abbr   # Use abbreviation instead of full name
+                                'home': leg['home_team'],  # Use full name for frontend matching
+                                'away': leg['away_team'],   # Use full name for frontend matching
+                                'home_abbr': home_abbr,     # Store abbreviation for display
+                                'away_abbr': away_abbr      # Store abbreviation for display
                             },
                             'score': {
                                 'home': leg.get('home_score', 0) or leg.get('homeScore', 0),

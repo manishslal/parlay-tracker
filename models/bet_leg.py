@@ -197,14 +197,14 @@ class BetLeg(db.Model):
             'bet_line_type': self.bet_line_type,
             'over_under': self.bet_line_type,  # Frontend expects 'over_under'
             'stat_add': self.bet_line_type,  # Frontend expects 'stat_add'
-            'target': float(self.target_value) if self.target_value else None,  # Frontend expects 'target'
-            'target_value': float(self.target_value) if self.target_value else None,
-            'current': float(self.achieved_value) if self.achieved_value else None,  # Frontend expects 'current'
-            'achieved_value': float(self.achieved_value) if self.achieved_value else None,
-            'player_season_avg': float(self.player_season_avg) if self.player_season_avg else None,
-            'player_last_5_avg': float(self.player_last_5_avg) if self.player_last_5_avg else None,
-            'vs_opponent_avg': float(self.vs_opponent_avg) if self.vs_opponent_avg else None,
-            'target_vs_season': float(self.target_vs_season) if self.target_vs_season else None,
+            'target': float(self.target_value) if self.target_value is not None else None,  # Frontend expects 'target'
+            'target_value': float(self.target_value) if self.target_value is not None else None,
+            'current': float(self.achieved_value) if self.achieved_value is not None else None,  # Frontend expects 'current'
+            'achieved_value': float(self.achieved_value) if self.achieved_value is not None else None,
+            'player_season_avg': float(self.player_season_avg) if self.player_season_avg is not None else None,
+            'player_last_5_avg': float(self.player_last_5_avg) if self.player_last_5_avg is not None else None,
+            'vs_opponent_avg': float(self.vs_opponent_avg) if self.vs_opponent_avg is not None else None,
+            'target_vs_season': float(self.target_vs_season) if self.target_vs_season is not None else None,
             'original_leg_odds': self.original_leg_odds,
             'boosted_leg_odds': self.boosted_leg_odds,
             'final_leg_odds': self.final_leg_odds,
