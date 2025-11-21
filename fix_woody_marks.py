@@ -11,19 +11,20 @@ from app import app, db
 from models import Bet, BetLeg
 
 def fix_woody_marks_stat():
-    """Fix Woody Marks stat type from passing_yards to rushing_yards"""
+    """Fix Woody Marks stat type from passing_yards to rushing_yards for bet ID 147"""
     with app.app_context():
-        # Find bet legs for Woody Marks with passing_yards
+        # Find bet legs for Woody Marks with passing_yards in bet 147
         woody_legs = BetLeg.query.filter(
+            BetLeg.bet_id == 147,
             BetLeg.player_name.ilike('%woody%marks%'),
             BetLeg.stat_type == 'passing_yards'
         ).all()
 
         if not woody_legs:
-            print("❌ No Woody Marks legs with passing_yards found")
+            print("❌ No Woody Marks legs with passing_yards found in bet 147")
             return False
 
-        print(f"Found {len(woody_legs)} Woody Marks legs with passing_yards:")
+        print(f"Found {len(woody_legs)} Woody Marks legs with passing_yards in bet 147:")
 
         fixed_count = 0
         for leg in woody_legs:
