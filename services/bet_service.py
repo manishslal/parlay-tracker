@@ -3,11 +3,42 @@ from helpers.utils import data_path, get_events, _get_player_stat_from_boxscore,
 from helpers.utils import compute_parlay_returns_from_odds
 import requests
 import logging
+import time
 
 logger = logging.getLogger(__name__)
 
 # Cache for game data to avoid repeated API calls
+# Each entry is a tuple of (game_data, timestamp)
 game_data_cache = {}
+
+# Cache expiration time in seconds (5 minutes = 300 seconds)
+CACHE_EXPIRATION = 300
+
+def cache_is_fresh(game_key):
+    """Check if cached data for a game is still fresh."""
+    if game_key not in game_data_cache:
+        return False
+    
+    game_data, timestamp = game_data_cache[game_key]
+    age = time.time() - timestamp
+    is_fresh = age < CACHE_EXPIRATION
+    
+    if not is_fresh:
+        logger.info(f"Cache for {game_key} expired ({age:.0f}s old, limit: {CACHE_EXPIRATION}s)")
+    
+    return is_fresh
+
+def clear_game_cache(game_key=None):
+    """Clear game cache. If game_key is provided, clear only that entry. Otherwise clear all."""
+    global game_data_cache
+    if game_key:
+        if game_key in game_data_cache:
+            del game_data_cache[game_key]
+            logger.info(f"Cleared cache for game: {game_key}")
+    else:
+        count = len(game_data_cache)
+        game_data_cache = {}
+        logger.info(f"Cleared entire game cache ({count} entries removed)")
 
 def calculate_bet_value(bet, game_data):
     """Calculate the current value for a bet based on game data."""
@@ -225,11 +256,11 @@ def process_parlay_data(parlays):
             game_key = f"{leg['game_date']}_{sport}_{leg['away']}_{leg['home']}"
             logger.info(f"Game key: {game_key}")
             
-            if game_key not in game_data_cache:
+            if game_key not in game_data_cache or not cache_is_fresh(game_key):
                 game_data = fetch_game_details_from_espn(leg['game_date'], leg['away'], leg['home'], sport)
-                game_data_cache[game_key] = game_data
+                game_data_cache[game_key] = (game_data, time.time())
             else:
-                game_data = game_data_cache[game_key]
+                game_data, _ = game_data_cache[game_key]
             
             if game_data:
                 parlay_games[game_key] = game_data

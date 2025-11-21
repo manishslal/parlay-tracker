@@ -685,3 +685,24 @@ def issues():
 		"issues": issues_list,
 		"total_issues": len(issues_list)
 	})
+
+@bets_bp.route("/api/cache-bust", methods=['POST'])
+@login_required
+@db_error_handler
+def cache_bust():
+	"""Clear the game data cache to force fresh ESPN data on next request."""
+	from services.bet_service import clear_game_cache
+	
+	try:
+		clear_game_cache()  # Clear all cached game data
+		return jsonify({
+			'success': True,
+			'message': 'Game cache cleared. Stats will refresh on next fetch.'
+		})
+	except Exception as e:
+		logger.error(f"Error clearing cache: {e}")
+		return jsonify({
+			'success': False,
+			'error': str(e)
+		}), 500
+

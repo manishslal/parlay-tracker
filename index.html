@@ -3527,6 +3527,14 @@ async function logoutToken() {
     async function update(){
       msg.textContent='Fetching data...';
       try{
+        // Clear the server-side cache to get fresh ESPN data
+        try {
+          await fetchWithAdminToken(`${API_BASE}/api/cache-bust`, { method: 'POST' });
+          console.log('✅ Server cache cleared, fetching fresh stats...');
+        } catch (e) {
+          console.warn('Could not clear server cache:', e);
+        }
+        
         // First process any new parlays
         await fetchWithAdminToken(statsUrl);
         
@@ -5430,6 +5438,39 @@ async function logoutToken() {
         
       } catch (error) {
         console.error('Skipping update due to auth error:', error);
+      }
+    })();
+    
+    // Handle page visibility changes - clear cache when page becomes visible (important for mobile)
+    // This ensures fresh stats when user switches back from another app/tab
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden) {
+        // Page became visible again - clear server cache and refresh current tab
+        console.log('📱 Page became visible, clearing cache and refreshing...');
+        (async () => {
+          try {
+            await fetchWithAdminToken(`${API_BASE}/api/cache-bust`, { method: 'POST' });
+            console.log('✅ Server cache cleared');
+            
+            // Refresh the current tab if it's live bets
+            const activeTab = document.querySelector('.tab.active');
+            if (activeTab && activeTab.dataset.tab === 'current') {
+              await update();
+            }
+          } catch (e) {
+            console.warn('Could not refresh stats on page visibility:', e);
+          }
+        })();
+      }
+    });
+    
+    // Clear cache when page is initially loaded (page refresh or new visit)
+    (async () => {
+      try {
+        await fetchWithAdminToken(`${API_BASE}/api/cache-bust`, { method: 'POST' });
+        console.log('✅ Initial page load: Server cache cleared');
+      } catch (e) {
+        console.warn('Could not clear cache on page load:', e);
       }
     })();
     
