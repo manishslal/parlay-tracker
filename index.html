@@ -1885,6 +1885,27 @@
           <div class="profile-label">Email</div>
           <div class="profile-value" id="profile-email">-</div>
         </div>
+        
+        <!-- Password Change Section -->
+        <div class="profile-section">
+          <h3 style="color: var(--primary); margin-bottom: 15px; margin-top: 20px;">Change Password</h3>
+          <form id="password-change-form">
+            <div style="margin-bottom: 15px;">
+              <label for="current-password" style="display: block; margin-bottom: 5px; color: var(--text);">Current Password</label>
+              <input type="password" id="current-password" required style="width: 100%; padding: 8px; border: 1px solid rgba(255, 204, 0, 0.3); border-radius: 4px; background: rgba(0, 0, 0, 0.3); color: var(--text);">
+            </div>
+            <div style="margin-bottom: 15px;">
+              <label for="new-password" style="display: block; margin-bottom: 5px; color: var(--text);">New Password</label>
+              <input type="password" id="new-password" required minlength="6" style="width: 100%; padding: 8px; border: 1px solid rgba(255, 204, 0, 0.3); border-radius: 4px; background: rgba(0, 0, 0, 0.3); color: var(--text);">
+            </div>
+            <div style="margin-bottom: 15px;">
+              <label for="confirm-password" style="display: block; margin-bottom: 5px; color: var(--text);">Confirm New Password</label>
+              <input type="password" id="confirm-password" required minlength="6" style="width: 100%; padding: 8px; border: 1px solid rgba(255, 204, 0, 0.3); border-radius: 4px; background: rgba(0, 0, 0, 0.3); color: var(--text);">
+            </div>
+            <button type="submit" class="btn" id="change-password-btn" style="width: auto; padding: 10px 20px;">Change Password</button>
+            <div id="password-status" class="status" style="margin-top: 15px;"></div>
+          </form>
+        </div>
       </div>
     </div>
     
@@ -2849,6 +2870,81 @@ function showProfilePage() {
   // Close side menu
   closeSideMenu();
 }
+
+// Password change functionality
+document.getElementById('password-change-form').addEventListener('submit', async function(e) {
+  e.preventDefault();
+  
+  const currentPassword = document.getElementById('current-password').value;
+  const newPassword = document.getElementById('new-password').value;
+  const confirmPassword = document.getElementById('confirm-password').value;
+  const statusDiv = document.getElementById('password-status');
+  const submitBtn = document.getElementById('change-password-btn');
+  
+  // Reset status
+  statusDiv.style.display = 'none';
+  statusDiv.className = 'status';
+  statusDiv.innerHTML = '';
+  
+  // Basic client-side validation
+  if (newPassword !== confirmPassword) {
+    statusDiv.style.display = 'block';
+    statusDiv.className = 'status error';
+    statusDiv.innerHTML = '❌ New password and confirmation do not match';
+    return;
+  }
+  
+  if (newPassword.length < 6) {
+    statusDiv.style.display = 'block';
+    statusDiv.className = 'status error';
+    statusDiv.innerHTML = '❌ New password must be at least 6 characters long';
+    return;
+  }
+  
+  // Disable button and show loading
+  submitBtn.disabled = true;
+  submitBtn.innerHTML = 'Changing... <span class="spinner"></span>';
+  
+  try {
+    const response = await fetch('/auth/change_password', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      credentials: 'include',
+      body: JSON.stringify({
+        current_password: currentPassword,
+        new_password: newPassword,
+        confirm_password: confirmPassword
+      })
+    });
+    
+    const data = await response.json();
+    
+    if (response.ok) {
+      statusDiv.style.display = 'block';
+      statusDiv.className = 'status success';
+      statusDiv.innerHTML = '✅ Password changed successfully!';
+      
+      // Clear form
+      document.getElementById('current-password').value = '';
+      document.getElementById('new-password').value = '';
+      document.getElementById('confirm-password').value = '';
+    } else {
+      statusDiv.style.display = 'block';
+      statusDiv.className = 'status error';
+      statusDiv.innerHTML = `❌ ${data.error || 'Failed to change password'}`;
+    }
+  } catch (error) {
+    statusDiv.style.display = 'block';
+    statusDiv.className = 'status error';
+    statusDiv.innerHTML = `❌ Error: ${error.message}`;
+  } finally {
+    // Re-enable button
+    submitBtn.disabled = false;
+    submitBtn.innerHTML = 'Change Password';
+  }
+});
 
 function showBetsPage() {
   // Show main content areas

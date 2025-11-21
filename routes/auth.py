@@ -80,3 +80,31 @@ def check_auth() -> object:
 	response.headers['Pragma'] = 'no-cache'
 	response.headers['Expires'] = '0'
 	return response, 200
+
+@auth_bp.route('/change_password', methods=['POST'])
+@login_required
+def change_password() -> object:
+	"""Change user password"""
+	data = request.json
+	current_password = data.get('current_password')
+	new_password = data.get('new_password')
+	confirm_password = data.get('confirm_password')
+	
+	if not current_password or not new_password or not confirm_password:
+		return jsonify({'error': 'All password fields are required'}), 400
+	
+	if new_password != confirm_password:
+		return jsonify({'error': 'New password and confirmation do not match'}), 400
+	
+	if len(new_password) < 6:
+		return jsonify({'error': 'New password must be at least 6 characters long'}), 400
+	
+	# Verify current password
+	if not current_user.check_password(current_password):
+		return jsonify({'error': 'Current password is incorrect'}), 401
+	
+	# Set new password
+	current_user.set_password(new_password)
+	db.session.commit()
+	
+	return jsonify({'message': 'Password changed successfully'}), 200
