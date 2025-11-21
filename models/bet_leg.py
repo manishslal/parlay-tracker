@@ -238,8 +238,17 @@ class BetLeg(db.Model):
         progress_display = None
         progress_color = None
         
-        # Only calculate for moneyline and spread bets
-        if self.stat_type and self.stat_type.lower() in ['moneyline', 'spread', 'total_points']:
+        # Skip display value generation for moneyline and anytime_touchdown bets
+        # These are better handled by the frontend's specialized display logic
+        if self.stat_type and self.stat_type.lower() in ['moneyline', 'anytime_touchdown', 'anytime_td']:
+            return {
+                'current_display': current_display,
+                'progress_display': progress_display,
+                'progress_color': progress_color
+            }
+        
+        # Only calculate for spread, total_points, etc.
+        if self.stat_type and self.stat_type.lower() in ['spread', 'total_points']:
             # Get scores
             home_score = self.home_score or 0
             away_score = self.away_score or 0
