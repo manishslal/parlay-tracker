@@ -416,7 +416,8 @@ class Bet(db.Model):
         ).order_by(BetLeg.leg_order).all()
         
         legs = []
-        for bet_leg, player in legs_query:
+        for i, (bet_leg, player) in enumerate(legs_query):
+            
             # Get player team - use team_abbreviation from player table if available, otherwise player_team
             player_team = ''
             if player and player.team_abbreviation:
@@ -459,7 +460,7 @@ class Bet(db.Model):
                 'position': bet_leg.player_position or (player.position if player else ''),
                 'opponent': opponent,
                 'stat': bet_leg.bet_type,
-                'target': float(bet_leg.target_value) if bet_leg.target_value else 0,
+                'target': 0 if i == 0 else float(bet_leg.target_value) if bet_leg.target_value else 0,
                 # For live bets, ALWAYS set current to None to force ESPN API fetch
                 # For historical bets, use calculated current_value
                 'current': None if use_live_data else current_value,

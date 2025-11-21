@@ -9,6 +9,9 @@ from datetime import datetime
 from typing import Any, List, Optional
 import requests
 import difflib
+import logging
+
+logger = logging.getLogger(__name__)
 
 def parse_american_odds(odds):
     """Parse American odds like +150 or -120 and return decimal multiplier (including stake)."""
@@ -83,11 +86,12 @@ def get_events(date_str, sport='NFL'):
         'NCAAB': 'basketball/mens-college-basketball'
     }
     sport_path = sport_map.get(sport.upper(), 'football/nfl')
-    url = f"http://site.api.espn.com/apis/site/v2/sports/{sport_path}/scoreboard?dates={d}"
+    url = f"https://site.api.espn.com/apis/site/v2/sports/{sport_path}/scoreboard?dates={d}"
     try:
-        data = requests.get(url).json()
+        data = requests.get(url, timeout=10).json()
         return data.get("events", [])
-    except Exception:
+    except Exception as e:
+        logger.warning(f"Failed to fetch events from ESPN API for {d}: {e}")
         return []
 
 def _norm(s):
