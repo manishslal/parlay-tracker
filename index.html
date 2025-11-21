@@ -4512,6 +4512,9 @@ async function logoutToken() {
                 txt = '✅ Hit';
               } else if (p.status === 'lost') {
                 txt = '🚫 Miss';
+              } else if (p.status === 'pending' && !gameData) {
+                // OCR bets that haven't been processed by ESPN API yet
+                txt = '🔜 Not Started';
               } else if(gameData && gameData.statusTypeName === 'STATUS_SCHEDULED') {
                 txt='🔜 Not Started';
               } else if(gameData && (gameData.statusTypeName === 'STATUS_IN_PROGRESS' || gameData.statusTypeName === 'STATUS_HALFTIME')) {
