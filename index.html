@@ -3291,6 +3291,16 @@ async function logoutToken() {
       return statMap[statType] || statType; // Fallback to original if not mapped
     }
 
+    // Format stat type with under indicator
+    function formatStatTypeWithUnder(statType, betLineType) {
+      const normalized = normalizeStatType(statType);
+      // Add (U) suffix if bet is under
+      if (betLineType && betLineType.toLowerCase() === 'under') {
+        return `${normalized} (U)`;
+      }
+      return normalized;
+    }
+
     // Calculate countdown to game start
     function getCountdown(startDateTime) {
       if (!startDateTime) return '';
@@ -4570,7 +4580,7 @@ async function logoutToken() {
               
               // Format for mobile display
               const playerOrTeam = playerDisplay; // Use the calculated playerDisplay
-              const statType = normalizeStatType(p.stat);
+              const statType = formatStatTypeWithUnder(p.stat, p.bet_line_type);
               const mobileCurrentDisplay = formatStatForMobile(currentDisplay, p.stat);
               const mobileTargetDisplay = formatStatForMobile(targetDisplay, p.stat);
               
@@ -4615,7 +4625,7 @@ async function logoutToken() {
                     </div>
                   </td>
                   <td>${playerCellHTML}</td>
-                  <td>${normalizeStatType(p.stat)}</td>
+                  <td>${formatStatTypeWithUnder(p.stat, p.bet_line_type)}</td>
                   <td>${currentDisplay}</td>
                   <td>${targetDisplay}</td>
                   <td>${progressCol}</td>
@@ -5176,7 +5186,7 @@ async function logoutToken() {
           if (leg.player) {
             // Player prop
             legDescription = `<strong style="color: #2c3e50; font-size: 15px;">${leg.player}</strong> <span style="color: #666; font-size: 13px;">(${leg.team || 'N/A'})</span>`;
-            legDescription += `<br><span style="color: #555; font-size: 14px; font-weight: 500;">${normalizeStatType(stat) || 'N/A'} <span style="text-transform: uppercase; color: #667eea; font-weight: 600;">${leg.stat_add || ''}</span> ${leg.line || ''}</span>`;
+            legDescription += `<br><span style="color: #555; font-size: 14px; font-weight: 500;">${formatStatTypeWithUnder(stat, leg.stat_add) || 'N/A'} <span style="text-transform: uppercase; color: #667eea; font-weight: 600;">${leg.stat_add || ''}</span> ${leg.line || ''}</span>`;
           } else if (betType === 'spread') {
             // Spread
             legDescription = `<strong style="color: #2c3e50; font-size: 15px;">${leg.team || 'N/A'}</strong> <span style="color: #667eea; font-weight: 600; font-size: 14px;">${leg.line > 0 ? '+' : ''}${leg.line || ''}</span>`;
