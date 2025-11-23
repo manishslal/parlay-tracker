@@ -706,7 +706,8 @@ def save_extracted_bet():
 		# Save the bet
 		from app import save_bet_to_db
 		# Use the current logged-in user's ID
-		result = save_bet_to_db(current_user.id, bet_data, skip_duplicate_check=True)
+		# Don't skip duplicate check - we need game ID and player population for ESPN linking
+		result = save_bet_to_db(current_user.id, bet_data, skip_duplicate_check=False)
 		
 		return jsonify({
 			'success': True,
