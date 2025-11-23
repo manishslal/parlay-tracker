@@ -556,18 +556,33 @@ def save_bet_to_db(user_id: int, bet_data: dict, skip_duplicate_check: bool = Fa
                 try:
                     import pytz
                     
-                    app.logger.info(f"[GAME-DATE-DEBUG] leg_data['game_date'] = {leg_data['game_date']}")
+                    game_date_str = str(leg_data['game_date']).strip()
+                    app.logger.info(f"[GAME-DATE-DEBUG] leg_data['game_date'] = '{game_date_str}'")
                     
-                    # Parse UTC time and convert to Eastern Time
-                    game_datetime_utc = datetime.fromisoformat(leg_data['game_date'].replace('Z', '+00:00'))
                     eastern_tz = pytz.timezone('US/Eastern')
-                    game_datetime_eastern = game_datetime_utc.astimezone(eastern_tz)
                     
-                    app.logger.info(f"[GAME-DATE-DEBUG] game_datetime_utc = {game_datetime_utc}, game_datetime_eastern = {game_datetime_eastern}")
-                    
-                    game_date = game_datetime_eastern.date()
-                    game_time = game_datetime_eastern.time()
-                except (ValueError, AttributeError) as e:
+                    # Try parsing as ISO datetime with UTC timezone
+                    try:
+                        if 'T' in game_date_str:
+                            # Full datetime string - parse as UTC and convert to Eastern
+                            game_datetime_utc = datetime.fromisoformat(game_date_str.replace('Z', '+00:00'))
+                            game_datetime_eastern = game_datetime_utc.astimezone(eastern_tz)
+                        else:
+                            # Just a date string (YYYY-MM-DD) - treat as already Eastern time
+                            game_date_obj = datetime.strptime(game_date_str, '%Y-%m-%d').date()
+                            game_date = game_date_obj
+                            app.logger.info(f"[GAME-DATE-DEBUG] Treated as Eastern date: {game_date}")
+                            continue
+                        
+                        app.logger.info(f"[GAME-DATE-DEBUG] Parsed UTC datetime, converted: {game_datetime_eastern}")
+                        game_date = game_datetime_eastern.date()
+                        game_time = game_datetime_eastern.time()
+                    except ValueError as parse_error:
+                        app.logger.error(f"[GAME-DATE-DEBUG] Parse error: {parse_error}. Treating as date only.")
+                        # Last resort: try to parse as simple date (treat as Eastern)
+                        game_date = datetime.strptime(game_date_str, '%Y-%m-%d').date()
+                        
+                except (ValueError, AttributeError, TypeError) as e:
                     app.logger.error(f"[GAME-DATE-DEBUG] Error parsing game_date: {e}")
                     pass
             
