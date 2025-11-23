@@ -1,8 +1,9 @@
 from flask import Blueprint, jsonify, request, session
 from typing import Any
 from flask_login import login_required, current_user
-from models import db, Bet
+from models import db, Bet, BetLeg
 from services import get_user_bets_query, process_parlay_data, sort_parlays_by_date
+from stat_standardization import standardize_stat_type, get_all_stats_for_sport
 from helpers.database import has_complete_final_data, save_final_results_to_bet, auto_move_completed_bets, auto_move_pending_to_live
 # from app import app  # Removed to avoid circular import
 from functools import wraps
@@ -350,6 +351,168 @@ def delete_bet(bet_id: int) -> Any:
 	except Exception as e:
 		return jsonify({"error": str(e)}), 500
 
+@bets_bp.route('/api/bets/<int:bet_id>/sport', methods=['PUT'])
+@login_required
+def correct_sport(bet_id):
+    """Task 6: Correct the sport classification for a bet.
+    
+    Allows users to fix incorrect sport detection. Clears cached game data 
+    and resets leg status to force re-fetch from ESPN API.
+    
+    Request body:
+        {
+            'sport': 'NBA',  # Required: valid sport (NFL, NBA, MLB, NHL, NCAAF, NCAAB)
+            'leg_order': 0   # Optional: specific leg index to update (0-based)
+        }
+    
+    Response:
+        {
+            'message': 'Sport corrected to NBA',
+            'legs_updated': 2,
+            'sport': 'NBA'
+        }
+    """
+    bet = Bet.query.get(bet_id)
+    if not bet or not current_user.can_access(bet):
+        return {'error': 'Bet not found'}, 404
+    
+    data = request.json or {}
+    new_sport = data.get('sport', '').strip().upper()
+    
+    # Validate sport
+    VALID_SPORTS = {'NFL', 'NBA', 'MLB', 'NHL', 'NCAAF', 'NCAAB'}
+    if new_sport not in VALID_SPORTS:
+        return {'error': f'Invalid sport. Must be one of: {", ".join(VALID_SPORTS)}'}, 400
+    
+    # Determine which legs to update (all, or specific leg_order)
+    leg_order = data.get('leg_order')  # Optional: specific leg to update
+    
+    # Get all bet legs
+    bet_legs = BetLeg.query.filter_by(bet_id=bet_id).all()
+    
+    updated_count = 0
+    for leg in bet_legs:
+        # If specific leg_order provided, only update that leg
+        if leg_order is not None and leg.leg_order != leg_order:
+            continue
+        
+        # Only update if sport is different
+        if leg.sport != new_sport:
+            leg.sport = new_sport
+            leg.status = 'pending'  # Reset status to force re-fetch
+            leg.achieved_value = None  # Clear cached values
+            leg.home_score = None
+            leg.away_score = None
+            leg.current_quarter = None
+            leg.time_remaining = None
+            updated_count += 1
+    
+    if updated_count > 0:
+        db.session.commit()
+        
+        # Clear game data cache for this bet (if cache exists)
+        # This ensures next live tracking will fetch fresh ESPN data
+        cache_key = f"bet_games_{bet_id}"
+        try:
+            from app import cache
+            cache.delete(cache_key)
+        except Exception:
+            pass  # Cache not available, will be cleared naturally
+        
+        logger.info(f"Sport corrected for bet {bet_id}: {updated_count} legs updated to {new_sport}")
+        
+        return {
+            'message': f'Sport corrected to {new_sport}',
+            'legs_updated': updated_count,
+            'sport': new_sport
+        }, 200
+    else:
+        return {'message': 'No changes needed (sport already set to ' + new_sport + ')'}, 200
+
+
+@bets_bp.route('/api/bets/<int:bet_id>/confidence', methods=['GET'])
+@login_required
+def get_sport_confidence(bet_id):
+    """Task 10: Get sport detection confidence metrics for a bet.
+    
+    Returns detailed confidence scoring (0.0-1.0) for each leg's sport detection.
+    Helps users identify low-confidence detections that may need correction.
+    
+    Response:
+        {
+            'bet_id': 123,
+            'overall_confidence': 0.85,
+            'legs': [
+                {
+                    'leg_index': 0,
+                    'sport': 'NFL',
+                    'confidence': 0.9,
+                    'detection_method': 'team_name',
+                    'games_found': true,
+                    'recommendation': null
+                },
+                {
+                    'leg_index': 1,
+                    'sport': 'NBA',
+                    'confidence': 0.3,
+                    'detection_method': 'fallback',
+                    'games_found': false,
+                    'recommendation': 'Consider correcting sport - no games found on ESPN'
+                }
+            ]
+        }
+    """
+    bet = Bet.query.get(bet_id)
+    if not bet or not current_user.can_access(bet):
+        return {'error': 'Bet not found'}, 404
+    
+    try:
+        # Get bet data with confidence metadata
+        bet_dict = bet.to_dict_structured(use_live_data=False)
+        sport_metadata = bet_dict.get('sport_detection_metadata', {})
+        confidence_data = sport_metadata.get('confidence_by_leg', [])
+        
+        # Calculate overall confidence as average of leg confidences
+        if confidence_data:
+            overall_confidence = sum(leg['confidence'] for leg in confidence_data) / len(confidence_data)
+        else:
+            overall_confidence = 0.5
+        
+        # Add recommendations based on confidence
+        legs_with_recommendations = []
+        for leg in confidence_data:
+            recommendation = None
+            confidence = leg.get('confidence', 0.5)
+            
+            # Low confidence (< 0.5) gets recommendation
+            if confidence < 0.5:
+                if not leg.get('games_found'):
+                    recommendation = f"Consider correcting sport to '{leg.get('sport')}' - no games found on ESPN"
+                else:
+                    recommendation = f"Low confidence detection for {leg.get('sport')}. Please verify."
+            elif confidence < 0.7 and not leg.get('games_found'):
+                recommendation = "Medium confidence - verify if sport is correct"
+            
+            leg['recommendation'] = recommendation
+            legs_with_recommendations.append(leg)
+        
+        return {
+            'bet_id': bet_id,
+            'overall_confidence': round(overall_confidence, 2),
+            'confidence_rating': 'high' if overall_confidence >= 0.8 else 'medium' if overall_confidence >= 0.6 else 'low',
+            'legs': legs_with_recommendations,
+            'warnings': [
+                f"Leg {leg['leg_index']}: {leg['recommendation']}"
+                for leg in legs_with_recommendations
+                if leg.get('recommendation')
+            ]
+        }, 200
+    
+    except Exception as e:
+        logger.error(f"Error retrieving confidence data for bet {bet_id}: {e}")
+        return {'error': 'Failed to retrieve confidence data'}, 500
+
+
 @bets_bp.route('/api/bets/<int:bet_id>/archive', methods=['PUT'])
 @login_required
 def archive_bet(bet_id: int) -> Any:
@@ -629,9 +792,47 @@ def transform_extracted_bet_data(data):
 		from datetime import datetime
 		default_game_date = datetime.now().strftime('%Y-%m-%d')
 		
-		# Better sport detection based on common NFL/NBA team names
+		# Better sport detection based on all major sports teams (FIX 2 & 3)
 		nfl_teams = ['raiders', 'cowboys', 'chiefs', 'chargers', 'broncos', 'patriots', 'jets', 'giants', 'eagles', 'commanders', 'bears', 'lions', 'packers', 'vikings', 'falcons', 'panthers', 'saints', 'buccaneers', 'cardinals', 'rams', '49ers', 'seahawks', 'bengals', 'browns', 'steelers', 'ravens', 'bills', 'dolphins', 'texans', 'colts', 'jaguars', 'titans']
 		nba_teams = ['lakers', 'celtics', 'warriors', 'bulls', 'heat', 'knicks', 'nets', 'sixers', 'raptors', 'bucks', 'suns', 'nuggets', 'clippers', 'mavericks', 'thunder', 'jazz', 'blazers', 'kings', 'wizards', 'hornets', 'pelicans', 'grizzlies', 'hawks', 'cavaliers', 'pistons', 'pacers', 'magic', 'spurs', 'rockets', 'timberwolves']
+		mlb_teams = ['yankees', 'redsox', 'orioles', 'rays', 'bluejays', 'indians', 'guardians', 'twins', 'whitesox', 'royals', 'tigers', 'athletics', 'mariners', 'rangers', 'astros', 'angels', 'dodgers', 'padres', 'giants', 'rockies', 'braves', 'mets', 'nationals', 'marlins', 'phillies', 'cubs', 'cardinals', 'brewers', 'pirates', 'reds']
+		nhl_teams = ['rangers', 'bruins', 'maple leafs', 'canadiens', 'devils', 'flyers', 'penguins', 'sabres', 'red wings', 'lightning', 'hurricanes', 'capitals', 'panthers', 'islanders', 'stars', 'avalanche', 'wild', 'blues', 'jets', 'blackhawks', 'canucks', 'flames', 'oilers', 'ducks', 'sharks', 'kings', 'desert']
+		
+		def detect_sport_from_stat_type(stat_type):
+			"""Task 9: Infer sport from stat type using standardization mapping.
+			
+			Uses stat_standardization.py to map stat types to sports.
+			Provides more comprehensive detection than hardcoded keywords.
+			"""
+			if not stat_type:
+				return None
+			
+			stat_lower = stat_type.lower().strip()
+			
+			# Try each sport's stat map
+			nfl_stats = get_all_stats_for_sport('NFL')
+			nba_stats = get_all_stats_for_sport('NBA')
+			mlb_stats = get_all_stats_for_sport('MLB')
+			nhl_stats = get_all_stats_for_sport('NHL')
+			
+			# Standardize the stat type and check which sport it belongs to
+			for sport, stat_list in [('NFL', nfl_stats), ('NBA', nba_stats), ('MLB', mlb_stats), ('NHL', nhl_stats)]:
+				canonical = standardize_stat_type(stat_type, sport=sport)
+				# If standardization returned a valid canonical stat (not the original), it matches
+				if canonical in stat_list:
+					return sport
+			
+			# Fallback to keyword matching for backwards compatibility
+			if any(x in stat_lower for x in ['passing_yards', 'rushing_yards', 'sacks', 'interceptions', 'pass_completions', 'rushing_attempts', 'receiving_yards', 'receiving_touchdowns']):
+				return 'NFL'
+			elif any(x in stat_lower for x in ['three_pointers', 'rebounds', 'assists', 'steals', 'blocks', 'field_goals']):
+				return 'NBA'
+			elif any(x in stat_lower for x in ['home_runs', 'strikeouts', 'batting_average', 'rbi', 'hits', 'runs', 'stolen_bases']):
+				return 'MLB'
+			elif any(x in stat_lower for x in ['goals', 'shutouts', 'saves', 'penalty_minutes', 'shots_on_goal']):
+				return 'NHL'
+			
+			return None
 		
 		team_lower = team_name.lower()
 		sport = 'NFL'  # Default to NFL
@@ -639,6 +840,16 @@ def transform_extracted_bet_data(data):
 			sport = 'NFL'
 		elif any(nba_team in team_lower for nba_team in nba_teams):
 			sport = 'NBA'
+		elif any(mlb_team in team_lower for mlb_team in mlb_teams):
+			sport = 'MLB'
+		elif any(nhl_team in team_lower for nhl_team in nhl_teams):
+			sport = 'NHL'
+		else:
+			# Stat type fallback if team matching failed
+			stat_type_sport = detect_sport_from_stat_type(leg.get('stat'))
+			if stat_type_sport:
+				logger.info(f"Detected sport '{stat_type_sport}' from stat type '{leg.get('stat')}' for team '{team_name}'")
+				sport = stat_type_sport
 		
 		# Set target_value appropriately based on bet type
 		if display_bet_type == 'moneyline':

@@ -129,18 +129,21 @@ def _get_player_stat_from_boxscore(player_name, category_name, stat_label, boxsc
                                 except Exception:
                                     return 0
                     try:
-                        athlete_names = [a.get('athlete', {}).get('displayName', '') for a in cat.get('athletes', [])]
-                        matches = difflib.get_close_matches(player_name, athlete_names, n=1, cutoff=0.6)
+                        # Fuzzy matching fallback - use normalized names for consistency
+                        athlete_names_raw = [a.get('athlete', {}).get('displayName', '') for a in cat.get('athletes', [])]
+                        athlete_names_norm = [_norm(name) for name in athlete_names_raw]
+                        matches = difflib.get_close_matches(player_norm, athlete_names_norm, n=1, cutoff=0.75)
                         if matches:
-                            best = matches[0]
-                            for ath in cat.get('athletes', []):
-                                if ath.get('athlete', {}).get('displayName') == best:
-                                    stats = ath.get('stats', [])
-                                    if stat_idx < len(stats):
-                                        try:
-                                            return int(float(stats[stat_idx]))
-                                        except Exception:
-                                            return 0
+                            best_norm = matches[0]
+                            # Find the original athlete with this normalized name
+                            match_idx = athlete_names_norm.index(best_norm)
+                            ath = cat.get('athletes', [])[match_idx]
+                            stats = ath.get('stats', [])
+                            if stat_idx < len(stats):
+                                try:
+                                    return int(float(stats[stat_idx]))
+                                except Exception:
+                                    return 0
                     except Exception:
                         pass
                 except (ValueError, IndexError):

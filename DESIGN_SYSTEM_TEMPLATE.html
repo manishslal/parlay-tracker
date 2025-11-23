@@ -1,0 +1,252 @@
+<!-- 
+  Design System & Component Examples
+  Use this file as reference for implementing components
+  across all pages in the application
+-->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Design System Components</title>
+  
+  <!-- Design System Stylesheets -->
+  <link rel="stylesheet" href="design-system.css">
+  <link rel="stylesheet" href="bottom-nav.css">
+  <link rel="stylesheet" href="icons.css">
+  
+  <style>
+    /* Page-specific styles only */
+    .demo-section {
+      margin-bottom: 3rem;
+      padding: 2rem;
+      border: 1px solid var(--border-secondary);
+      border-radius: var(--radius-lg);
+    }
+    
+    .demo-section h2 {
+      margin-top: 0;
+    }
+  </style>
+</head>
+<body class="dark-mode">
+  <div class="container">
+    <!-- TYPOGRAPHY SECTION -->
+    <section class="demo-section">
+      <h2>Typography System</h2>
+      <h1>Heading 1 - 30px Bold</h1>
+      <h2>Heading 2 - 24px Bold</h2>
+      <h3>Heading 3 - 20px Bold</h3>
+      <h4>Heading 4 - 18px Medium</h4>
+      <p>Body text - 16px Regular with normal line height</p>
+      <p class="text-small">Small text - 14px</p>
+      <p class="text-xs">Extra small text - 12px (secondary color)</p>
+      <p class="text-muted">Muted text - secondary color</p>
+    </section>
+
+    <!-- BUTTONS SECTION -->
+    <section class="demo-section">
+      <h2>Button Components</h2>
+      
+      <div class="flex flex-col" style="gap: 1rem;">
+        <div>
+          <h4>Primary Buttons</h4>
+          <div class="flex" style="gap: 0.5rem; flex-wrap: wrap;">
+            <button class="btn btn-primary">Add Bet</button>
+            <button class="btn btn-primary btn-small">Small</button>
+            <button class="btn btn-primary btn-large">Large</button>
+            <button class="btn btn-primary" disabled>Disabled</button>
+          </div>
+        </div>
+        
+        <div>
+          <h4>Secondary Buttons</h4>
+          <div class="flex" style="gap: 0.5rem; flex-wrap: wrap;">
+            <button class="btn btn-secondary">Submit</button>
+            <button class="btn btn-secondary btn-small">Small</button>
+            <button class="btn btn-secondary btn-large">Large</button>
+          </div>
+        </div>
+        
+        <div>
+          <h4>Ghost Buttons</h4>
+          <div class="flex" style="gap: 0.5rem; flex-wrap: wrap;">
+            <button class="btn btn-ghost">Cancel</button>
+            <button class="btn btn-ghost btn-small">Small</button>
+            <button class="btn btn-ghost btn-large">Large</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CARDS SECTION -->
+    <section class="demo-section">
+      <h2>Card Components</h2>
+      
+      <div class="grid grid-2" style="margin-bottom: 2rem;">
+        <div class="card">
+          <div class="card-header">
+            <h3>Card Title</h3>
+            <span class="badge badge-success">Active</span>
+          </div>
+          <div class="card-body">
+            <p>This is a card component with header, body, and footer sections.</p>
+          </div>
+          <div class="card-footer">
+            <button class="btn btn-primary btn-small">Action</button>
+            <button class="btn btn-ghost btn-small">Cancel</button>
+          </div>
+        </div>
+        
+        <div class="card">
+          <div class="card-header">
+            <h3>Bet Card</h3>
+            <span class="badge badge-info">LIVE</span>
+          </div>
+          <div class="card-body">
+            <p><strong>Sportsbook:</strong> DraftKings</p>
+            <p><strong>Wager:</strong> $100</p>
+            <p><strong>Potential Win:</strong> $250</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- BADGES SECTION -->
+    <section class="demo-section">
+      <h2>Status Badges</h2>
+      <div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
+        <span class="badge badge-success">✓ SUCCESS</span>
+        <span class="badge badge-warning">⚠ WARNING</span>
+        <span class="badge badge-pending">◉ PENDING</span>
+        <span class="badge badge-error">✕ ERROR</span>
+        <span class="badge badge-info">ℹ INFO</span>
+      </div>
+    </section>
+
+    <!-- FORM ELEMENTS SECTION -->
+    <section class="demo-section">
+      <h2>Form Elements</h2>
+      
+      <div style="max-width: 400px;">
+        <div style="margin-bottom: 1.5rem;">
+          <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Username</label>
+          <input type="text" placeholder="Enter username">
+        </div>
+        
+        <div style="margin-bottom: 1.5rem;">
+          <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Email</label>
+          <input type="email" placeholder="Enter email">
+        </div>
+        
+        <div style="margin-bottom: 1.5rem;">
+          <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Select Sportsbook</label>
+          <select>
+            <option>DraftKings</option>
+            <option>FanDuel</option>
+            <option>BET365</option>
+            <option>BetMGM</option>
+          </select>
+        </div>
+        
+        <div style="margin-bottom: 1.5rem;">
+          <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Notes</label>
+          <textarea placeholder="Enter additional notes..."></textarea>
+        </div>
+        
+        <button class="btn btn-primary" style="width: 100%;">Submit</button>
+      </div>
+    </section>
+
+    <!-- LAYOUT GRID SECTION -->
+    <section class="demo-section">
+      <h2>Grid Layouts</h2>
+      
+      <h4>2 Column Grid</h4>
+      <div class="grid grid-2" style="margin-bottom: 1rem;">
+        <div class="card" style="display: flex; align-items: center; justify-content: center; min-height: 100px;">
+          <p>Column 1</p>
+        </div>
+        <div class="card" style="display: flex; align-items: center; justify-content: center; min-height: 100px;">
+          <p>Column 2</p>
+        </div>
+      </div>
+      
+      <h4>3 Column Grid</h4>
+      <div class="grid grid-3" style="margin-bottom: 1rem;">
+        <div class="card" style="display: flex; align-items: center; justify-content: center; min-height: 100px;">
+          <p>Column 1</p>
+        </div>
+        <div class="card" style="display: flex; align-items: center; justify-content: center; min-height: 100px;">
+          <p>Column 2</p>
+        </div>
+        <div class="card" style="display: flex; align-items: center; justify-content: center; min-height: 100px;">
+          <p>Column 3</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- SPACING UTILITIES SECTION -->
+    <section class="demo-section">
+      <h2>Spacing Utilities</h2>
+      <div class="card mt-lg mb-lg px-md py-md">
+        <p class="mb-lg">Spacing utilities help maintain consistent padding and margins</p>
+        <p class="text-small text-muted">mt-* (margin-top), mb-* (margin-bottom), px-* (padding-x), py-* (padding-y)</p>
+        <p class="text-small text-muted">Sizes: xs (4px), sm (8px), md (16px), lg (24px), xl (32px)</p>
+      </div>
+    </section>
+
+    <!-- RESPONSIVE SECTION -->
+    <section class="demo-section">
+      <h2>Responsive Design</h2>
+      <p>Resize your browser to see responsive behavior:</p>
+      <ul>
+        <li>Mobile: &lt; 480px</li>
+        <li>Tablet: 480px - 768px</li>
+        <li>Desktop: &gt; 768px</li>
+      </ul>
+      <div class="grid grid-3">
+        <div class="card" style="display: flex; align-items: center; justify-content: center; min-height: 150px;">
+          <p style="text-align: center;">Responsive Grid<br>(3 cols → 1 col on mobile)</p>
+        </div>
+        <div class="card" style="display: flex; align-items: center; justify-content: center; min-height: 150px;">
+          <p style="text-align: center;">Responsive Grid<br>(3 cols → 1 col on mobile)</p>
+        </div>
+        <div class="card" style="display: flex; align-items: center; justify-content: center; min-height: 150px;">
+          <p style="text-align: center;">Responsive Grid<br>(3 cols → 1 col on mobile)</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- PAGINATION PLACEHOLDER -->
+    <section style="height: 200px;"></section>
+  </div>
+
+  <!-- BOTTOM NAVIGATION BAR -->
+  <nav class="bottom-nav">
+    <a href="/" class="bottom-nav-item active" data-action="my-bets">
+      <span class="nav-icon">📊</span>
+      <span class="nav-label">My Bets</span>
+    </a>
+    <a href="/explore" class="bottom-nav-item" data-action="explore">
+      <span class="nav-icon">🔍</span>
+      <span class="nav-label">Explore</span>
+    </a>
+    <a href="/watched" class="bottom-nav-item" data-action="watched">
+      <span class="nav-icon">⭐</span>
+      <span class="nav-label">Watched</span>
+    </a>
+    <a href="/social" class="bottom-nav-item" data-action="social">
+      <span class="nav-icon">👥</span>
+      <span class="nav-label">Social</span>
+    </a>
+    <a href="/account" class="bottom-nav-item" data-action="account">
+      <span class="nav-icon">👤</span>
+      <span class="nav-label">Account</span>
+    </a>
+  </nav>
+
+  <script src="bottom-nav.js"></script>
+</body>
+</html>

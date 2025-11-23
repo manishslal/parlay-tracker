@@ -4,6 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - Parlay Tracker</title>
+    <!-- Design System Stylesheets -->
+    <link rel="stylesheet" href="design-system.css">
+    <link rel="stylesheet" href="bottom-nav.css">
+    <link rel="stylesheet" href="icons.css">
     <!-- Roboto Font Import -->
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
     <style>
@@ -328,5 +332,31 @@
             errorMessage.classList.remove('show');
         });
     </script>
+    
+    <!-- Bottom Navigation Bar -->
+    <nav class="bottom-nav">
+      <a href="/" class="bottom-nav-item" data-action="my-bets">
+        <span class="nav-icon">📊</span>
+        <span class="nav-label">My Bets</span>
+      </a>
+      <a href="/explore" class="bottom-nav-item" data-action="explore">
+        <span class="nav-icon">🔍</span>
+        <span class="nav-label">Explore</span>
+      </a>
+      <a href="/watched" class="bottom-nav-item" data-action="watched">
+        <span class="nav-icon">⭐</span>
+        <span class="nav-label">Watched</span>
+      </a>
+      <a href="/social" class="bottom-nav-item" data-action="social">
+        <span class="nav-icon">👥</span>
+        <span class="nav-label">Social</span>
+      </a>
+      <a href="/account" class="bottom-nav-item" data-action="account">
+        <span class="nav-icon">👤</span>
+        <span class="nav-label">Account</span>
+      </a>
+    </nav>
+    
+    <script src="bottom-nav.js"></script>
 </body>
 </html>

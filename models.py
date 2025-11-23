@@ -590,6 +590,56 @@ class Bet(db.Model):
                 bet_dict['boost'] = json_data['boost']
             if 'sport' in json_data:
                 bet_dict['sport'] = json_data['sport']
+            
+            # Task 5: Add sport detection metadata to response
+            # Analyze sport detection confidence across all legs
+            sport_detection_metadata = {
+                'sports_detected': {},  # {'NFL': 2, 'NBA': 1, 'MLB': 1}
+                'detection_methods': {},  # {'team_name': 2, 'stat_type': 1, 'fallback': 1}
+                'games_found': {},  # {'NFL': True, 'NBA': True, 'MLB': False}
+                'confidence_by_leg': []  # Array with confidence for each leg
+            }
+            
+            # Count sports and detection methods per leg
+            for leg in legs:
+                sport = leg.get('sport', 'NFL')
+                sport_detection_metadata['sports_detected'][sport] = sport_detection_metadata['sports_detected'].get(sport, 0) + 1
+                
+                # Determine detection method based on available info
+                method = 'unknown'
+                if json_leg.get('detection_method'):
+                    method = json_leg['detection_method']
+                elif leg.get('player'):  # Player name usually means stat_type detection
+                    method = 'team_or_player_name'
+                
+                sport_detection_metadata['detection_methods'][method] = sport_detection_metadata['detection_methods'].get(method, 0) + 1
+                
+                # Check if games were found (inferred from whether score data exists or game_status is not 'unknown')
+                games_found = leg.get('gameStatus') != 'unknown' if leg.get('gameStatus') else bool(leg.get('homeScore') is not None or leg.get('awayScore') is not None)
+                sport_detection_metadata['games_found'][sport] = sport_detection_metadata['games_found'].get(sport, 0) + (1 if games_found else 0)
+                
+                # Calculate confidence per leg (0.0-1.0)
+                # High confidence: team name match, games found
+                # Medium confidence: stat type inference, games found
+                # Low confidence: fallback to NFL, no games found
+                leg_confidence = 0.5  # Default medium
+                if method == 'team_or_player_name' and games_found:
+                    leg_confidence = 0.9  # High confidence
+                elif method == 'stat_type' and games_found:
+                    leg_confidence = 0.7  # Good confidence
+                elif not games_found:
+                    leg_confidence = 0.3  # Low confidence if no games found
+                
+                sport_detection_metadata['confidence_by_leg'].append({
+                    'leg_index': len(sport_detection_metadata['confidence_by_leg']),
+                    'sport': sport,
+                    'detection_method': method,
+                    'confidence': leg_confidence,
+                    'games_found': games_found,
+                    'warning': leg.get('sport_match_warning')
+                })
+            
+            bet_dict['sport_detection_metadata'] = sport_detection_metadata
         except Exception as e:
             # Log but don't fail if JSON fallback has issues
             import logging
@@ -625,3 +675,114 @@ class Bet(db.Model):
     
     def __repr__(self):
         return f'<Bet {self.betting_site_id} - User {self.user_id}>'
+
+
+class Team(db.Model):
+    """Team model for storing official team data across all sports.
+    
+    Task 8: Create Teams database table. Provides authoritative team data
+    for sport detection and name standardization. Replaces hardcoded team lists.
+    
+    Supports: NFL, NBA, MLB, NHL (330+ teams)
+    """
+    __tablename__ = 'teams'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    
+    # Core identifiers
+    sport = db.Column(db.String(20), nullable=False, index=True)  # 'NFL', 'NBA', 'MLB', 'NHL'
+    name_full = db.Column(db.String(100), nullable=False, index=True)  # 'New York Yankees'
+    name_short = db.Column(db.String(50), nullable=False, index=True)  # 'Yankees'
+    abbreviation = db.Column(db.String(10), nullable=False, unique=True, index=True)  # 'NYY'
+    
+    # Team info
+    nickname = db.Column(db.String(50))  # 'Bronx Bombers' (optional nickname)
+    conference = db.Column(db.String(50))  # 'AL' (MLB), 'AFC' (NFL), 'Eastern' (NBA/NHL)
+    division = db.Column(db.String(50))  # 'AL East' (MLB), 'AFC East' (NFL)
+    league = db.Column(db.String(50))  # 'American League' (MLB), 'National Football League'
+    location = db.Column(db.String(100))  # 'New York, NY'
+    
+    # Metadata
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Indexes for common queries
+    __table_args__ = (
+        db.Index('idx_sport_abbr', 'sport', 'abbreviation'),
+        db.Index('idx_sport_name_short', 'sport', 'name_short'),
+        db.Index('idx_sport_name_full', 'sport', 'name_full'),
+    )
+    
+    @classmethod
+    def find_by_name(cls, sport, team_name):
+        """Find team by name in a specific sport.
+        
+        Searches name_full, name_short, and abbreviation with case-insensitive matching.
+        Returns first match found (preference: abbreviation > short name > full name).
+        """
+        if not team_name or not sport:
+            return None
+        
+        name_upper = team_name.upper().strip()
+        
+        # Try exact abbreviation match first
+        team = cls.query.filter_by(sport=sport, abbreviation=name_upper).first()
+        if team:
+            return team
+        
+        # Try name_short match
+        team = cls.query.filter(
+            db.and_(
+                cls.sport == sport,
+                db.func.upper(cls.name_short) == name_upper
+            )
+        ).first()
+        if team:
+            return team
+        
+        # Try name_full match
+        team = cls.query.filter(
+            db.and_(
+                cls.sport == sport,
+                db.func.upper(cls.name_full) == name_upper
+            )
+        ).first()
+        if team:
+            return team
+        
+        # Try substring match (e.g., "Yankees" matches "New York Yankees")
+        team = cls.query.filter(
+            db.and_(
+                cls.sport == sport,
+                db.or_(
+                    db.func.upper(cls.name_full).contains(name_upper),
+                    name_upper.in_(db.func.upper(cls.name_full).split(' '))
+                )
+            )
+        ).first()
+        
+        return team
+    
+    @classmethod
+    def get_all_for_sport(cls, sport):
+        """Get all teams for a specific sport."""
+        return cls.query.filter_by(sport=sport).all()
+    
+    def to_dict(self):
+        """Convert team to dictionary."""
+        return {
+            'id': self.id,
+            'sport': self.sport,
+            'name_full': self.name_full,
+            'name_short': self.name_short,
+            'abbreviation': self.abbreviation,
+            'nickname': self.nickname,
+            'conference': self.conference,
+            'division': self.division,
+            'league': self.league,
+            'location': self.location
+        }
+    
+    def __repr__(self):
+        return f'<Team {self.sport} - {self.name_short} ({self.abbreviation})>'
+

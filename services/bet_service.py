@@ -146,18 +146,22 @@ def fetch_game_details_from_espn(game_date, away_team, home_team, sport='NFL'):
                     """Check if search_team matches any team, allowing partial matches"""
                     search_lower = search_team.lower().strip()
                     
-                    # Check exact matches first
-                    if search_team in team_names or search_team in team_abbrs:
+                    # Create lowercase sets for case-insensitive comparison
+                    team_names_lower = {name.lower() for name in team_names}
+                    team_abbrs_lower = {abbr.lower() for abbr in team_abbrs}
+                    
+                    # Check exact matches first (case-insensitive)
+                    if search_lower in team_names_lower or search_lower in team_abbrs_lower:
                         return True
                     
                     # Check partial matches for team names (e.g., 'Packers' matches 'Green Bay Packers')
-                    for name in team_names:
-                        if search_lower in name.lower() or name.lower() in search_lower:
+                    for name in team_names_lower:
+                        if search_lower in name or name in search_lower:
                             return True
                     
-                    # Check partial matches for abbreviations (e.g., 'Packers' might match 'GB' in some cases)
-                    for abbr in team_abbrs:
-                        if search_lower == abbr.lower() or abbr.lower() in search_lower:
+                    # Check partial matches for abbreviations
+                    for abbr in team_abbrs_lower:
+                        if search_lower == abbr or abbr in search_lower:
                             return True
                     
                     return False
@@ -259,10 +263,14 @@ def process_parlay_data(parlays):
         parlay_games = {}
         
         for leg in parlay.get("legs", []):
-            logger.info(f"Processing leg for {leg.get('player')} - {leg.get('stat')}")
+            player_name = leg.get('player', 'Unknown Player')
+            stat_name = leg.get('stat', 'Unknown Stat')
+            game_date = leg.get('game_date', 'Unknown Date')
+            logger.info(f"[Sport Detection] Processing leg for {player_name} - {stat_name} on {game_date}")
+            
             sport = leg.get('sport', 'NFL')  # Default to NFL if not specified
             game_key = f"{leg['game_date']}_{sport}_{leg['away']}_{leg['home']}"
-            logger.info(f"Game key: {game_key}")
+            logger.info(f"Game key: {game_key} | Sport: {sport}")
             
             if game_key not in game_data_cache or not cache_is_fresh(game_key):
                 game_data = fetch_game_details_from_espn(leg['game_date'], leg['away'], leg['home'], sport)
@@ -272,9 +280,11 @@ def process_parlay_data(parlays):
             
             if game_data:
                 parlay_games[game_key] = game_data
+                logger.info(f"✓ [ESPN Match Success] Found game for {leg['away']} vs {leg['home']} on {game_date} (Sport: {sport})")
             else:
                 # Create a minimal game object from leg data when ESPN API fails
                 # This ensures games array is populated even if ESPN is unreachable
+                logger.warning(f"❌ [SPORT MISMATCH WARNING] ESPN API returned no games for {player_name} ({stat_name}) | {leg['away']} vs {leg['home']} on {game_date} (Sport: {sport}) - This may indicate incorrect sport classification")
                 game_data = {
                     "espn_game_id": leg.get("gameId", ""),
                     "teams": {
@@ -295,6 +305,8 @@ def process_parlay_data(parlays):
                     "leaders": []
                 }
                 parlay_games[game_key] = game_data
+                # Mark this leg with a warning for frontend to highlight
+                leg["sport_match_warning"] = f"No ESPN game found for {sport}. Using fallback data. Please verify sport classification."
                 logger.info(f"Created fallback game object for {game_key} due to ESPN API unavailability")
 
         for leg in parlay.get("legs", []):
@@ -371,6 +383,24 @@ def process_parlay_data(parlays):
         # Copy all original parlay fields and add games
         processed_parlay = parlay.copy()
         processed_parlay["games"] = list(parlay_games.values())
+        
+        # Task 7: Add alerts for sport mismatch
+        # Check if any legs had sport match warnings or no games found
+        parlay_alerts = []
+        for leg in parlay.get("legs", []):
+            if leg.get('sport_match_warning'):
+                parlay_alerts.append({
+                    'type': 'sport_mismatch_warning',
+                    'severity': 'warning',
+                    'player': leg.get('player', 'Unknown'),
+                    'sport': leg.get('sport', 'Unknown'),
+                    'message': leg['sport_match_warning']
+                })
+        
+        if parlay_alerts:
+            processed_parlay["sport_alerts"] = parlay_alerts
+            logger.warning(f"⚠️  [Sport Mismatch Alerts] Parlay '{parlay.get('name')}' has {len(parlay_alerts)} potential sport classification issues")
+        
         processed_parlays.append(processed_parlay)
     
     return processed_parlays

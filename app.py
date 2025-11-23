@@ -495,7 +495,19 @@ def save_bet_to_db(user_id: int, bet_data: dict, skip_duplicate_check: bool = Fa
                     game_time = game_datetime_eastern.time()
                 except (ValueError, AttributeError):
                     pass
+            
+            # SPORT VALIDATION & NORMALIZATION (FIX 1)
+            VALID_SPORTS = {'NFL', 'NBA', 'MLB', 'NHL', 'NCAAF', 'NCAAB'}
             sport = leg_data.get('sport', 'NFL')
+            if isinstance(sport, str):
+                sport = sport.upper().strip()
+            else:
+                sport = 'NFL'
+            
+            if sport not in VALID_SPORTS:
+                app.logger.warning(f"Invalid sport '{sport}' for leg '{leg_data.get('player_name')}'. Defaulting to NFL.")
+                sport = 'NFL'
+            
             team_value = leg_data.get('team_name')  # Use transformed field name
             if team_value:
                 team_value = normalize_team_name(team_value, sport)
