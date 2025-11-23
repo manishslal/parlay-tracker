@@ -12,16 +12,16 @@ Usage:
 
 # NFL stat type mapping
 NFL_STATS = {
-    'passing_yards': ['passing_yards', 'passing yards', 'pass yards', 'pass_yards', 'passing yds', 'pass yds'],
+    'passing_yards': ['passing_yards', 'passing yards', 'pass yards', 'pass_yards', 'passing yds', 'pass yds', 'alt_passing_yards', 'alt_passing_yds', 'alt passing yards', 'alt pass yds'],
     'passing_touchdowns': ['passing_touchdowns', 'passing touchdowns', 'pass touchdowns', 'passing_td', 'passing td', 'pass td'],
     'interceptions_thrown': ['interceptions_thrown', 'interceptions thrown', 'interceptions', 'int_thrown'],
     'passing_completions': ['passing_completions', 'passing completions', 'completions', 'pass_completions'],
-    'rushing_yards': ['rushing_yards', 'rushing yards', 'rush yards', 'rush_yards', 'rushing yds', 'rush yds'],
+    'rushing_yards': ['rushing_yards', 'rushing yards', 'rush yards', 'rush_yards', 'rushing yds', 'rush yds', 'alt_rushing_yards', 'alt_rushing_yds', 'alt rushing yards', 'alt rush yds'],
     'rushing_touchdowns': ['rushing_touchdowns', 'rushing touchdowns', 'rush touchdowns', 'rushing_td', 'rushing td', 'rush td'],
     'rushing_attempts': ['rushing_attempts', 'rushing attempts', 'rush attempts', 'rushing_att', 'rush_att', 'carries'],
-    'receiving_yards': ['receiving_yards', 'receiving yards', 'rec yards', 'rec_yards', 'receiving yds', 'rec yds'],
+    'receiving_yards': ['receiving_yards', 'receiving yards', 'rec yards', 'rec_yards', 'receiving yds', 'rec yds', 'alt_receiving_yards', 'alt_receiving_yds', 'alt receiving yards', 'alt rec yds'],
     'receiving_touchdowns': ['receiving_touchdowns', 'receiving touchdowns', 'rec touchdowns', 'receiving_td', 'receiving td', 'rec td'],
-    'receptions': ['receptions', 'reception', 'rec', 'catches', 'receptions_alt'],
+    'receptions': ['receptions', 'reception', 'rec', 'catches', 'receptions_alt', 'alt_receptions', 'alt receptions'],
     'longest_reception': ['longest_reception', 'longest reception', 'longest rec'],
     'sacks': ['sacks', 'sack', 'sks', 'quarterback_sacks'],
     'tackles_assists': ['tackles_assists', 'tackles assists', 'tackles', 'tackle', 'total tackles'],
@@ -29,6 +29,7 @@ NFL_STATS = {
     'kicking_points': ['kicking_points', 'kicking points', 'points', 'kicker points'],
     'rushing_receiving_yards': ['rushing_receiving_yards', 'rushing receiving yards', 'rush receiving yards'],
     'passing_rushing_yards': ['passing_rushing_yards', 'passing rushing yards', 'pass rushing yards'],
+    'anytime_touchdown': ['anytime_touchdown', 'anytime td', 'anytime_td', 'touchdown_scorer', 'td_scorer', 'any_td', 'anytime td scorer', 'touchdown scorer'],
     'team_total_points': ['team_total_points', 'team total points', 'team points', 'team_score'],
     'moneyline': ['moneyline', 'money line', 'ml', 'win'],
     'spread': ['spread', 'point spread', 'spread_total'],

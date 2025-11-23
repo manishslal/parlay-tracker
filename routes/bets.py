@@ -857,10 +857,15 @@ def transform_extracted_bet_data(data):
 		else:
 			target_value = leg.get('line')
 		
+		# Standardize the stat type to canonical name
+		raw_stat_type = leg.get('stat')
+		from stat_standardization import standardize_stat_type
+		standardized_stat = standardize_stat_type(raw_stat_type, sport=sport)
+		
 		transformed_leg = {
 			'player_name': player_name,
 			'team_name': team_name,
-			'stat_type': leg.get('stat'),  # Frontend expects stat_type for display
+			'stat_type': standardized_stat,  # Use standardized stat type
 			'bet_type': display_bet_type,  # Frontend also checks bet_type for logic
 			'target_value': target_value,
 			'bet_line_type': 'over' if leg.get('stat_add') == 'over' else 'under' if leg.get('stat_add') == 'under' else None,
