@@ -78,7 +78,7 @@
     /* Page Header with Title and Hamburger Menu */
     .page-header {
       display: flex !important;
-      justify-content: flex-start !important;
+      justify-content: space-between !important;
       align-items: center !important;
       position: fixed !important;
       top: 0 !important;
@@ -86,29 +86,30 @@
       right: 0 !important;
       background: var(--primary) !important;
       z-index: 1000 !important;
-      padding: 0 !important;
+      padding: 0 0.5rem !important;
       height: 62.5px !important;
       box-shadow: 0 2px 8px rgba(0,0,0,0.2) !important;
       border-radius: 0 !important;
-      gap: 1rem !important;
       margin: 0 !important;
-      width: 100vw !important;
+      width: 100% !important;
+      box-sizing: border-box !important;
       min-height: 62.5px !important;
       max-height: 62.5px !important;
-      overflow: hidden !important;
-      contain: layout style paint !important;
+      overflow: visible !important;
     }
     
     /* App Logo in Header */
     .page-header-logo {
-      height: 100% !important;
-      aspect-ratio: 1 !important;
+      height: 62.5px !important;
+      width: 62.5px !important;
       padding: 0.5rem !important;
       display: flex !important;
       align-items: center !important;
       justify-content: center !important;
       flex-shrink: 0 !important;
       margin: 0 !important;
+      order: -1 !important;
+      box-sizing: border-box !important;
     }
     
     .page-header-logo img,
@@ -122,17 +123,17 @@
     .page-header h1 {
       color: #fff !important;
       margin: 0 !important;
-      flex: 0;
-      text-align: left;
+      flex: 1 !important;
+      text-align: center !important;
       font-size: 1.125rem !important;
       font-weight: 700 !important;
       line-height: 62.5px !important;
-      padding: 0 1rem !important;
-      letter-spacing: 0.5px;
-      white-space: nowrap;
+      padding: 0 !important;
+      letter-spacing: 0.5px !important;
+      white-space: nowrap !important;
       display: block !important;
-      height: 62.5px;
-      overflow: hidden;
+      height: 62.5px !important;
+      overflow: hidden !important;
     }
     
     /* Hamburger Menu Button - 75% size, inline with title */
@@ -141,21 +142,21 @@
       color: #fff !important;
       border: none !important;
       border-radius: 8px !important;
-      width: 30px !important;  /* 75% of 50px */
-      height: 30px !important; /* 75% of 50px */
+      width: 30px !important;
+      height: 30px !important;
       cursor: pointer !important;
       display: flex !important;
       flex-direction: column !important;
       align-items: center !important;
       justify-content: center !important;
-      gap: 3px !important;     /* 75% of 5px */
+      gap: 3px !important;
       box-shadow: none !important;
       transition: transform 0.2s, opacity 0.3s !important;
       flex-shrink: 0 !important;
-      margin-left: auto !important;
-      margin-right: 1rem !important;
-      outline: none !important;
+      margin: 0 !important;
       padding: 0 !important;
+      outline: none !important;
+      order: 1 !important;
       -webkit-tap-highlight-color: transparent;
     }
     
