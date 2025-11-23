@@ -1851,6 +1851,67 @@ def run_process_historical_bets_api():
         from automation.historical_bet_processing import process_historical_bets_api
         process_historical_bets_api()
 
+def run_populate_missing_game_ids():
+    """Populate game IDs for bet legs that are missing them (e.g., OCR bets)"""
+    logger.info("[SCHEDULER] Running populate_missing_game_ids")
+    with app.app_context():
+        try:
+            # Find all bets with legs that have game_date but no game_id
+            bet_ids = db.session.query(Bet.id).join(
+                BetLeg, BetLeg.bet_id == Bet.id
+            ).filter(
+                BetLeg.game_date.isnot(None),
+                BetLeg.game_id.is_(None)
+            ).distinct().all()
+            
+            if not bet_ids:
+                logger.info("[GAME-ID-POPULATION] No bets with missing game IDs found")
+                return
+            
+            logger.info(f"[GAME-ID-POPULATION] Found {len(bet_ids)} bets with missing game IDs")
+            
+            for (bet_id,) in bet_ids:
+                try:
+                    bet = Bet.query.get(bet_id)
+                    if bet:
+                        populate_game_ids_for_bet(bet)
+                except Exception as e:
+                    logger.error(f"[GAME-ID-POPULATION] Error populating game IDs for bet {bet_id}: {e}")
+        
+        except Exception as e:
+            logger.error(f"[GAME-ID-POPULATION] Error in run_populate_missing_game_ids: {e}")
+
+def run_populate_missing_player_data():
+    """Populate player data for bet legs that are missing it (e.g., OCR bets)"""
+    logger.info("[SCHEDULER] Running populate_missing_player_data")
+    with app.app_context():
+        try:
+            # Find all bets with legs that have game_id but no player data
+            bet_ids = db.session.query(Bet.id).join(
+                BetLeg, BetLeg.bet_id == Bet.id
+            ).filter(
+                BetLeg.game_id.isnot(None),
+                (BetLeg.achieved_value.is_(None) | (BetLeg.achieved_value == 0.0)),
+                BetLeg.status == 'pending'
+            ).distinct().all()
+            
+            if not bet_ids:
+                logger.info("[PLAYER-POPULATION] No bets with missing player data found")
+                return
+            
+            logger.info(f"[PLAYER-POPULATION] Found {len(bet_ids)} bets with missing player data")
+            
+            for (bet_id,) in bet_ids:
+                try:
+                    bet = Bet.query.get(bet_id)
+                    if bet:
+                        populate_player_data_for_bet(bet)
+                except Exception as e:
+                    logger.error(f"[PLAYER-POPULATION] Error populating player data for bet {bet_id}: {e}")
+        
+        except Exception as e:
+            logger.error(f"[PLAYER-POPULATION] Error in run_populate_missing_player_data: {e}")
+
 # Schedule automated tasks (moved outside if __name__ == '__main__' so it runs on Render)
 scheduler.add_job(
     func=run_update_completed_bet_legs,
@@ -1892,6 +1953,20 @@ scheduler.add_job(
     trigger=IntervalTrigger(hours=1),
     id='historical_bet_processing',
     name='Process historical bets with ESPN API data and update status hourly'
+)
+
+scheduler.add_job(
+    func=run_populate_missing_game_ids,
+    trigger=IntervalTrigger(minutes=2),
+    id='populate_missing_game_ids',
+    name='Populate game IDs for bets with missing ESPN game links every 2 minutes'
+)
+
+scheduler.add_job(
+    func=run_populate_missing_player_data,
+    trigger=IntervalTrigger(minutes=3),
+    id='populate_missing_player_data',
+    name='Populate player data for bets with missing stats every 3 minutes'
 )
 
 # Start the scheduler
