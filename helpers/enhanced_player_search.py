@@ -35,14 +35,20 @@ def search_espn_by_last_name(last_name: str, sport: str = "football", league: st
                 if result.get('type') == 'player':
                     player_data = result.get('contents', [{}])[0]
                     if player_data:
+                        position = player_data.get('position', {}).get('abbreviation', '')
+                        jersey_number = player_data.get('jersey', '')
+                        
+                        # Determine correct sport
+                        correct_sport = 'NFL' if league.upper() == 'NFL' else 'NBA' if league.upper() == 'NBA' else sport.upper()
+                        
                         player_info = {
                             'espn_player_id': str(player_data.get('id', '')),
                             'player_name': player_data.get('displayName', ''),
-                            'position': player_data.get('position', {}).get('abbreviation', ''),
-                            'jersey_number': player_data.get('jersey', ''),
+                            'position': position if position else None,
+                            'jersey_number': jersey_number if jersey_number else None,
                             'team_abbreviation': player_data.get('team', {}).get('abbreviation', ''),
                             'current_team': player_data.get('team', {}).get('displayName', ''),
-                            'sport': sport.upper()
+                            'sport': correct_sport
                         }
                         players.append(player_info)
 
@@ -122,51 +128,6 @@ def enhanced_player_search(player_name: str, sport: str = "football", league: st
             if simplified_data and simplified_data.get('espn_player_id'):
                 print(f"  ✓ Found with simplified name: {simplified_data['player_name']}")
                 return simplified_data
-
-    print(f"  ✗ No matches found for {player_name}")
-    return None
-
-def search_espn_by_last_name(last_name: str, sport: str = "football", league: str = "nfl") -> list:
-    """
-    Search ESPN by last name only to find potential matches
-    """
-    try:
-        search_url = "https://site.api.espn.com/apis/search/v2"
-        params = {
-            "query": last_name,
-            "limit": 15,  # Get more results for last name searches
-            "page": 1,
-            "sort": "relevance",
-            "active": True,
-            "sport": sport,
-            "league": league
-        }
-
-        response = requests.get(search_url, params=params, timeout=10)
-        response.raise_for_status()
-        data = response.json()
-
-        players = []
-        if 'results' in data and len(data['results']) > 0:
-            for result in data['results']:
-                if result.get('type') == 'player':
-                    player_data = result.get('contents', [{}])[0]
-                    if player_data:
-                        player_info = {
-                            'espn_player_id': str(player_data.get('id', '')),
-                            'player_name': player_data.get('displayName', ''),
-                            'position': player_data.get('position', {}).get('abbreviation', ''),
-                            'jersey_number': player_data.get('jersey', ''),
-                            'team_abbreviation': player_data.get('team', {}).get('abbreviation', ''),
-                            'current_team': player_data.get('team', {}).get('displayName', ''),
-                            'sport': sport.upper()
-                        }
-                        players.append(player_info)
-
-        return players
-    except Exception as e:
-        print(f"Error searching ESPN by last name {last_name}: {e}")
-        return []
 
 def generate_name_variations(player_name: str) -> list:
     """

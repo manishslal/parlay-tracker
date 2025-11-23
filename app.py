@@ -403,8 +403,12 @@ def populate_player_data_for_bet(bet: Any) -> None:
                 continue
             
             # Player not found, search ESPN with enhanced fallback strategies
-            app.logger.info(f"[PLAYER-POPULATION] Player {leg.player_name} not found locally, searching ESPN with enhanced strategies...")
-            espn_player_data = enhanced_player_search(leg.player_name, sport="football", league="nfl")
+            # Determine sport and league from bet leg
+            sport_param = "football" if leg.parlay_sport in ['NFL', None] else "basketball"
+            league_param = leg.parlay_sport.lower() if leg.parlay_sport else "nfl"
+            
+            app.logger.info(f"[PLAYER-POPULATION] Player {leg.player_name} not found locally, searching ESPN with enhanced strategies (sport={sport_param}, league={league_param})...")
+            espn_player_data = enhanced_player_search(leg.player_name, sport=sport_param, league=league_param)
             
             if espn_player_data:
                 # Create new player record

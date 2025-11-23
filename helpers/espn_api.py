@@ -156,14 +156,20 @@ def search_espn_player(player_name: str, sport: str = "football", league: str = 
                     player_data = result.get('contents', [{}])[0]
                     if player_data:
                         # Extract player information
+                        position = player_data.get('position', {}).get('abbreviation', '')
+                        jersey_number = player_data.get('jersey', '')
+                        
+                        # Determine correct sport
+                        correct_sport = 'NFL' if league.upper() == 'NFL' else 'NBA' if league.upper() == 'NBA' else sport.upper()
+                        
                         player_info = {
                             'espn_player_id': str(player_data.get('id', '')),
                             'player_name': player_data.get('displayName', ''),
-                            'position': player_data.get('position', {}).get('abbreviation', ''),
-                            'jersey_number': player_data.get('jersey', ''),
+                            'position': position if position else None,
+                            'jersey_number': jersey_number if jersey_number else None,
                             'team_abbreviation': player_data.get('team', {}).get('abbreviation', ''),
                             'current_team': player_data.get('team', {}).get('displayName', ''),
-                            'sport': sport.upper()
+                            'sport': correct_sport
                         }
                         return player_info
         
@@ -280,14 +286,20 @@ def get_espn_player_details(player_id: str, sport: str = "football", league: str
             athlete = data['athlete']
             team = athlete.get('team', {})
             
+            position = athlete.get('position', {}).get('abbreviation', '')
+            jersey_number = athlete.get('jersey', '')
+            
+            # Determine correct sport
+            correct_sport = 'NFL' if league.upper() == 'NFL' else 'NBA' if league.upper() == 'NBA' else sport.upper()
+            
             player_info = {
                 'espn_player_id': str(athlete.get('id', '')),
                 'player_name': athlete.get('displayName', ''),
-                'position': athlete.get('position', {}).get('abbreviation', ''),
-                'jersey_number': athlete.get('jersey', ''),
+                'position': position if position else None,
+                'jersey_number': jersey_number if jersey_number else None,
                 'team_abbreviation': team.get('abbreviation', ''),
                 'current_team': team.get('displayName', ''),
-                'sport': sport.upper()
+                'sport': correct_sport
             }
             return player_info
         
