@@ -700,7 +700,10 @@ def update_bet_legs_for_bet(bet: Any) -> None:
                 bet_leg.home_score = processed_leg['homeScore']
                 bet_leg.away_score = processed_leg['awayScore']
             # Calculate and save leg status (won/lost)
-            if bet_leg.status == 'pending' and bet_leg.is_hit is None and bet_leg.achieved_value is not None:
+            # ONLY if game has been finalized (not unknown) AND achieved_value exists and isn't just the default 0
+            if (bet_leg.status == 'pending' and bet_leg.is_hit is None and 
+                bet_leg.achieved_value is not None and bet_leg.achieved_value != 0 and
+                bet_leg.game_status != 'unknown' and bet_leg.game_status is not None):
                 leg_status = 'lost'
                 stat_type = bet_leg.bet_type.lower()
                 if stat_type == 'moneyline':
