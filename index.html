@@ -4350,7 +4350,8 @@ async function logoutToken() {
               ) : null;
               
               let progressCol = '';
-              let currentDisplay = p.current_display || current;
+              // For moneyline/spread bets, don't use cached current_display - always recalculate
+              let currentDisplay = (isSpreadOrML) ? null : (p.current_display || current);
               let targetDisplay = p.target;
               
               // For spread/moneyline, use team name; for player props, use player name
@@ -4579,6 +4580,11 @@ async function logoutToken() {
                     // No game data yet
                     currentDisplay = '-';
                   }
+                }
+                
+                // Fallback: if currentDisplay is still null, use the calculated current value
+                if (currentDisplay === null) {
+                  currentDisplay = current;
                 }
                 
               } else {
