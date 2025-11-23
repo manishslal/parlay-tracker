@@ -129,6 +129,10 @@ class Bet(db.Model):
             games_map = {}
             for leg in result['legs']:
                 if leg.get('home_team') and leg.get('away_team'):
+                    # Skip games with TBD teams - these will be populated by ESPN API
+                    if leg.get('away_team') == 'TBD' or leg.get('home_team') == 'TBD':
+                        continue
+                    
                     game_key = f"{leg['away_team']}-{leg['home_team']}"
                     if game_key not in games_map:
                         # Look up team abbreviations from teams table using partial matching

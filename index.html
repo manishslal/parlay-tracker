@@ -4135,16 +4135,25 @@ async function logoutToken() {
         const isSingleBet = parlay.type === 'Single Bet' || (parlay.legs && Array.isArray(parlay.legs) && parlay.legs.length === 1);
         const isSGP = parlay.type === 'Same Game Parlay' || parlay.type === 'SGP';
         
+        // Filter out TBD games before processing
+        const validGames = parlay.games ? parlay.games.filter(g => 
+          g.teams && g.teams.away !== 'TBD' && g.teams.home !== 'TBD'
+        ) : [];
+        
         // Collect all games
         let gamesToShow = [];
-        if (parlay.games && parlay.games.length > 0) {
+        if (validGames && validGames.length > 0) {
           if (parlay.type !== 'SGP' && parlay.type !== 'Same Game Parlay') {
-            // For non-SGPs, get unique games
+            // For non-SGPs, get unique games and filter out TBD teams
             const uniqueGames = new Map();
             if (parlay.legs && Array.isArray(parlay.legs) && parlay.legs.length > 0) {
               parlay.legs.forEach(leg => {
+                // Skip TBD teams
+                if (leg.away === 'TBD' || leg.home === 'TBD') {
+                  return;
+                }
                 const gameKey = `${leg.away}-${leg.home}`;
-                const game = parlay.games.find(g => 
+                const game = validGames.find(g => 
                   g.teams.away === leg.away && g.teams.home === leg.home
                 );
                 if (game && !uniqueGames.has(gameKey)) {
@@ -4154,7 +4163,7 @@ async function logoutToken() {
             }
             gamesToShow = Array.from(uniqueGames.values());
           } else {
-            gamesToShow = parlay.games;
+            gamesToShow = validGames;
           }
         } else if (parlay.legs && Array.isArray(parlay.legs) && parlay.legs.length > 0) {
           // For historical bets without ESPN game data, create game objects from leg data
@@ -4221,9 +4230,9 @@ async function logoutToken() {
           header.appendChild(scoreboardBlock);
         }
 
-        const isAnyGameLive = parlay.games && parlay.games.some(g=>g.statusTypeName==='STATUS_IN_PROGRESS' || g.statusTypeName==='STATUS_HALFTIME');
-        const areAllGamesFinal = parlay.games && parlay.games.every(g=>g.statusTypeName==='STATUS_FINAL');
-        const areAllGamesScheduled = parlay.games && parlay.games.every(g=>g.statusTypeName==='STATUS_SCHEDULED');
+        const isAnyGameLive = validGames && validGames.some(g=>g.statusTypeName==='STATUS_IN_PROGRESS' || g.statusTypeName==='STATUS_HALFTIME');
+        const areAllGamesFinal = validGames && validGames.every(g=>g.statusTypeName==='STATUS_FINAL');
+        const areAllGamesScheduled = validGames && validGames.every(g=>g.statusTypeName==='STATUS_SCHEDULED');
 
         // Sort legs by status for Live Bets: "In Progress" → "Not Started" → "Hit"
         // Only sort for live bets tab, not historical
@@ -4770,7 +4779,7 @@ async function logoutToken() {
         
         // Calculate winnings if bet won (all games final and all legs hit)
         let winningsText = '$0.00';
-        const allGamesFinal = parlay.games && parlay.games.every(g => g.statusTypeName === 'STATUS_FINAL');
+        const allGamesFinal = validGames && validGames.every(g => g.statusTypeName === 'STATUS_FINAL');
         
         if (allGamesFinal && allLegsComplete && parlay.returns && parlay.wager) {
           const winnings = parlay.returns - parlay.wager;
