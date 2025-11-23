@@ -6,6 +6,7 @@ from services import get_user_bets_query, process_parlay_data, sort_parlays_by_d
 from stat_standardization import standardize_stat_type, get_all_stats_for_sport
 from helpers.database import has_complete_final_data, save_final_results_to_bet, auto_move_completed_bets, auto_move_pending_to_live
 import datetime as dt_module  # Import entire datetime module
+import pytz  # For timezone handling
 # from app import app  # Removed to avoid circular import
 from functools import wraps
 import logging
@@ -769,7 +770,9 @@ def transform_extracted_bet_data(data):
 			away_team = 'TBD'
 		
 		# Set default game_date for all OCR bets (they typically don't include dates)
-		default_game_date = dt_module.datetime.now().strftime('%Y-%m-%d')
+		# Use Eastern timezone to ensure correct date regardless of server location
+		eastern_tz = pytz.timezone('US/Eastern')
+		default_game_date = dt_module.datetime.now(eastern_tz).strftime('%Y-%m-%d')
 		
 		# Better sport detection based on all major sports teams (FIX 2 & 3)
 		nfl_teams = ['raiders', 'cowboys', 'chiefs', 'chargers', 'broncos', 'patriots', 'jets', 'giants', 'eagles', 'commanders', 'bears', 'lions', 'packers', 'vikings', 'falcons', 'panthers', 'saints', 'buccaneers', 'cardinals', 'rams', '49ers', 'seahawks', 'bengals', 'browns', 'steelers', 'ravens', 'bills', 'dolphins', 'texans', 'colts', 'jaguars', 'titans']
