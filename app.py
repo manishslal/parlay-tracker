@@ -65,9 +65,13 @@ def manifest():
 @app.route('/explore')
 @app.route('/watched')
 @app.route('/social')
-@app.route('/account')
 def uncharted():
     return app.send_static_file('uncharted.html')
+
+# Serve modern account page
+@app.route('/account')
+def account():
+    return app.send_static_file('account.html')
 
 from routes.admin import admin_bp
 from routes.auth import auth_bp

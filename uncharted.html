@@ -307,6 +307,27 @@
   <script src="bottom-nav.js"></script>
   
   <script>
+    // Set the correct active navigation based on current path
+    document.addEventListener('DOMContentLoaded', () => {
+      const currentPath = window.location.pathname;
+      const navItems = document.querySelectorAll('.bottom-nav-item');
+      
+      navItems.forEach(item => {
+        const href = item.getAttribute('href');
+        if (href && currentPath === href) {
+          // Update bottom nav
+          navItems.forEach(i => i.classList.remove('active'));
+          item.classList.add('active');
+          
+          // Store the action for persistence
+          const action = item.getAttribute('data-action');
+          if (action) {
+            sessionStorage.setItem('activeNavItem', action);
+          }
+        }
+      });
+    });
+    
     // Hamburger menu toggle
     const menuButton = document.getElementById('menu-button');
     const sideMenu = document.getElementById('side-menu');
