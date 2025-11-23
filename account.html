@@ -373,43 +373,67 @@
     }
     
     /* Side Menu */
-    .side-menu {
+    .menu-overlay {
+      display: none;
       position: fixed;
+      top: 0;
       left: 0;
-      top: 50px;
-      width: 250px;
-      height: calc(100vh - 50px - 80px);
-      background: var(--surface);
-      box-shadow: 2px 0 8px rgba(0,0,0,0.3);
-      z-index: 999;
-      transform: translateX(-100%);
-      transition: transform 0.3s ease;
-      overflow-y: auto;
-      display: flex;
-      flex-direction: column;
+      right: 0;
+      bottom: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 998;
     }
     
-    .side-menu.active {
-      transform: translateX(0);
+    .menu-overlay.active {
+      display: block;
+    }
+    
+    .side-menu {
+      position: fixed;
+      right: 0;
+      top: 0;
+      width: 50vw;
+      max-width: 250px;
+      background: var(--surface);
+      z-index: 1000;
+      transition: right 0.3s ease;
+      padding: 4rem 1rem 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+    
+    .side-menu:not(.active) {
+      right: -250px;
     }
     
     .menu-item {
-      padding: 1rem;
+      padding: 0.65rem 0.8rem;
       cursor: pointer;
       display: flex;
       align-items: center;
-      gap: 1rem;
-      transition: background 0.2s;
-      border-bottom: 1px solid var(--border);
+      gap: 0.8rem;
+      transition: all 0.2s ease;
+      background: var(--section-bg);
+      border-radius: 6px;
     }
     
     .menu-item:hover {
-      background: var(--section-bg);
+      background: var(--yellow);
+      color: var(--primary);
     }
     
-    .menu-item-text {
+    .menu-item:hover .menu-icon {
+      color: var(--primary);
+      stroke: var(--primary);
+    }
+    
+    .menu-icon {
+      width: 20px;
+      height: 20px;
+      flex-shrink: 0;
       color: var(--text);
-      font-weight: 500;
+      transition: color 0.2s ease;
     }
     
     body.light-mode .account-header {
@@ -422,33 +446,58 @@
   </style>
 </head>
 <body>
+  <!-- Menu Overlay -->
+  <div class="menu-overlay" id="menu-overlay"></div>
+  
   <!-- Side Menu -->
   <div class="side-menu" id="side-menu">
     <div class="menu-item" id="add-bet-item">
-      <span>➕</span>
-      <span class="menu-item-text">Add New Bet</span>
+      <svg class="menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <line x1="12" y1="5" x2="12" y2="19"></line>
+        <line x1="5" y1="12" x2="19" y2="12"></line>
+      </svg>
+      <span>Add New Bet</span>
     </div>
     
     <div class="menu-item" id="issues-item">
-      <span>🐛</span>
-      <span class="menu-item-text">Issues</span>
+      <svg class="menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="10"></circle>
+        <line x1="12" y1="8" x2="12" y2="12"></line>
+        <line x1="12" y1="16" x2="12.01" y2="16"></line>
+      </svg>
+      <span>Issues</span>
     </div>
     
     <div class="menu-item" id="theme-toggle">
-      <span>🌙</span>
-      <span class="menu-item-text" id="theme-text">Light Mode</span>
+      <svg class="menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="5"></circle>
+        <line x1="12" y1="1" x2="12" y2="3"></line>
+        <line x1="12" y1="21" x2="12" y2="23"></line>
+        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+        <line x1="1" y1="12" x2="3" y2="12"></line>
+        <line x1="21" y1="12" x2="23" y2="12"></line>
+        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+      </svg>
+      <span id="theme-text">Light Mode</span>
     </div>
     
-    <div class="menu-divider"></div>
-    
     <div class="menu-item" id="profile-item">
-      <span>👤</span>
-      <span class="menu-item-text">My Bets</span>
+      <svg class="menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+        <circle cx="12" cy="7" r="4"></circle>
+      </svg>
+      <span>Profile</span>
     </div>
     
     <div class="menu-item" id="logout-item">
-      <span>🚪</span>
-      <span class="menu-item-text">Logout</span>
+      <svg class="menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+        <polyline points="16 8 20 12 16 16"></polyline>
+        <line x1="9" y1="12" x2="20" y2="12"></line>
+      </svg>
+      <span>Logout</span>
     </div>
   </div>
 
@@ -618,17 +667,26 @@
     // Hamburger menu toggle
     const menuButton = document.getElementById('menu-button');
     const sideMenu = document.getElementById('side-menu');
+    const menuOverlay = document.getElementById('menu-overlay');
     
-    if (menuButton && sideMenu) {
+    if (menuButton && sideMenu && menuOverlay) {
       menuButton.addEventListener('click', () => {
         menuButton.classList.toggle('active');
         sideMenu.classList.toggle('active');
+        menuOverlay.classList.toggle('active');
+      });
+      
+      menuOverlay.addEventListener('click', () => {
+        menuButton.classList.remove('active');
+        sideMenu.classList.remove('active');
+        menuOverlay.classList.remove('active');
       });
       
       sideMenu.querySelectorAll('.menu-item').forEach(item => {
         item.addEventListener('click', () => {
           menuButton.classList.remove('active');
           sideMenu.classList.remove('active');
+          menuOverlay.classList.remove('active');
         });
       });
     }
