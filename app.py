@@ -424,8 +424,8 @@ def save_bet_to_db(user_id: int, bet_data: dict, skip_duplicate_check: bool = Fa
         user_bets = Bet.query.filter_by(user_id=user_id).order_by(Bet.created_at.desc()).limit(100).all()
         for existing_bet in user_bets:
             existing_data = existing_bet.get_bet_data()
-            # Check for duplicate bets
-            if existing_data['wager'] == core_match['wager'] and existing_data['final_odds'] == core_match['final_odds']:
+            # Check for duplicate bets - use .get() to safely handle missing keys
+            if existing_data.get('wager') == core_match['wager'] and existing_data.get('final_odds') == core_match['final_odds']:
                 app.logger.info(f"[DUPLICATE CHECK] Bet already exists for user {user_id}.")
                 return existing_bet.to_dict()
 
