@@ -714,6 +714,8 @@ def get_users():
 
 def transform_extracted_bet_data(data):
 	"""Transform frontend extracted bet data to internal format."""
+	from datetime import datetime
+	
 	# Map frontend field names to internal format
 	# CRITICAL: bet_id (from OCR) → betting_site_id; bet_site (from OCR) → betting_site
 	transformed = {
@@ -766,7 +768,6 @@ def transform_extracted_bet_data(data):
 			away_team = 'TBD'
 		
 		# Set default game_date for all OCR bets (they typically don't include dates)
-		from datetime import datetime
 		default_game_date = datetime.now().strftime('%Y-%m-%d')
 		
 		# Better sport detection based on all major sports teams (FIX 2 & 3)
