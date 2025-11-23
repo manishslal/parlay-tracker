@@ -360,6 +360,21 @@ def populate_player_data_for_bet(bet: Any) -> None:
                 app.logger.info(f"[PLAYER-POPULATION] Found existing player {existing_player.player_name} (ID: {existing_player.id}) for leg {leg.id}")
                 continue
             
+            # Check if we've already created this player in this transaction
+            new_player_in_session = None
+            normalized_name = leg.player_name.lower().strip()
+            for obj in db.session.new:
+                if isinstance(obj, Player) and obj.normalized_name == normalized_name:
+                    new_player_in_session = obj
+                    break
+            
+            if new_player_in_session:
+                # Reuse the player we just created in this transaction
+                leg.player_id = new_player_in_session.id
+                leg.player_position = new_player_in_session.position
+                app.logger.info(f"[PLAYER-POPULATION] Reusing newly created player {new_player_in_session.player_name} (ID: {new_player_in_session.id}) for leg {leg.id}")
+                continue
+            
             # Player not found, search ESPN with enhanced fallback strategies
             app.logger.info(f"[PLAYER-POPULATION] Player {leg.player_name} not found locally, searching ESPN with enhanced strategies...")
             espn_player_data = enhanced_player_search(leg.player_name, sport="football", league="nfl")
@@ -408,6 +423,7 @@ def populate_player_data_for_bet(bet: Any) -> None:
         app.logger.info(f"[PLAYER-POPULATION] Successfully populated player data for bet {bet.id}")
     except Exception as e:
         app.logger.error(f"[PLAYER-POPULATION] Error committing changes for bet {bet.id}: {e}")
+        db.session.rollback()
         db.session.rollback()
 
 def save_bet_to_db(user_id: int, bet_data: dict, skip_duplicate_check: bool = False) -> dict:

@@ -684,7 +684,9 @@ def save_extracted_bet():
 		})
 		
 	except Exception as e:
-		logger.error(f"Save extracted bet error: {e}")
+		logger.error(f"Save extracted bet error: {e}", exc_info=True)
+		# Ensure session is rolled back to recover from any transaction errors
+		db.session.rollback()
 		return jsonify({'success': False, 'error': str(e)}), 500
 
 @bets_bp.route('/api/users', methods=['GET'])
