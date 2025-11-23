@@ -79,21 +79,24 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      position: relative; /* Not sticky - allow it to scroll away */
-      background: var(--primary); /* Purple background to match theme */
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      background: var(--primary);
       z-index: 100;
-      padding: 0.5rem; /* Increased for better vertical spacing */
-      margin-bottom: 1.5rem;
+      padding: 0.25rem;
+      height: 50px;
       box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-      border-radius: 12px; /* Rounded corners to match theme */
+      border-radius: 0;
     }
     
     h1 {
-      color: #fff; /* White text on purple background */
+      color: #fff;
       margin: 0;
       flex: 1;
       text-align: center;
-      font-size: var(--text-2xl);
+      font-size: var(--text-lg);
       font-weight: var(--weight-bold);
       line-height: var(--line-height-tight);
     }
@@ -880,6 +883,22 @@
       background: var(--tab-active);
       color: var(--title-color);
     }
+    
+    /* Reduce header sizes in My Bets sections */
+    #parlay-sections h2,
+    #historical-sections h2,
+    #archived-sections h2 {
+      font-size: var(--text-lg);
+      margin: 1rem 0 0.75rem 0;
+    }
+    
+    #parlay-sections h3,
+    #historical-sections h3,
+    #archived-sections h3 {
+      font-size: var(--text-base);
+      margin: 0.75rem 0 0.5rem 0;
+    }
+    
     body{background:var(--bg);color:var(--text);
       font-family:Roboto,sans-serif;
       margin:0;
@@ -891,6 +910,7 @@
       padding-right: max(1rem, env(safe-area-inset-right));
       zoom: 0.8;}
     .container{max-width:1200px;margin:auto;padding:2rem;
+      padding-top: calc(2rem + 50px);
       padding-bottom:calc(2rem + 80px);
       background:var(--surface);border-radius:12px;
       box-shadow:0 4px 20px rgba(0,0,0,0.25);}
@@ -1235,6 +1255,7 @@
       
       .container {
         padding: 0.5rem;
+        padding-top: calc(0.5rem + 50px);
         padding-bottom: calc(0.5rem + 80px);
         border-radius: 0;
       }
@@ -1669,7 +1690,7 @@
       <span class="menu-item-text">Admin Tools</span>
     </div>
     
-    <div class="menu-item" id="issues-item" style="display:none;">
+    <div class="menu-item" id="issues-item">
       <span class="menu-item-icon">🐛</span>
       <span class="menu-item-text">Issues</span>
     </div>
@@ -1713,7 +1734,6 @@
       <button class="tab active" data-tab="current">Live Bets</button>
       <button class="tab" data-tab="historical">Historical Bets</button>
       <button class="tab" data-tab="archived">Archived Bets</button>
-      <button class="tab" data-tab="issues" id="issues-tab" style="display:none">Issues</button>
     </div>
     <div class="button-container">
       <button id="refresh-button">Refresh Stats</button>

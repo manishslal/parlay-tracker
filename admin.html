@@ -193,6 +193,33 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+
+        /* Override bottom nav colors to use design system defaults on admin page */
+        ::-webkit-scrollbar {
+            width: 10px;
+        }
+        
+        /* Use design system colors for bottom nav instead of admin yellow */
+        .bottom-nav .bottom-nav-item {
+            color: var(--text-primary, #e0e0e0);
+        }
+        
+        .bottom-nav .bottom-nav-item.active {
+            color: #ffeb3b;
+            background: rgba(255, 235, 59, 0.1);
+        }
+        
+        /* Light mode adjustments */
+        @media (prefers-color-scheme: light) {
+            .bottom-nav .bottom-nav-item {
+                color: #333;
+            }
+            
+            .bottom-nav .bottom-nav-item.active {
+                color: #f57f17;
+                background: rgba(245, 127, 23, 0.1);
+            }
+        }
     </style>
 </head>
 <body>
