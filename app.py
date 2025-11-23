@@ -366,13 +366,23 @@ def populate_player_data_for_bet(bet: Any) -> None:
             
             if espn_player_data:
                 # Create new player record
+                # Convert empty strings to None for integer fields
+                jersey_number = espn_player_data['jersey_number']
+                if jersey_number == '' or jersey_number is None:
+                    jersey_number = None
+                else:
+                    try:
+                        jersey_number = int(jersey_number)
+                    except (ValueError, TypeError):
+                        jersey_number = None
+                
                 new_player = Player(
                     player_name=espn_player_data['player_name'],
                     normalized_name=espn_player_data['player_name'].lower().strip(),
                     display_name=espn_player_data['player_name'],
                     sport=espn_player_data['sport'],
                     position=espn_player_data['position'],
-                    jersey_number=espn_player_data['jersey_number'],
+                    jersey_number=jersey_number,
                     current_team=espn_player_data['current_team'],
                     team_abbreviation=espn_player_data['team_abbreviation'],
                     espn_player_id=espn_player_data['espn_player_id']
