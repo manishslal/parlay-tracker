@@ -688,7 +688,7 @@ def upload_betslip():
 		return jsonify({'success': False, 'error': str(e)}), 500
 
 @bets_bp.route('/api/save-extracted-bet', methods=['POST'])
-# @login_required  # Temporarily disabled for testing
+@login_required
 def save_extracted_bet():
 	"""Save an extracted/edited bet from bet slip processing."""
 	try:
@@ -705,9 +705,8 @@ def save_extracted_bet():
 		
 		# Save the bet
 		from app import save_bet_to_db
-		# For testing, use a default user ID (you may need to adjust this)
-		test_user_id = 1  # Adjust this to a valid user ID in your database
-		result = save_bet_to_db(test_user_id, bet_data, skip_duplicate_check=True)
+		# Use the current logged-in user's ID
+		result = save_bet_to_db(current_user.id, bet_data, skip_duplicate_check=True)
 		
 		return jsonify({
 			'success': True,
