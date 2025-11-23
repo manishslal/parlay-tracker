@@ -556,15 +556,27 @@ def save_bet_to_db(user_id: int, bet_data: dict, skip_duplicate_check: bool = Fa
                 try:
                     import pytz
                     
+                    app.logger.info(f"[GAME-DATE-DEBUG] leg_data['game_date'] = {leg_data['game_date']}")
+                    
                     # Parse UTC time and convert to Eastern Time
                     game_datetime_utc = datetime.fromisoformat(leg_data['game_date'].replace('Z', '+00:00'))
                     eastern_tz = pytz.timezone('US/Eastern')
                     game_datetime_eastern = game_datetime_utc.astimezone(eastern_tz)
                     
+                    app.logger.info(f"[GAME-DATE-DEBUG] game_datetime_utc = {game_datetime_utc}, game_datetime_eastern = {game_datetime_eastern}")
+                    
                     game_date = game_datetime_eastern.date()
                     game_time = game_datetime_eastern.time()
-                except (ValueError, AttributeError):
+                except (ValueError, AttributeError) as e:
+                    app.logger.error(f"[GAME-DATE-DEBUG] Error parsing game_date: {e}")
                     pass
+            
+            # If game_date is still None, use today's date in Eastern timezone
+            if game_date is None:
+                import pytz
+                eastern_tz = pytz.timezone('US/Eastern')
+                game_date = datetime.now(eastern_tz).date()
+                app.logger.info(f"[GAME-DATE-DEBUG] No game_date provided, using Eastern today: {game_date}")
             
             # SPORT VALIDATION & NORMALIZATION (FIX 1)
             VALID_SPORTS = {'NFL', 'NBA', 'MLB', 'NHL', 'NCAAF', 'NCAAB'}
