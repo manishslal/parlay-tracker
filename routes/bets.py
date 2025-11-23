@@ -718,6 +718,7 @@ def transform_extracted_bet_data(data):
 		'betting_site_id': data.get('bet_id'),  # Actual bet ID (e.g., "O/0240915/0000074" or "DK638926171300468480")
 		'betting_site': data.get('bet_site'),  # Betting site name (DraftKings, FanDuel, etc.)
 		'bet_type': data.get('bet_type', 'parlay'),
+		'secondary_bettor_ids': data.get('secondary_bettor_ids', []),  # Include secondary bettors
 		'legs': []
 	}
 	
