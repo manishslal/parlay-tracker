@@ -85,7 +85,7 @@
       right: 0;
       background: var(--primary);
       z-index: 100;
-      padding: 0.25rem;
+      padding: 0;
       height: 50px;
       box-shadow: 0 2px 8px rgba(0,0,0,0.2);
       border-radius: 0;
@@ -98,7 +98,9 @@
       text-align: center;
       font-size: var(--text-lg);
       font-weight: var(--weight-bold);
-      line-height: var(--line-height-tight);
+      line-height: 50px;
+      padding: 0 1rem;
+      margin-left: -3rem;
     }
     
     /* Hamburger Menu Button - 80% size, inline with title */
@@ -118,6 +120,7 @@
       box-shadow: 0 4px 12px rgba(0,0,0,0.3);
       transition: transform 0.2s, opacity 0.3s;
       flex-shrink: 0;
+      margin-right: 0.5rem;
     }
     
     .menu-button:hover {
@@ -730,7 +733,7 @@
     /* Pull to refresh indicator */
     .pull-refresh {
       position: fixed;
-      top: 0;
+      top: 50px;
       left: 50%;
       transform: translateX(-50%);
       background: var(--primary);
@@ -739,7 +742,8 @@
       border-radius: 0 0 8px 8px;
       opacity: 0;
       transition: opacity 0.3s;
-      z-index: 1001;
+      z-index: 99;
+      pointer-events: none;
     }
     
     .pull-refresh.active {
@@ -5651,7 +5655,7 @@ async function logoutToken() {
       </span>
       <span class="nav-label">Social</span>
     </a>
-    <a href="/account" class="bottom-nav-item" data-action="account" title="Account">
+    <a href="#" class="bottom-nav-item" data-action="account" title="Account">
       <span class="nav-icon">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/>

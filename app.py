@@ -61,6 +61,14 @@ def service_worker():
 def manifest():
     return app.send_static_file('manifest.json')
 
+# Serve uncharted territories page
+@app.route('/explore')
+@app.route('/watched')
+@app.route('/social')
+@app.route('/account')
+def uncharted():
+    return app.send_static_file('uncharted.html')
+
 from routes.admin import admin_bp
 from routes.auth import auth_bp
 from routes import bets_bp

@@ -119,8 +119,24 @@ class BottomNavigation {
   }
 
   navigateToAccount() {
-    // Navigate to account page (to be implemented)
-    window.location.href = '/account';
+    // Show profile page
+    this.showProfilePage();
+  }
+
+  /**
+   * Show the profile page
+   */
+  showProfilePage() {
+    // Hide all pages first
+    const pages = document.querySelectorAll('[id$="-page"]');
+    pages.forEach(page => page.style.display = 'none');
+    
+    // Show profile page
+    const profilePage = document.getElementById('profile-page');
+    if (profilePage) {
+      profilePage.style.display = 'block';
+      window.scrollTo(0, 0);
+    }
   }
 
   /**
