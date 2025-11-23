@@ -5,6 +5,7 @@ from models import db, Bet, BetLeg
 from services import get_user_bets_query, process_parlay_data, sort_parlays_by_date
 from stat_standardization import standardize_stat_type, get_all_stats_for_sport
 from helpers.database import has_complete_final_data, save_final_results_to_bet, auto_move_completed_bets, auto_move_pending_to_live
+from datetime import datetime  # Import at module level for availability throughout
 # from app import app  # Removed to avoid circular import
 from functools import wraps
 import logging
@@ -714,7 +715,7 @@ def get_users():
 
 def transform_extracted_bet_data(data):
 	"""Transform frontend extracted bet data to internal format."""
-	from datetime import datetime
+	# datetime is now imported at module level
 	
 	# Map frontend field names to internal format
 	# CRITICAL: bet_id (from OCR) → betting_site_id; bet_site (from OCR) → betting_site
