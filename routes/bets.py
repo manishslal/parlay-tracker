@@ -853,7 +853,7 @@ def transform_extracted_bet_data(data):
 		
 		# Set target_value appropriately based on bet type
 		if display_bet_type == 'moneyline':
-			target_value = 'Win'  # Moneyline bets target a win
+			target_value = None  # Moneyline bets don't have a numeric target, they're win/loss only
 		else:
 			target_value = leg.get('line')
 		
