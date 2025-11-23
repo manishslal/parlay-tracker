@@ -89,6 +89,7 @@ Total: "Game Total Over 220.5" → team: "Game Total", stat: "total_points", lin
 Player Prop: "LeBron James Over 25.5 Points" → player: "LeBron James", team: "Los Angeles Lakers", stat: "points", line: 25.5, stat_add: "over"
 
 {
+  "bet_id": "the bet confirmation number visible on the slip (e.g., 'O/0240915/0000074' for FanDuel, 'DK638926171300468480' for DraftKings)",
   "bet_site": "name of the betting site (e.g., DraftKings, FanDuel, Caesars, BetMGM)",
   "bet_type": "parlay|single|teaser|round_robin",
   "total_odds": "number like +150, -120, or the American odds format",
@@ -112,6 +113,7 @@ IMPORTANT:
 - For team names, use the full name as shown (e.g., "Kansas City Chiefs", not "Chiefs")
 - For stats, be specific: "passing_yards" not "passing", "total_points" not "totals"
 - If a leg has both player and team, include both fields
+- The bet_id is CRITICAL - look for confirmation number, reference number, or bet ID on the slip
 - Return ONLY the JSON object, no explanations or additional text.'''
                         },
                         {
@@ -200,40 +202,6 @@ IMPORTANT:
     except Exception as e:
         logger.error(f"Error processing bet slip image: {e}")
         raise
-
-def transform_extracted_bet_data(data):
-    """Transform frontend extracted bet data to internal format."""
-    # Map frontend field names to internal format
-    bet_data = {
-        'name': data.get('bet_name'),
-        'type': data.get('bet_type', 'parlay'),
-        'betting_site': data.get('bet_site', 'Unknown'),
-        'wager': data.get('wager_amount'),
-        'odds': data.get('total_odds'),
-        'payout': data.get('potential_payout'),
-        'placed_at': data.get('bet_date'),
-        'secondary_bettor_ids': data.get('secondary_bettor_ids', []),
-        'legs': []
-    }
-    
-    # Transform legs
-    for i, leg in enumerate(data.get('legs', [])):
-        transformed_leg = {
-            'leg_order': i,
-            'player': leg.get('player'),
-            'team': leg.get('team'),
-            'stat': leg.get('stat'),
-            'line': leg.get('line'),
-            'stat_add': leg.get('stat_add'),  # over/under
-            'odds': leg.get('odds')
-        }
-        
-        # Clean up empty values
-        transformed_leg = {k: v for k, v in transformed_leg.items() if v is not None and v != ''}
-        
-        bet_data['legs'].append(transformed_leg)
-    
-    return bet_data
 
 def db_error_handler(f):
     """Decorator to handle database connection errors gracefully."""
@@ -741,12 +709,14 @@ def get_users():
 def transform_extracted_bet_data(data):
 	"""Transform frontend extracted bet data to internal format."""
 	# Map frontend field names to internal format
+	# CRITICAL: bet_id (from OCR) → betting_site_id; bet_site (from OCR) → betting_site
 	transformed = {
 		'wager': float(data.get('wager_amount', 0)) if data.get('wager_amount') else None,
 		'potential_winnings': float(data.get('potential_payout', 0)) if data.get('potential_payout') else None,
 		'final_odds': data.get('total_odds'),
 		'bet_date': data.get('bet_date'),
-		'betting_site_id': data.get('bet_site'),
+		'betting_site_id': data.get('bet_id'),  # Actual bet ID (e.g., "O/0240915/0000074" or "DK638926171300468480")
+		'betting_site': data.get('bet_site'),  # Betting site name (DraftKings, FanDuel, etc.)
 		'bet_type': data.get('bet_type', 'parlay'),
 		'legs': []
 	}
