@@ -52,7 +52,7 @@
       right: 0;
       background: var(--primary);
       z-index: 100;
-      padding: 0.25rem;
+      padding: 0;
       height: 50px;
       box-shadow: 0 2px 8px rgba(0,0,0,0.2);
       border-radius: 0;
@@ -65,6 +65,9 @@
       text-align: center;
       font-size: 1.125rem;
       font-weight: 700;
+      line-height: 50px;
+      padding: 0 1rem;
+      margin-left: -3rem;
     }
     
     .menu-button {
@@ -72,17 +75,20 @@
       color: #fff;
       border: none;
       border-radius: 8px;
-      width: 40px;
-      height: 40px;
+      width: 30px;  /* 75% of 50px */
+      height: 30px; /* 75% of 50px */
       cursor: pointer;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: 4px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      gap: 3px;     /* 75% of 5px */
+      box-shadow: none;
       transition: transform 0.2s, opacity 0.3s;
       flex-shrink: 0;
+      margin-right: 0.5rem;
+      outline: none;
+      -webkit-tap-highlight-color: transparent;
     }
     
     .menu-button:hover {
@@ -90,11 +96,23 @@
     }
     
     .menu-button span {
-      width: 20px;
-      height: 2.4px;
+      width: 15px;  /* 75% of 20px */
+      height: 2px; /* 75% of 2.4px */
       background: #fff;
       border-radius: 2px;
       transition: all 0.3s;
+    }
+    
+    .menu-button.active span:nth-child(1) {
+      transform: rotate(45deg) translate(4.2px, 4.2px);
+    }
+    
+    .menu-button.active span:nth-child(2) {
+      opacity: 0;
+    }
+    
+    .menu-button.active span:nth-child(3) {
+      transform: rotate(-45deg) translate(4.2px, -4.2px);
     }
     
     .container {
