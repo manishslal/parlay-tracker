@@ -4520,14 +4520,7 @@ async function logoutToken() {
 
                 // Show score if available
                 if (betTeamScore !== null && oppTeamScore !== null) {
-                  // For moneyline, show the result (Won/Lost) instead of scores
-                  if (p.stat === 'moneyline') {
-                    const resultText = isWinning ? 'Won' : 'Lost';
-                    progressCol = `<div style="text-align:center;padding:0.5rem;font-weight:bold;${progressColor}">${resultText}</div>`;
-                  } else {
-                    // For spread and other bets, show the score
-                    progressCol = `<div style="text-align:center;padding:0.5rem;font-weight:bold;${progressColor}">${betTeamName} ${betTeamScore} - ${oppTeamScore} ${opponentTeamName}</div>`;
-                  }
+                  progressCol = `<div style="text-align:center;padding:0.5rem;font-weight:bold;${progressColor}">${betTeamName} ${betTeamScore} - ${oppTeamScore} ${opponentTeamName}</div>`;
                 } else {
                   // No game data yet (scheduled game)
                   progressCol = `<div style="text-align:center;padding:0.5rem;">-</div>`;
