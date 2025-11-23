@@ -36,6 +36,12 @@
   gap: var(--space-xs);
   padding: var(--space-sm);
   position: relative;
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.bottom-nav-item:focus {
+  outline: none;
 }
 
 /* Icon styling */
@@ -65,7 +71,7 @@
 
 /* Active state with indicator */
 .bottom-nav-item.active {
-  color: var(--primary);
+  color: var(--yellow);
 }
 
 .bottom-nav-item.active::before {
@@ -77,15 +83,15 @@
   width: 4px;
   height: 4px;
   border-radius: var(--radius-full);
-  background: var(--primary);
+  background: var(--yellow);
 }
 
 .bottom-nav-item.active .nav-icon {
-  color: var(--primary);
+  color: var(--yellow);
 }
 
 .bottom-nav-item.active .nav-label {
-  color: var(--primary);
+  color: var(--yellow);
   font-weight: var(--weight-bold);
 }
 
