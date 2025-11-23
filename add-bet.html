@@ -111,7 +111,7 @@
       padding: 10px 12px;
       border: 1px solid rgba(255, 204, 0, 0.3);
       border-radius: 6px;
-      font-size: 0.95em;
+      font-size: var(--text-sm);
       transition: border-color 0.3s, background-color 0.3s;
       box-sizing: border-box;
       background: var(--bg);
@@ -143,12 +143,12 @@
 
     .leg-card h3 {
       color: var(--title-color);
-      font-size: 1em;
+      font-size: var(--text-base);
       margin-bottom: 12px;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      font-weight: 600;
+      font-weight: var(--weight-bold);
     }
 
     .remove-leg-btn {
@@ -158,7 +158,7 @@
       border-radius: 6px;
       padding: 6px 10px;
       cursor: pointer;
-      font-size: 0.8em;
+      font-size: var(--text-xs);
       transition: opacity 0.3s, transform 0.1s;
     }
 
@@ -177,8 +177,8 @@
       padding: 10px 20px;
       border: none;
       border-radius: 8px;
-      font-size: 0.95em;
-      font-weight: 600;
+      font-size: var(--text-sm);
+      font-weight: var(--weight-bold);
       cursor: pointer;
       transition: opacity 0.3s, transform 0.1s, box-shadow 0.3s;
       display: inline-flex;
