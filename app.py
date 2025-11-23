@@ -262,8 +262,6 @@ def populate_game_ids_for_bet(bet: Any) -> None:
     bet_legs = db.session.query(BetLeg).filter(
         BetLeg.bet_id == bet.id,
         BetLeg.game_date.isnot(None),
-        BetLeg.away_team.isnot(None),
-        BetLeg.home_team.isnot(None),
         (BetLeg.game_id.is_(None) | (BetLeg.game_id == ''))
     ).all()
     
@@ -289,28 +287,60 @@ def populate_game_ids_for_bet(bet: Any) -> None:
                 app.logger.warning(f"[GAME-ID-POPULATION] No games found for date {game_date}")
                 continue
             
-            # Create lookup map for faster matching
-            game_lookup = {}
+            # Create lookup maps for faster matching
+            # Map 1: Both teams known (away@home)
+            game_lookup_both = {}
+            # Map 2: Single team (for TBD cases)
+            game_lookup_single_home = {}  # home team -> game_id
+            game_lookup_single_away = {}  # away team -> game_id
+            
             for game_id, espn_away, espn_home in games:
                 # Normalize team names for matching
                 away_norm = espn_away.lower().strip()
                 home_norm = espn_home.lower().strip()
-                key = f"{away_norm}@{home_norm}"
-                game_lookup[key] = game_id
                 
-                # Also try reverse order
+                # Both teams lookup
+                key = f"{away_norm}@{home_norm}"
+                game_lookup_both[key] = game_id
                 reverse_key = f"{home_norm}@{away_norm}"
-                game_lookup[reverse_key] = game_id
+                game_lookup_both[reverse_key] = game_id
+                
+                # Single team lookups (for TBD cases)
+                game_lookup_single_home[home_norm] = game_id
+                game_lookup_single_away[away_norm] = game_id
             
             # Match each leg to a game
             for leg in legs:
+                if leg.game_id:  # Already has game_id, skip
+                    continue
+                
+                # Skip if both teams are missing or TBD
+                if not leg.home_team or leg.home_team.lower().strip() == 'tbd' or \
+                   not leg.away_team or leg.away_team.lower().strip() == 'tbd':
+                    # Try to match on single team if one is available
+                    if leg.home_team and leg.home_team.lower().strip() != 'tbd':
+                        home_norm = leg.home_team.lower().strip()
+                        if home_norm in game_lookup_single_home:
+                            leg.game_id = game_lookup_single_home[home_norm]
+                            app.logger.info(f"[GAME-ID-POPULATION] Set game_id {leg.game_id} for leg {leg.id} (matched on home team: {leg.home_team})")
+                            continue
+                    if leg.away_team and leg.away_team.lower().strip() != 'tbd':
+                        away_norm = leg.away_team.lower().strip()
+                        if away_norm in game_lookup_single_away:
+                            leg.game_id = game_lookup_single_away[away_norm]
+                            app.logger.info(f"[GAME-ID-POPULATION] Set game_id {leg.game_id} for leg {leg.id} (matched on away team: {leg.away_team})")
+                            continue
+                    app.logger.warning(f"[GAME-ID-POPULATION] No game match found for leg {leg.id}: {leg.away_team} @ {leg.home_team} on {game_date}")
+                    continue
+                
+                # Both teams available, try exact match
                 away_norm = leg.away_team.lower().strip()
                 home_norm = leg.home_team.lower().strip()
                 key = f"{away_norm}@{home_norm}"
                 
-                if key in game_lookup:
-                    leg.game_id = game_lookup[key]
-                    app.logger.info(f"[GAME-ID-POPULATION] Set game_id {game_lookup[key]} for leg {leg.id} ({leg.away_team} @ {leg.home_team})")
+                if key in game_lookup_both:
+                    leg.game_id = game_lookup_both[key]
+                    app.logger.info(f"[GAME-ID-POPULATION] Set game_id {game_lookup_both[key]} for leg {leg.id} ({leg.away_team} @ {leg.home_team})")
                 else:
                     app.logger.warning(f"[GAME-ID-POPULATION] No game match found for leg {leg.id}: {leg.away_team} @ {leg.home_team} on {game_date}")
         
@@ -326,15 +356,24 @@ def populate_game_ids_for_bet(bet: Any) -> None:
         db.session.rollback()
 
 def populate_player_data_for_bet(bet: Any) -> None:
-    """Populate player_id and player_position for all bet legs in a bet."""
+    """Populate player_id and player_position for all bet legs in a bet.
+    
+    Skips:
+    - Team moneyline/spread bets (where player_name is null)
+    - Game total bets (where player_name is 'Game Total')
+    - Legs that already have player_id
+    """
     from helpers.espn_api import search_espn_player
     from models import Player
     
+    # Filter for legs that need player population
+    # Skip: team bets (player_name is None), game totals, and already-processed legs
     bet_legs = db.session.query(BetLeg).filter(
         BetLeg.bet_id == bet.id,
-        BetLeg.player_name.isnot(None),
-        BetLeg.player_name != 'Unknown',
-        BetLeg.player_id.is_(None)
+        BetLeg.player_name.isnot(None),  # Skip None (team bets, game totals)
+        BetLeg.player_name != 'Unknown',  # Skip unknown
+        BetLeg.player_name != 'Game Total',  # Skip game totals
+        BetLeg.player_id.is_(None)  # Skip already processed
     ).all()
     
     if not bet_legs:

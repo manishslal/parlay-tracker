@@ -71,10 +71,16 @@ def analyze_latest_bet():
         print(f"\n{'='*70}")
         print(f"👥 SECONDARY BETTORS")
         print(f"{'='*70}")
+        print(f"Raw secondary_bettors value: {latest_bet.secondary_bettors}")
+        print(f"Type: {type(latest_bet.secondary_bettors)}")
         if latest_bet.secondary_bettors:
             print(f"Count: {len(latest_bet.secondary_bettors)}")
-            for bettor in latest_bet.secondary_bettors:
-                print(f"  - {bettor.username} (ID: {bettor.id})")
+            for bettor_id in latest_bet.secondary_bettors:
+                try:
+                    bettor = db.session.query(db.func.count(1)).filter_by(id=bettor_id).scalar()
+                    print(f"  - ID: {bettor_id}")
+                except Exception as e:
+                    print(f"  - ID: {bettor_id} (lookup error: {e})")
         else:
             print("None")
         

@@ -243,17 +243,21 @@ def create_bet() -> Any:
 		if 'type' in data:
 			data['type'] = bet_type_mapping.get(data['type'], data['type'])
 		
+		# FIX: Rename 'type' to 'bet_type' to match save_bet_to_db expectations
+		if 'type' in data:
+			data['bet_type'] = data.pop('type')
+		
 		# Generate standardized bet name if not provided or if it's generic
 		if 'name' not in data or not data['name'] or data['name'].strip() == '':
 			leg_count = len(data.get('legs', []))
-			if data['type'] == 'SGP':
+			if data.get('bet_type') == 'SGP':
 				data['name'] = f"{leg_count} Leg SGP"
-			elif data['type'] == 'Parlay':
+			elif data.get('bet_type') == 'Parlay':
 				data['name'] = f"{leg_count} Pick Parlay"
-			elif data['type'] == 'Single Bet':
+			elif data.get('bet_type') == 'Single Bet':
 				data['name'] = "Single Bet"
 			else:
-				data['name'] = f"{leg_count} Pick {data['type']}"
+				data['name'] = f"{leg_count} Pick {data.get('bet_type')}"
 		
 		# Ensure status is set properly
 		if 'status' not in data:
