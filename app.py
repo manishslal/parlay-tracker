@@ -251,7 +251,8 @@ def populate_game_ids_for_bet(bet: Any) -> None:
     bet_legs = db.session.query(BetLeg).filter(
         BetLeg.bet_id == bet.id,
         BetLeg.game_date.isnot(None),
-        (BetLeg.game_id.is_(None) | (BetLeg.game_id == ''))
+        ((BetLeg.game_id.is_(None) | (BetLeg.game_id == '')) | 
+         (BetLeg.away_team.is_(None) | (BetLeg.away_team == 'TBD')))
     ).all()
     
     if not bet_legs:
@@ -324,30 +325,32 @@ def populate_game_ids_for_bet(bet: Any) -> None:
                 continue
             
             # Create lookup maps for faster matching
-            # Map 1: Both teams known (away@home)
-            game_lookup_both = {}
-            # Map 2: Single team (for TBD cases)
-            game_lookup_single_home = {}  # home team -> game_id
-            game_lookup_single_away = {}  # away team -> game_id
+            # Store game data: (game_id, espn_away, espn_home)
+            game_lookup_both = {}  # (away_norm, home_norm) -> (game_id, espn_away, espn_home)
+            game_lookup_single_home = {}  # home_norm -> (game_id, espn_away, espn_home)
+            game_lookup_single_away = {}  # away_norm -> (game_id, espn_away, espn_home)
             
             for game_id, espn_away, espn_home in games:
                 # Normalize team names for matching
                 away_norm = espn_away.lower().strip()
                 home_norm = espn_home.lower().strip()
+                game_data = (game_id, espn_away, espn_home)
                 
                 # Both teams lookup
                 key = f"{away_norm}@{home_norm}"
-                game_lookup_both[key] = game_id
+                game_lookup_both[key] = game_data
                 reverse_key = f"{home_norm}@{away_norm}"
-                game_lookup_both[reverse_key] = game_id
+                game_lookup_both[reverse_key] = game_data
                 
                 # Single team lookups (for TBD cases)
-                game_lookup_single_home[home_norm] = game_id
-                game_lookup_single_away[away_norm] = game_id
+                game_lookup_single_home[home_norm] = game_data
+                game_lookup_single_away[away_norm] = game_data
             
             # Match each leg to a game
             for leg in legs:
-                if leg.game_id:  # Already has game_id, skip
+                leg_needs_update = (not leg.game_id or leg.game_id == '') or (not leg.away_team or leg.away_team == 'TBD')
+                
+                if not leg_needs_update:  # Already has both game_id and away_team
                     continue
                 
                 # Normalize leg team names for matching
@@ -366,29 +369,44 @@ def populate_game_ids_for_bet(bet: Any) -> None:
                 if leg_home_norm != 'tbd' and leg_away_norm != 'tbd':
                     key = f"{leg_away_norm}@{leg_home_norm}"
                     if key in game_lookup_both:
-                        leg.game_id = game_lookup_both[key]
-                        app.logger.info(f"[GAME-ID-POPULATION] Set game_id {leg.game_id} for leg {leg.id} (matched on both teams: {leg.away_team} @ {leg.home_team})")
+                        game_id, espn_away, espn_home = game_lookup_both[key]
+                        leg.game_id = game_id
+                        leg.away_team = espn_away
+                        leg.home_team = espn_home
+                        app.logger.info(f"[GAME-ID-POPULATION] Set game_id {leg.game_id} for leg {leg.id}, teams: {leg.away_team} @ {leg.home_team}")
                         continue
                 
                 # Try to match on single team if other is TBD
                 if leg_home_norm != 'tbd' and (not leg.away_team or leg.away_team.lower().strip() == 'tbd'):
                     if leg_home_norm in game_lookup_single_home:
-                        leg.game_id = game_lookup_single_home[leg_home_norm]
-                        app.logger.info(f"[GAME-ID-POPULATION] Set game_id {leg.game_id} for leg {leg.id} (matched on home team: {leg.home_team})")
+                        game_id, espn_away, espn_home = game_lookup_single_home[leg_home_norm]
+                        leg.game_id = game_id
+                        leg.away_team = espn_away
+                        leg.home_team = espn_home
+                        app.logger.info(f"[GAME-ID-POPULATION] Set game_id {leg.game_id} for leg {leg.id}, matched home team: {leg.home_team}")
                         continue
                     if leg_home_norm in game_lookup_single_away:
-                        leg.game_id = game_lookup_single_away[leg_home_norm]
-                        app.logger.info(f"[GAME-ID-POPULATION] Set game_id {leg.game_id} for leg {leg.id} (matched on away team via home field: {leg.home_team})")
+                        game_id, espn_away, espn_home = game_lookup_single_away[leg_home_norm]
+                        leg.game_id = game_id
+                        leg.away_team = espn_away
+                        leg.home_team = espn_home
+                        app.logger.info(f"[GAME-ID-POPULATION] Set game_id {leg.game_id} for leg {leg.id}, matched as away team: {leg.away_team}")
                         continue
                 
                 if leg_away_norm != 'tbd' and (not leg.home_team or leg.home_team.lower().strip() == 'tbd'):
                     if leg_away_norm in game_lookup_single_away:
-                        leg.game_id = game_lookup_single_away[leg_away_norm]
-                        app.logger.info(f"[GAME-ID-POPULATION] Set game_id {leg.game_id} for leg {leg.id} (matched on away team: {leg.away_team})")
+                        game_id, espn_away, espn_home = game_lookup_single_away[leg_away_norm]
+                        leg.game_id = game_id
+                        leg.away_team = espn_away
+                        leg.home_team = espn_home
+                        app.logger.info(f"[GAME-ID-POPULATION] Set game_id {leg.game_id} for leg {leg.id}, matched away team: {leg.away_team}")
                         continue
                     if leg_away_norm in game_lookup_single_home:
-                        leg.game_id = game_lookup_single_home[leg_away_norm]
-                        app.logger.info(f"[GAME-ID-POPULATION] Set game_id {leg.game_id} for leg {leg.id} (matched on home team via away field: {leg.away_team})")
+                        game_id, espn_away, espn_home = game_lookup_single_home[leg_away_norm]
+                        leg.game_id = game_id
+                        leg.away_team = espn_away
+                        leg.home_team = espn_home
+                        app.logger.info(f"[GAME-ID-POPULATION] Set game_id {leg.game_id} for leg {leg.id}, matched as home team: {leg.home_team}")
                         continue
                 
                 app.logger.warning(f"[GAME-ID-POPULATION] No game match found for leg {leg.id}: {leg.away_team} @ {leg.home_team} on {game_date}")
