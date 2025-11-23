@@ -246,6 +246,7 @@ def get_user_bets_from_db(user_id: int, status_filter: Optional[Any] = None) -> 
 def populate_game_ids_for_bet(bet: Any) -> None:
     """Populate ESPN game IDs for all bet legs in a bet that have game dates and team info."""
     from helpers.espn_api import get_espn_games_with_ids_for_date
+    from models import Team
     
     bet_legs = db.session.query(BetLeg).filter(
         BetLeg.bet_id == bet.id,
@@ -257,6 +258,53 @@ def populate_game_ids_for_bet(bet: Any) -> None:
         return  # No legs need game ID population
     
     app.logger.info(f"[GAME-ID-POPULATION] Populating game IDs for {len(bet_legs)} legs in bet {bet.id}")
+    
+    # Build team lookup from database (for normalization)
+    teams = Team.query.all()
+    team_lookup_for_norm = {}
+    for sport in ['NFL', 'NBA', 'MLB', 'NHL']:
+        sport_teams = [t for t in teams if t.sport == sport]
+        abbr_to_fullname = {}
+        shortname_to_fullname = {}
+        for team in sport_teams:
+            if team.team_name:
+                full_name_norm = team.team_name.lower().strip()
+                if team.team_abbr:
+                    abbr_to_fullname[team.team_abbr.upper().strip()] = full_name_norm
+                if team.team_name_short:
+                    shortname_to_fullname[team.team_name_short.lower().strip()] = full_name_norm
+                # Also add nickname mapping
+                if team.nickname and team.nickname.lower().strip() != team.team_name.lower().strip():
+                    shortname_to_fullname[team.nickname.lower().strip()] = full_name_norm
+        team_lookup_for_norm[sport] = {
+            'abbr_to_fullname': abbr_to_fullname,
+            'shortname_to_fullname': shortname_to_fullname
+        }
+    
+    def normalize_team_name_for_matching(team_str, sport='NFL'):
+        """Normalize team name to ESPN-compatible full name for matching"""
+        if not team_str or sport not in team_lookup_for_norm:
+            return team_str.lower().strip() if team_str else ''
+        
+        lookup = team_lookup_for_norm[sport]
+        team_lower = team_str.lower().strip()
+        team_upper = team_str.upper().strip()
+        
+        # Try abbreviation lookup (e.g., "SEA" -> "seattle seahawks")
+        if team_upper in lookup['abbr_to_fullname']:
+            return lookup['abbr_to_fullname'][team_upper]
+        
+        # Try short name/nickname lookup (e.g., "Seahawks" -> "seattle seahawks")
+        if team_lower in lookup['shortname_to_fullname']:
+            return lookup['shortname_to_fullname'][team_lower]
+        
+        # Try partial match
+        for shortname, fullname in lookup['shortname_to_fullname'].items():
+            if shortname in team_lower:
+                return fullname
+        
+        # Fallback: just return lowercase
+        return team_lower
     
     # Group legs by game date for efficiency
     legs_by_date = {}
@@ -302,35 +350,48 @@ def populate_game_ids_for_bet(bet: Any) -> None:
                 if leg.game_id:  # Already has game_id, skip
                     continue
                 
+                # Normalize leg team names for matching
+                leg_home_norm = normalize_team_name_for_matching(leg.home_team, leg.sport or 'NFL')
+                leg_away_norm = normalize_team_name_for_matching(leg.away_team, leg.sport or 'NFL')
+                
+                app.logger.info(f"[GAME-ID-POPULATION] Leg {leg.id}: Matching '{leg.home_team}' (norm: '{leg_home_norm}') @ '{leg.away_team}' (norm: '{leg_away_norm}')")
+                
                 # Skip if both teams are missing or TBD
-                if not leg.home_team or leg.home_team.lower().strip() == 'tbd' or \
-                   not leg.away_team or leg.away_team.lower().strip() == 'tbd':
-                    # Try to match on single team if one is available
-                    if leg.home_team and leg.home_team.lower().strip() != 'tbd':
-                        home_norm = leg.home_team.lower().strip()
-                        if home_norm in game_lookup_single_home:
-                            leg.game_id = game_lookup_single_home[home_norm]
-                            app.logger.info(f"[GAME-ID-POPULATION] Set game_id {leg.game_id} for leg {leg.id} (matched on home team: {leg.home_team})")
-                            continue
-                    if leg.away_team and leg.away_team.lower().strip() != 'tbd':
-                        away_norm = leg.away_team.lower().strip()
-                        if away_norm in game_lookup_single_away:
-                            leg.game_id = game_lookup_single_away[away_norm]
-                            app.logger.info(f"[GAME-ID-POPULATION] Set game_id {leg.game_id} for leg {leg.id} (matched on away team: {leg.away_team})")
-                            continue
-                    app.logger.warning(f"[GAME-ID-POPULATION] No game match found for leg {leg.id}: {leg.away_team} @ {leg.home_team} on {game_date}")
+                if (not leg.home_team or leg.home_team.lower().strip() == 'tbd') and \
+                   (not leg.away_team or leg.away_team.lower().strip() == 'tbd'):
+                    app.logger.warning(f"[GAME-ID-POPULATION] Skipping leg {leg.id}: both teams are TBD")
                     continue
                 
-                # Both teams available, try exact match
-                away_norm = leg.away_team.lower().strip()
-                home_norm = leg.home_team.lower().strip()
-                key = f"{away_norm}@{home_norm}"
+                # Try to match on both teams if available
+                if leg_home_norm != 'tbd' and leg_away_norm != 'tbd':
+                    key = f"{leg_away_norm}@{leg_home_norm}"
+                    if key in game_lookup_both:
+                        leg.game_id = game_lookup_both[key]
+                        app.logger.info(f"[GAME-ID-POPULATION] Set game_id {leg.game_id} for leg {leg.id} (matched on both teams: {leg.away_team} @ {leg.home_team})")
+                        continue
                 
-                if key in game_lookup_both:
-                    leg.game_id = game_lookup_both[key]
-                    app.logger.info(f"[GAME-ID-POPULATION] Set game_id {game_lookup_both[key]} for leg {leg.id} ({leg.away_team} @ {leg.home_team})")
-                else:
-                    app.logger.warning(f"[GAME-ID-POPULATION] No game match found for leg {leg.id}: {leg.away_team} @ {leg.home_team} on {game_date}")
+                # Try to match on single team if other is TBD
+                if leg_home_norm != 'tbd' and (not leg.away_team or leg.away_team.lower().strip() == 'tbd'):
+                    if leg_home_norm in game_lookup_single_home:
+                        leg.game_id = game_lookup_single_home[leg_home_norm]
+                        app.logger.info(f"[GAME-ID-POPULATION] Set game_id {leg.game_id} for leg {leg.id} (matched on home team: {leg.home_team})")
+                        continue
+                    if leg_home_norm in game_lookup_single_away:
+                        leg.game_id = game_lookup_single_away[leg_home_norm]
+                        app.logger.info(f"[GAME-ID-POPULATION] Set game_id {leg.game_id} for leg {leg.id} (matched on away team via home field: {leg.home_team})")
+                        continue
+                
+                if leg_away_norm != 'tbd' and (not leg.home_team or leg.home_team.lower().strip() == 'tbd'):
+                    if leg_away_norm in game_lookup_single_away:
+                        leg.game_id = game_lookup_single_away[leg_away_norm]
+                        app.logger.info(f"[GAME-ID-POPULATION] Set game_id {leg.game_id} for leg {leg.id} (matched on away team: {leg.away_team})")
+                        continue
+                    if leg_away_norm in game_lookup_single_home:
+                        leg.game_id = game_lookup_single_home[leg_away_norm]
+                        app.logger.info(f"[GAME-ID-POPULATION] Set game_id {leg.game_id} for leg {leg.id} (matched on home team via away field: {leg.away_team})")
+                        continue
+                
+                app.logger.warning(f"[GAME-ID-POPULATION] No game match found for leg {leg.id}: {leg.away_team} @ {leg.home_team} on {game_date}")
         
         except Exception as e:
             app.logger.error(f"[GAME-ID-POPULATION] Error processing date {game_date}: {e}")
