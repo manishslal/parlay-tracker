@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
-  <title>Uncharted Territories - Parlay Tracker</title>
+  <title>Uncharted Territories - Double Down</title>
   
   <!-- PWA Configuration -->
   <link rel="manifest" href="/manifest.json">
@@ -44,7 +44,7 @@
     
     .page-header {
       display: flex;
-      justify-content: space-between;
+      justify-content: flex-start;
       align-items: center;
       position: fixed;
       top: 0;
@@ -53,21 +53,39 @@
       background: var(--primary);
       z-index: 100;
       padding: 0;
-      height: 50px;
+      height: 62.5px;
       box-shadow: 0 2px 8px rgba(0,0,0,0.2);
       border-radius: 0;
+      gap: 1rem;
+    }
+    
+    /* App Logo in Header */
+    .page-header-logo {
+      height: 100%;
+      aspect-ratio: 1;
+      padding: 0.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .page-header-logo img,
+    .page-header-logo svg {
+      height: 90%;
+      width: auto;
+      max-width: 100%;
     }
     
     h1 {
       color: #fff;
       margin: 0;
-      flex: 1;
-      text-align: center;
+      flex: 0;
+      text-align: left;
       font-size: 1.125rem;
       font-weight: 700;
-      line-height: 50px;
+      line-height: 62.5px;
       padding: 0 1rem;
-      margin-left: -3rem;
+      white-space: nowrap;
     }
     
     .menu-button {
@@ -86,7 +104,8 @@
       box-shadow: none;
       transition: transform 0.2s, opacity 0.3s;
       flex-shrink: 0;
-      margin-right: 0.5rem;
+      margin-left: auto;
+      margin-right: 1rem;
       outline: none;
       -webkit-tap-highlight-color: transparent;
     }
@@ -116,7 +135,7 @@
     }
     
     .container {
-      padding-top: calc(2rem + 50px);
+      padding-top: calc(2rem + 62.5px);
       padding-bottom: calc(2rem + 80px);
       max-width: 100%;
       padding-left: 2rem;
@@ -125,7 +144,7 @@
     
     @media (max-width: 768px) {
       .container {
-        padding-top: calc(0.5rem + 50px);
+        padding-top: calc(0.5rem + 62.5px);
         padding-left: 1rem;
         padding-right: 1rem;
       }
@@ -298,7 +317,10 @@
 
   <!-- Page Header with Title and Hamburger Menu -->
   <div class="page-header">
-    <h1>Parlay & Wager Tracker</h1>
+    <div class="page-header-logo">
+      <img src="/media/app-1.svg" alt="Double Down Logo">
+    </div>
+    <h1>WELCOME TO DOUBLE DOWN</h1>
     <button class="menu-button" id="menu-button">
       <span></span>
       <span></span>

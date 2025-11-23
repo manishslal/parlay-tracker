@@ -1,7 +1,7 @@
 {
-  "name": "Parlay Tracker",
-  "short_name": "Parlays",
-  "description": "Track your sports betting parlays and monitor live stats",
+  "name": "Double Down - Sports Betting Tracker",
+  "short_name": "Double Down",
+  "description": "Track your sports betting parlays and monitor live stats with Double Down",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
@@ -12,9 +12,9 @@
   "prefer_related_applications": false,
   "icons": [
     {
-      "src": "/media/icons/icon-72x72.png",
-      "sizes": "72x72",
-      "type": "image/png",
+      "src": "/media/app-1.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
       "purpose": "any"
     },
     {
