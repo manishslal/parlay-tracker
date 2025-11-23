@@ -45,15 +45,22 @@ def auto_move_bets_no_live_legs():
             if not bet_legs:
                 continue
             
-            # Check if any leg has a game currently in progress
+            # Check if any leg has a game currently in progress or unknown status
             has_live_game = False
+            has_unknown_status = False
+            
             for leg in bet_legs:
                 if leg.game_status in ['STATUS_IN_PROGRESS', 'STATUS_HALFTIME']:
                     has_live_game = True
                     break
+                # If any leg has unknown status, we can't move yet
+                if leg.game_status in ['unknown', 'STATUS_SCHEDULED']:
+                    has_unknown_status = True
             
-            # If no legs have live games, move to historical
-            if not has_live_game:
+            # Only move to historical if:
+            # 1. No legs have live games AND
+            # 2. No legs have unknown or scheduled status (i.e., all games are definitively finished)
+            if not has_live_game and not has_unknown_status:
                 logging.info(f"[AUTO-MOVE-NO-LIVE] Bet {bet.id} has no live games - moving to historical")
                 bet.is_active = False  # Move to historical
                 bet.status = 'completed'  # Mark as completed
