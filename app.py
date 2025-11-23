@@ -8,25 +8,14 @@ from apscheduler.triggers.interval import IntervalTrigger
 import requests
 import os
 import time
-from datetime import datetime
-import json
-import atexit
-from flask import Flask, jsonify, send_from_directory, request, session
-from flask_cors import CORS
-from flask_login import LoginManager, login_user, logout_user, login_required, current_user
-from apscheduler.schedulers.background import BackgroundScheduler
-from apscheduler.triggers.interval import IntervalTrigger
-import requests
-import os
-import time
-from datetime import datetime
 import json
 import logging
+import atexit
+from datetime import datetime, timedelta, date
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
-import atexit
 
 # Load environment variables from .env file
 from dotenv import load_dotenv
@@ -257,7 +246,6 @@ def get_user_bets_from_db(user_id: int, status_filter: Optional[Any] = None) -> 
 def populate_game_ids_for_bet(bet: Any) -> None:
     """Populate ESPN game IDs for all bet legs in a bet that have game dates and team info."""
     from helpers.espn_api import get_espn_games_with_ids_for_date
-    from datetime import datetime, timedelta
     
     bet_legs = db.session.query(BetLeg).filter(
         BetLeg.bet_id == bet.id,
@@ -542,7 +530,6 @@ def save_bet_to_db(user_id: int, bet_data: dict, skip_duplicate_check: bool = Fa
     if bet_date_value:
         if isinstance(bet_date_value, str):
             try:
-                from datetime import datetime
                 bet.bet_date = datetime.strptime(bet_date_value, '%Y-%m-%d').date()
             except ValueError:
                 # If parsing fails, use today's date
@@ -563,11 +550,10 @@ def save_bet_to_db(user_id: int, bet_data: dict, skip_duplicate_check: bool = Fa
             game_time = None
             if leg_data.get('game_date'):
                 try:
-                    from datetime import datetime as dt
                     import pytz
                     
                     # Parse UTC time and convert to Eastern Time
-                    game_datetime_utc = dt.fromisoformat(leg_data['game_date'].replace('Z', '+00:00'))
+                    game_datetime_utc = datetime.fromisoformat(leg_data['game_date'].replace('Z', '+00:00'))
                     eastern_tz = pytz.timezone('US/Eastern')
                     game_datetime_eastern = game_datetime_utc.astimezone(eastern_tz)
                     
@@ -663,7 +649,6 @@ def save_bet_to_db(user_id: int, bet_data: dict, skip_duplicate_check: bool = Fa
             app.logger.error(f"[ESPN-UPDATE] Error updating bet legs for bet {bet.id}: {e}")
     
     # Return bet data directly without triggering database queries
-    from datetime import datetime
     return {
         'id': bet_id,
         'db_id': bet_id,
@@ -873,7 +858,6 @@ def auto_move_completed_bets(user_id):
     Also saves final game results before moving to completed status.
     """
     try:
-        from datetime import date
         today = date.today()
         
         # Get all pending and live bets for user
