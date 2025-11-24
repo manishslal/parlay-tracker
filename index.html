@@ -3289,7 +3289,7 @@ async function logoutToken() {
     }
 
     function fmtType(stat, stat_add = null){
-      const m={'passing_yards':'Pass Yds','passing_yards_alt':'Alt Pass Yds','receiving_yards':'Rec Yds','receiving_yards_alt':'Alt Rec Yds','rushing_yards':'Rush Yds','rushing_yards_alt':'Alt Rush Yds','rushing_receiving_yards':'Rush + Rec Yds','passing_rushing_yards':'Pass + Rush Yds','anytime_touchdown':'Anytime TD','anytime_td_scorer':'Anytime TD','passing_touchdowns':'Pass TDs','rushing_touchdowns':'Rush TDs','receptions':'Receptions','receptions_alt':'Alt Receptions','longest_reception':'Longest Rec','moneyline':'Moneyline','spread':'Spread','total_points':'Total Points','total_points_under':'Total Points Under','total_points_over':'Total Points Over','interceptions_thrown':'INTs Thrown'};
+      const m={'passing_yards':'Pass Yds','passing_yards_alt':'Alt Pass Yds','receiving_yards':'Rec Yds','receiving_yards_alt':'Alt Rec Yds','rushing_yards':'Rush Yds','rushing_yards_alt':'Alt Rush Yds','rushing_receiving_yards':'Rush + Rec Yds','passing_rushing_yards':'Pass + Rush Yds','anytime_touchdown':'Anytime TD','anytime_td_scorer':'Anytime TD','passing_touchdowns':'Pass TDs','rushing_touchdowns':'Rush TDs','receptions':'Receptions','receptions_alt':'Alt Receptions','longest_reception':'Longest Rec','moneyline':'Moneyline','spread':'Spread','total_points':'Total Points','total_points_under':'Total Points Under','total_points_over':'Total Points Over','interceptions_thrown':'INTs Thrown','points':'Points','assists':'Assists','rebounds':'Rebounds','made_threes':'3-Point FG','made_three_pointers':'3-Point FG','three_pointers':'3-Point FG','steals':'Steals','blocks':'Blocks','turnovers':'Turnovers','field_goals_made':'FG Made','free_throws_made':'FT Made','combined_points_rebounds_assists':'PRA','points_rebounds_assists':'PRA','points_rebounds':'Points + Rebounds','points_assists':'Points + Assists','rebounds_assists':'Rebounds + Assists'};
       const baseName = m[stat] || (stat ? stat.replace(/_/g,' ').replace(/\b\w/g,l=>l.toUpperCase()) : 'Unknown Stat');
       
       // Only add (U) suffix for under bets, over is default/implied
@@ -3401,6 +3401,34 @@ async function logoutToken() {
         // Moneyline/Spread (keep as-is)
         'moneyline': 'Moneyline',
         'spread': 'Spread',
+        
+        // NBA Basketball Stats - Standardized Display Names
+        'points': 'Points',
+        'assists': 'Assists',
+        'rebounds': 'Rebounds',
+        'made_threes': '3-Point FG',
+        'made_three_pointers': '3-Point FG',
+        '3_pointers_made': '3-Point FG',
+        'three_pointers': '3-Point FG',
+        'three_point_field_goals': '3-Point FG',
+        'player_threes': '3-Point FG',
+        'player_points': 'Points',
+        'player_assists': 'Assists',
+        'player_rebounds': 'Rebounds',
+        'steals': 'Steals',
+        'blocks': 'Blocks',
+        'turnovers': 'Turnovers',
+        'field_goals_made': 'FG Made',
+        'field_goal_attempts': 'FG Attempts',
+        'free_throws_made': 'FT Made',
+        'free_throw_attempts': 'FT Attempts',
+        'combined_points_rebounds_assists': 'PRA',
+        'points_rebounds_assists': 'PRA',
+        'points_rebounds': 'Points + Rebounds',
+        'points_assists': 'Points + Assists',
+        'rebounds_assists': 'Rebounds + Assists',
+        'double_double': 'Double Double',
+        'triple_double': 'Triple Double',
         
         // Additional variants found in database
         'anytime_td_scorer': 'Anytime TD Scorer',
