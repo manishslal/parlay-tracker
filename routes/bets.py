@@ -680,8 +680,9 @@ def save_extracted_bet():
 		# Save the bet
 		from app import save_bet_to_db
 		# Use the current logged-in user's ID
-		# Don't skip duplicate check - we need game ID and player population for ESPN linking
-		result = save_bet_to_db(current_user.id, bet_data, skip_duplicate_check=False)
+		# Skip duplicate check for OCR bets - they need their own BetLeg records created
+		# Even if the wager/odds match another bet, OCR bets are separate instances
+		result = save_bet_to_db(current_user.id, bet_data, skip_duplicate_check=True)
 		
 		return jsonify({
 			'success': True,

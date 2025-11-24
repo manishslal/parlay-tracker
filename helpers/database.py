@@ -180,6 +180,7 @@ def auto_move_completed_bets(user_id):
             has_confirmed_loss = False
             all_games_finished = True
             games_data = matching_processed.get('games', [])
+            processed_any_leg = False  # Track if we actually processed any legs
             for i, leg in enumerate(legs):
                 processed_leg = matching_processed.get('legs', [])[i] if i < len(matching_processed.get('legs', [])) else None
                 if not processed_leg:
@@ -201,6 +202,7 @@ def auto_move_completed_bets(user_id):
                 if not game_data:
                     all_games_finished = False
                     continue
+                processed_any_leg = True  # Mark that we found a matching game for this leg
                 game_status = game_data.get('statusTypeName', '')
                 if game_status != 'STATUS_FINAL':
                     all_games_finished = False
@@ -231,11 +233,12 @@ def auto_move_completed_bets(user_id):
                                 elif is_over and pct <= 100:
                                     has_confirmed_loss = True
                                     logging.info(f"Bet {bet.id} - Leg {i+1} MISS (total points over)")
-            if has_confirmed_loss and all_games_finished:
+            # Only update bet status if we actually processed at least one leg with complete data
+            if processed_any_leg and has_confirmed_loss and all_games_finished:
                 bet.status = 'lost'
                 updated_count += 1
                 logging.info(f"Auto-moved bet {bet.id} to LOST")
-            elif all_games_finished:
+            elif processed_any_leg and all_games_finished:
                 bet.status = 'won'
                 updated_count += 1
                 logging.info(f"Auto-moved bet {bet.id} to WON")

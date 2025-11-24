@@ -315,13 +315,21 @@ def populate_game_ids_for_bet(bet: Any) -> None:
             legs_by_date[date_key] = []
         legs_by_date[date_key].append(leg)
     
-    # Process each date
+    # Process each date and up to 2 days into the future
+    from datetime import timedelta
     for game_date, legs in legs_by_date.items():
         try:
-            # Get games with IDs for this date
-            games = get_espn_games_with_ids_for_date(game_date)
-            if not games:
-                app.logger.warning(f"[GAME-ID-POPULATION] No games found for date {game_date}")
+            # Collect games from the game date + 2 days into future (for multi-day parlays)
+            all_games = []
+            for day_offset in range(3):  # 0, 1, 2 days from game_date
+                search_date = game_date + timedelta(days=day_offset)
+                games = get_espn_games_with_ids_for_date(search_date)
+                if games:
+                    all_games.extend(games)
+                    app.logger.info(f"[GAME-ID-POPULATION] Found {len(games)} games for {search_date}")
+            
+            if not all_games:
+                app.logger.warning(f"[GAME-ID-POPULATION] No games found for date range {game_date} to {game_date + timedelta(days=2)}")
                 continue
             
             # Create lookup maps for faster matching
@@ -330,7 +338,7 @@ def populate_game_ids_for_bet(bet: Any) -> None:
             game_lookup_single_home = {}  # home_norm -> (game_id, espn_away, espn_home)
             game_lookup_single_away = {}  # away_norm -> (game_id, espn_away, espn_home)
             
-            for game_id, espn_away, espn_home in games:
+            for game_id, espn_away, espn_home in all_games:
                 # Normalize team names for matching
                 away_norm = espn_away.lower().strip()
                 home_norm = espn_home.lower().strip()
