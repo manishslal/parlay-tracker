@@ -122,7 +122,8 @@ def auto_move_completed_bets(user_id):
         two_days_ago = today - timedelta(days=2)
         
         from app import get_user_bets_from_db, process_parlay_data
-        bets = get_user_bets_from_db(user_id, status_filter=['pending', 'live'])
+        # Include 'won' and 'lost' so we can revert them if games are no longer finished
+        bets = get_user_bets_from_db(user_id, status_filter=['pending', 'live', 'won', 'lost'])
         bet_data_list = [bet.to_dict_structured(use_live_data=True) for bet in bets]
         processed_data = process_parlay_data(bet_data_list)
         updated_count = 0
@@ -179,6 +180,7 @@ def auto_move_completed_bets(user_id):
                 continue
             has_confirmed_loss = False
             all_games_finished = True
+            has_any_not_finished = False  # Track if any games are not finished
             games_data = matching_processed.get('games', [])
             processed_any_leg = False  # Track if we actually processed any legs
             for i, leg in enumerate(legs):
@@ -201,11 +203,13 @@ def auto_move_completed_bets(user_id):
                         break
                 if not game_data:
                     all_games_finished = False
+                    has_any_not_finished = True
                     continue
                 processed_any_leg = True  # Mark that we found a matching game for this leg
                 game_status = game_data.get('statusTypeName', '')
                 if game_status != 'STATUS_FINAL':
                     all_games_finished = False
+                    has_any_not_finished = True
                 else:
                     is_spread_or_ml = leg.get('stat') in ['spread', 'moneyline']
                     current = processed_leg.get('current', 0)
@@ -234,14 +238,21 @@ def auto_move_completed_bets(user_id):
                                     has_confirmed_loss = True
                                     logging.info(f"Bet {bet.id} - Leg {i+1} MISS (total points over)")
             # Only update bet status if we actually processed at least one leg with complete data
-            if processed_any_leg and has_confirmed_loss and all_games_finished:
-                bet.status = 'lost'
+            # AND the bet hasn't already been set to a final status
+            if processed_any_leg and all_games_finished and bet.status not in ['won', 'lost', 'completed']:
+                if has_confirmed_loss:
+                    bet.status = 'lost'
+                    logging.info(f"Auto-moved bet {bet.id} to LOST")
+                else:
+                    bet.status = 'won'
+                    logging.info(f"Auto-moved bet {bet.id} to WON")
                 updated_count += 1
-                logging.info(f"Auto-moved bet {bet.id} to LOST")
-            elif processed_any_leg and all_games_finished:
-                bet.status = 'won'
+            elif bet.status in ['won', 'lost'] and has_any_not_finished and processed_any_leg:
+                # CRITICAL: Bet was previously marked as won/lost but games are no longer finished
+                # Revert it back to 'live' since games are ongoing
+                logging.warning(f"REVERTING BET {bet.id}: Was marked as '{bet.status}' but games are no longer finished (has_any_not_finished={has_any_not_finished})")
+                bet.status = 'live'
                 updated_count += 1
-                logging.info(f"Auto-moved bet {bet.id} to WON")
         if updated_count > 0:
             db.session.commit()
             logging.info(f"Auto-move completed for {updated_count} bets")
