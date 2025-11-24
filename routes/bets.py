@@ -5,6 +5,7 @@ from models import db, Bet, BetLeg
 from services import get_user_bets_query, process_parlay_data, sort_parlays_by_date
 from stat_standardization import standardize_stat_type, get_all_stats_for_sport
 from helpers.database import has_complete_final_data, save_final_results_to_bet, auto_move_completed_bets, auto_move_pending_to_live
+from sqlalchemy import or_
 import datetime as dt_module  # Import entire datetime module
 import pytz  # For timezone handling
 # from app import app  # Removed to avoid circular import
@@ -561,7 +562,18 @@ def live():
 	auto_move_pending_to_live()  # Move pending bets to live if their games started
 	auto_move_bets_no_live_legs()  # Move bets with no live legs to historical
 	auto_determine_leg_hit_status()  # Ensure hit/miss status is up to date
-	bets = get_user_bets_query(current_user, is_active=True, is_archived=False, status='live').options(db.joinedload(Bet.bet_legs_rel)).all()
+	# Include all active statuses: pending, live, won, lost (for bets still marked active with completed games)
+	bets = Bet.query.filter(
+		or_(
+			Bet.user_id == current_user.id,
+			db.text(f"secondary_bettors @> ARRAY[{current_user.id}]")
+		)
+	).filter_by(
+		is_active=True,
+		is_archived=False
+	).filter(
+		Bet.status.in_(['pending', 'live', 'won', 'lost', 'completed'])
+	).options(db.joinedload(Bet.bet_legs_rel)).all()
 	live_parlays = [bet.to_dict_structured(use_live_data=True) for bet in bets]
 	processed = process_parlay_data(live_parlays)
 	return jsonify(sort_parlays_by_date(processed))
@@ -575,7 +587,18 @@ def todays():
 	auto_move_completed_bets(current_user.id)
 	auto_move_bets_no_live_legs()  # Also move bets with no live legs
 	auto_determine_leg_hit_status()  # Determine hit/miss status for legs
-	bets = get_user_bets_query(current_user, is_active=True, is_archived=False, status='pending').options(db.joinedload(Bet.bet_legs_rel)).all()
+	# Include all active statuses: pending, live, won, lost (for bets still marked active with completed games)
+	bets = Bet.query.filter(
+		or_(
+			Bet.user_id == current_user.id,
+			db.text(f"secondary_bettors @> ARRAY[{current_user.id}]")
+		)
+	).filter_by(
+		is_active=True,
+		is_archived=False
+	).filter(
+		Bet.status.in_(['pending', 'live', 'won', 'lost', 'completed'])
+	).options(db.joinedload(Bet.bet_legs_rel)).all()
 	todays_parlays = [bet.to_dict_structured(use_live_data=True) for bet in bets]
 	processed = process_parlay_data(todays_parlays)
 	return jsonify(sort_parlays_by_date(processed))

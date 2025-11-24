@@ -178,7 +178,164 @@ def search_espn_player(player_name: str, sport: str = "football", league: str = 
         print(f"Error searching ESPN for player {player_name}: {e}")
         return None
 
-def get_espn_game_data(home_team: str, away_team: str, game_date: str, player_name: str = None) -> dict:
+def _get_player_stats_from_boxscore(player_name: str, sport: str, boxscore: dict) -> dict:
+    """
+    Extract player stats from boxscore data
+    
+    Args:
+        player_name: Player name to search for
+        sport: Sport (NBA or NFL)
+        boxscore: Boxscore data from ESPN API
+    
+    Returns:
+        Dictionary with player stats
+    """
+    if not boxscore:
+        return {}
+    
+    players_data = boxscore.get('players', [])
+    
+    for team_data in players_data:
+        statistics = team_data.get('statistics', [])
+        for stat_group in statistics:
+            athletes = stat_group.get('athletes', [])
+            for athlete in athletes:
+                athlete_name = athlete.get('athlete', {}).get('displayName', '')
+                if player_name.lower() in athlete_name.lower() or athlete_name.lower() in player_name.lower():
+                    # Found the player, extract stats
+                    stats_list = athlete.get('stats', [])
+                    labels = stat_group.get('labels', [])
+                    
+                    stats_dict = {}
+                    for i, label in enumerate(labels):
+                        if i < len(stats_list):
+                            try:
+                                # Normalize the label key
+                                normalized_label = label.lower().strip()
+                                stat_value = stats_list[i]
+                                
+                                # Handle stats that come as ranges (e.g., "1-6" for 3PT)
+                                if isinstance(stat_value, str) and '-' in stat_value:
+                                    # Parse "made-attempted" format (e.g., "1-6" -> 1)
+                                    parts = stat_value.split('-')
+                                    if parts[0].isdigit():
+                                        stat_value = float(parts[0])  # Take the made number
+                                
+                                # Convert to float if possible
+                                if isinstance(stat_value, str) and stat_value.replace('.', '', 1).isdigit():
+                                    stat_value = float(stat_value)
+                                elif isinstance(stat_value, (int, float)):
+                                    stat_value = float(stat_value)
+                                
+                                stats_dict[normalized_label] = stat_value
+                            except (ValueError, TypeError, AttributeError):
+                                normalized_label = label.lower().strip()
+                                stats_dict[normalized_label] = stats_list[i]
+                    
+                    return stats_dict
+    
+    return {}
+
+
+def _extract_achieved_value(stats: dict, stat_type: str, bet_type: str, bet_line_type: str) -> float:
+    """
+    Extract achieved value from player stats based on stat and bet type
+    
+    Args:
+        stats: Player stats dictionary
+        stat_type: Type of stat (e.g., 'points', 'assists', 'made_threes')
+        bet_type: Type of bet (e.g., 'total', 'made_threes', 'assists')
+        bet_line_type: Line type ('over', 'under')
+    
+    Returns:
+        Achieved value or None
+    """
+    if not stats:
+        return None
+    
+    stat_type_lower = (stat_type or '').lower().strip()
+    bet_type_lower = (bet_type or '').lower().strip()
+    
+    # NBA stat mappings - ordered by specificity
+    # ESPN uses abbreviations: PTS, AST, REB, 3PT, STL, BLK, TO
+    
+    if 'point' in stat_type_lower or 'point' in bet_type_lower or 'pts' in stat_type_lower:
+        for key in ['pts', 'points']:
+            if key in stats:
+                return stats[key]
+    
+    if 'assist' in stat_type_lower or 'ast' in stat_type_lower:
+        for key in ['ast', 'assists']:
+            if key in stats:
+                return stats[key]
+    
+    if 'rebound' in stat_type_lower or 'reb' in stat_type_lower:
+        for key in ['reb', 'rebounds']:
+            if key in stats:
+                return stats[key]
+    
+    # Three pointers - ESPN uses "3PT" label
+    if 'three' in stat_type_lower or '3p' in stat_type_lower.replace('-', '').replace('_', '') or 'three' in bet_type_lower or '3p' in bet_type_lower.replace('-', '').replace('_', ''):
+        # Try ESPN abbreviations first
+        for key in ['3pt', '3p', '3-pt']:
+            if key in stats:
+                val = stats[key]
+                # If it's a float already, return it
+                if isinstance(val, (int, float)):
+                    return val
+        
+        # Then try full names
+        possible_keys = [
+            '3-pt made',
+            '3-pointers made',
+            'three-pointers made',
+            'three pointers made',
+            'made threes',
+            'made 3-pointers',
+            'made 3-pt',
+        ]
+        for key in possible_keys:
+            if key in stats:
+                return stats[key]
+    
+    # Steals
+    if 'steal' in stat_type_lower or 'stl' in stat_type_lower:
+        for key in ['stl', 'steals']:
+            if key in stats:
+                return stats[key]
+    
+    # Blocks
+    if 'block' in stat_type_lower or 'blk' in stat_type_lower:
+        for key in ['blk', 'blocks']:
+            if key in stats:
+                return stats[key]
+    
+    # Turnovers
+    if 'turnover' in stat_type_lower or 'to' in stat_type_lower:
+        for key in ['to', 'turnovers']:
+            if key in stats:
+                return stats[key]
+    
+    # Try direct key match first
+    if stat_type_lower in stats:
+        return stats[stat_type_lower]
+    
+    if bet_type_lower in stats:
+        return stats[bet_type_lower]
+    
+    # Try removing spaces and special characters
+    normalized_stat = stat_type_lower.replace(' ', '').replace('_', '').replace('-', '')
+    normalized_bet = bet_type_lower.replace(' ', '').replace('_', '').replace('-', '')
+    
+    for key in stats.keys():
+        normalized_key = key.lower().replace(' ', '').replace('_', '').replace('-', '').replace('.', '')
+        if normalized_key == normalized_stat or normalized_key == normalized_bet:
+            return stats[key]
+    
+    return None
+
+
+def get_espn_game_data(home_team: str, away_team: str, game_date: str, player_name: str = None, sport: str = 'NBA', stat_type: str = None, bet_type: str = None, bet_line_type: str = None) -> dict:
     """
     Fetch comprehensive ESPN game data for a specific game
     
@@ -187,6 +344,10 @@ def get_espn_game_data(home_team: str, away_team: str, game_date: str, player_na
         away_team: Away team name  
         game_date: Game date in YYYY-MM-DD format
         player_name: Player name for player props (optional)
+        sport: Sport (NBA, NFL, etc.)
+        stat_type: Stat type for player props (e.g., 'points', 'assists')
+        bet_type: Type of bet (e.g., 'total', 'made_threes')
+        bet_line_type: Line type ('over', 'under')
     
     Returns:
         Dictionary with game data or None if not found
@@ -196,7 +357,13 @@ def get_espn_game_data(home_team: str, away_team: str, game_date: str, player_na
         date_obj = datetime.strptime(game_date, '%Y-%m-%d')
         espn_date = date_obj.strftime('%Y%m%d')
         
-        url = f"https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?dates={espn_date}"
+        # Determine sport and league
+        if sport and 'NBA' in sport.upper():
+            sport_path = "basketball/nba"
+        else:
+            sport_path = "football/nfl"
+        
+        url = f"https://site.api.espn.com/apis/site/v2/sports/{sport_path}/scoreboard?dates={espn_date}"
         headers = {'User-Agent': 'Mozilla/5.0'}
         response = requests.get(url, headers=headers, timeout=10)
         
@@ -235,25 +402,38 @@ def get_espn_game_data(home_team: str, away_team: str, game_date: str, player_na
                 home_score = int(home_competitor.get('score', 0))
                 away_score = int(away_competitor.get('score', 0))
                 
-                # Determine if player is home or away (simplified - would need better player team lookup)
-                is_home_game = None
+                # Get game status
+                game_status_obj = competition.get('status', {})
+                game_status_name = game_status_obj.get('name', 'STATUS_END_PERIOD')
+                
                 achieved_value = None
+                is_home_game = None
                 
                 if player_name:
-                    # For now, return None for player stats - would need player stats API integration
-                    # This is a placeholder for future player stats fetching
-                    achieved_value = None
-                    is_home_game = None
-                else:
-                    # For team bets, determine home/away based on team names
-                    is_home_game = None  # Not applicable for team bets
+                    # Fetch detailed boxscore for player stats
+                    try:
+                        summary_url = f"https://site.api.espn.com/apis/site/v2/sports/{sport_path}/summary?event={game_id}"
+                        summary_response = requests.get(summary_url, headers=headers, timeout=10)
+                        if summary_response.status_code == 200:
+                            summary_data = summary_response.json()
+                            boxscore = summary_data.get('boxscore', {})
+                            
+                            # Get player stats from boxscore
+                            player_stats = _get_player_stats_from_boxscore(player_name, sport, boxscore)
+                            
+                            if player_stats:
+                                # Extract the relevant stat
+                                achieved_value = _extract_achieved_value(player_stats, stat_type, bet_type, bet_line_type)
+                    except Exception as e:
+                        print(f"Error fetching player stats for {player_name}: {e}")
                 
                 return {
                     'game_id': game_id,
                     'home_score': home_score,
                     'away_score': away_score,
                     'is_home_game': is_home_game,
-                    'achieved_value': achieved_value
+                    'achieved_value': achieved_value,
+                    'game_status': game_status_name
                 }
         
         return None

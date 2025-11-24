@@ -87,6 +87,17 @@ def process_historical_bets_api():
                         bet.api_fetched = 'Yes'
                         bet.last_api_update = datetime.now(timezone.utc)
                         processed_count += 1
+                        
+                        # Step 3g: Update bet status based on leg statuses
+                        _update_bet_status_from_legs(bet)
+                        _update_bet_stats_from_legs(bet)
+                        
+                        # Step 3h: Check if any legs are live - if so, revert bet to is_active=True
+                        has_live_legs = any(leg.status == 'live' for leg in bet.bet_legs_rel)
+                        if has_live_legs:
+                            bet.is_active = True
+                            logger.info(f"[HISTORICAL-API] Bet {bet.id} has live legs - reverting to is_active=True, status={bet.status}")
+                        
                         logger.info(f"[HISTORICAL-API] Successfully processed bet {bet.id}")
                     else:
                         logger.warning(f"[HISTORICAL-API] Bet {bet.id} had processing issues")
@@ -153,18 +164,23 @@ def _fetch_espn_data_for_leg(leg, issues):
     """
     Step 3d: Fetch comprehensive ESPN data for the leg.
     
-    Updates: achieved_value, home_score, away_score, is_home_game, game_id
+    Updates: achieved_value, home_score, away_score, is_home_game, game_id, game_status
     """
     try:
         # Import ESPN helper functions
         from helpers import espn_api
+        from datetime import datetime
         
         # Get game data from ESPN
         game_data = espn_api.get_espn_game_data(
             leg.home_team, 
             leg.away_team, 
             leg.game_date.strftime('%Y-%m-%d') if hasattr(leg.game_date, 'strftime') else str(leg.game_date),
-            leg.player_name if leg.player_name else None
+            player_name=leg.player_name if leg.player_name else None,
+            sport=leg.sport,
+            stat_type=leg.stat_type,
+            bet_type=leg.bet_type,
+            bet_line_type=leg.bet_line_type
         )
         
         if not game_data:
@@ -177,8 +193,9 @@ def _fetch_espn_data_for_leg(leg, issues):
         leg.away_score = game_data.get('away_score')
         leg.is_home_game = game_data.get('is_home_game')
         leg.game_id = game_data.get('game_id')
+        leg.game_status = game_data.get('game_status', 'STATUS_END_PERIOD')  # Store the actual game status from ESPN
         
-        logger.debug(f"[HISTORICAL-API] Updated leg {leg.id} with ESPN data: achieved={leg.achieved_value}, scores={leg.home_score}-{leg.away_score}")
+        logger.debug(f"[HISTORICAL-API] Updated leg {leg.id} with ESPN data: achieved={leg.achieved_value}, scores={leg.home_score}-{leg.away_score}, game_status={leg.game_status}")
         return True
         
     except Exception as e:
@@ -189,20 +206,21 @@ def _fetch_espn_data_for_leg(leg, issues):
 
 def _update_leg_status(leg):
     """
-    Step 3e: Set game_status, status, and is_hit based on data.
+    Step 3e: Set status and is_hit based on game_status and achieved data.
+    Only mark as won/lost if game is actually finished (STATUS_FINAL).
     """
-    # Set game status to final
-    leg.game_status = 'STATUS_FINAL'
+    # Check if game is finished
+    is_game_finished = leg.game_status == 'STATUS_FINAL'
     
-    # Determine if the bet was hit
-    if leg.achieved_value is not None and leg.target_value is not None:
+    # Determine if the bet was hit (only if game is finished and we have data)
+    if is_game_finished and leg.achieved_value is not None and leg.target_value is not None:
         stat_type = leg.bet_type.lower()
         
         if stat_type == 'moneyline':
             leg.is_hit = leg.achieved_value > 0
         elif stat_type == 'spread':
             leg.is_hit = (leg.achieved_value + leg.target_value) > 0
-        elif stat_type in ['total_points', 'player_prop']:
+        elif stat_type in ['total_points', 'player_prop', 'total', 'made_threes', 'assists', 'points']:
             if leg.bet_line_type == 'under':
                 leg.is_hit = leg.achieved_value < leg.target_value
             else:  # over
@@ -211,9 +229,57 @@ def _update_leg_status(leg):
             leg.is_hit = False  # Default to not hit
         
         leg.status = 'won' if leg.is_hit else 'lost'
-    else:
-        leg.status = 'pending'  # Can't determine without data
+    elif is_game_finished and leg.achieved_value is None:
+        # Game finished but we don't have player stats
+        leg.status = 'pending'
         leg.is_hit = None
+    else:
+        # Game not finished yet - mark as live
+        leg.status = 'live'
+        leg.is_hit = None
+
+
+def _update_bet_status_from_legs(bet):
+    """
+    Update bet status based on its legs' statuses.
+    Bet status should reflect the most critical leg status.
+    """
+    if not bet.bet_legs_rel:
+        return
+    
+    leg_statuses = [leg.status for leg in bet.bet_legs_rel]
+    
+    # Priority: live > pending > won/lost
+    if 'live' in leg_statuses:
+        bet.status = 'live'
+    elif 'pending' in leg_statuses:
+        bet.status = 'pending'
+    elif all(status in ['won', 'lost'] for status in leg_statuses):
+        # All legs are finished - determine if overall bet is won or lost
+        # Parlay is won only if ALL legs are won
+        all_won = all(status == 'won' for status in leg_statuses)
+        bet.status = 'won' if all_won else 'lost'
+    else:
+        # Mixed - if any are won/lost, mark as that
+        if 'won' in leg_statuses:
+            bet.status = 'won'
+        elif 'lost' in leg_statuses:
+            bet.status = 'lost'
+
+
+def _update_bet_stats_from_legs(bet):
+    """
+    Update bet's leg count statistics from its legs.
+    """
+    legs = bet.bet_legs_rel
+    if not legs:
+        return
+    
+    bet.total_legs = len(legs)
+    bet.legs_won = sum(1 for leg in legs if leg.status == 'won')
+    bet.legs_lost = sum(1 for leg in legs if leg.status == 'lost')
+    bet.legs_pending = sum(1 for leg in legs if leg.status == 'pending')
+    bet.legs_live = sum(1 for leg in legs if leg.status == 'live')
 
 
 def _log_issues_to_page(issues: List[str]):

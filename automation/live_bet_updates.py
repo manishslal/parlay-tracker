@@ -16,6 +16,7 @@ def update_live_bet_legs():
     Finds all live/pending bets and updates their legs with current game data:
     - Fetches live scores from ESPN API
     - Updates current values for active bets
+    - Fetches player stats from ESPN for player prop bets
     - Keeps live bets showing real-time data
     
     This runs every minute during active game times.
@@ -62,7 +63,34 @@ def update_live_bet_legs():
                         if i < len(bet_legs):
                             bet_leg = bet_legs[i]
                             
-                            if 'current' in leg_data:
+                            # For player prop bets, fetch ESPN player stats if available
+                            if bet_leg.player_name and bet_leg.stat_type and not bet_leg.achieved_value:
+                                try:
+                                    from helpers import espn_api
+                                    game_data = espn_api.get_espn_game_data(
+                                        bet_leg.home_team, 
+                                        bet_leg.away_team, 
+                                        bet_leg.game_date.strftime('%Y-%m-%d'),
+                                        player_name=bet_leg.player_name,
+                                        sport=bet_leg.sport,
+                                        stat_type=bet_leg.stat_type,
+                                        bet_type=bet_leg.bet_type,
+                                        bet_line_type=bet_leg.bet_line_type
+                                    )
+                                    if game_data and 'achieved_value' in game_data and game_data['achieved_value'] is not None:
+                                        new_achieved = game_data['achieved_value']
+                                        if bet_leg.achieved_value != new_achieved:
+                                            bet_leg.achieved_value = new_achieved
+                                            updated_legs += 1
+                                            logging.debug(f"[LIVE-UPDATE] Bet {bet.id} Leg {bet_leg.leg_order}: player stat {bet_leg.stat_type} = {new_achieved}")
+                                    
+                                    # Update game status if available
+                                    if 'game_status' in game_data:
+                                        bet_leg.game_status = game_data['game_status']
+                                except Exception as e:
+                                    logging.debug(f"[LIVE-UPDATE] Could not fetch ESPN player stats for leg {bet_leg.id}: {e}")
+                            
+                            elif 'current' in leg_data:
                                 # Update current value if it changed
                                 new_current = leg_data.get('current')
                                 if new_current is not None and bet_leg.achieved_value != new_current:

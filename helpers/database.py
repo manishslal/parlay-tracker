@@ -165,6 +165,9 @@ def auto_move_completed_bets(user_id):
                 # Remove from bets list so it doesn't get processed again
                 bets.remove(bet)
         
+        # Track bets that were reverted in this pass to prevent yo-yo effect
+        reverted_bets = set()
+        
         # Second pass: Process remaining bets with live data (existing logic)
         for bet in bets:
             bet_data = bet.to_dict_structured(use_live_data=True)
@@ -173,23 +176,41 @@ def auto_move_completed_bets(user_id):
                 continue
             matching_processed = None
             for p in processed_data:
-                if p.get('bet_id') == bet_data.get('bet_id') or p.get('name') == bet_data.get('name'):
+                # CRITICAL FIX: Use db_id for matching (more reliable than bet_id which is often None)
+                # Fall back to name matching only if db_id is not available
+                if p.get('db_id') == bet_data.get('db_id'):
+                    matching_processed = p
+                    break
+                elif bet_data.get('db_id') is None and p.get('bet_id') == bet_data.get('bet_id') and bet_data.get('bet_id') is not None:
                     matching_processed = p
                     break
             if not matching_processed:
+                if bet.status in ['won', 'lost']:
+                    logging.warning(f"[DEBUG BET {bet.id}] No matching_processed found but bet status='{bet.status}' - skipping")
                 continue
             has_confirmed_loss = False
             all_games_finished = True
             has_any_not_finished = False  # Track if any games are not finished
             games_data = matching_processed.get('games', [])
             processed_any_leg = False  # Track if we actually processed any legs
+            
+            # Debug logging for bets 163-166
+            if bet.id in [163, 164, 165, 166]:
+                logging.warning(f"[DEBUG BET {bet.id}] Starting processing: status={bet.status}, legs_count={len(legs)}, games_count={len(games_data)}")
+            
             for i, leg in enumerate(legs):
                 processed_leg = matching_processed.get('legs', [])[i] if i < len(matching_processed.get('legs', [])) else None
                 if not processed_leg:
+                    if bet.id in [163, 164, 165, 166]:
+                        logging.warning(f"[DEBUG BET {bet.id}] Leg {i}: No processed_leg found (skipping)")
                     continue
                 game_data = None
                 leg_away = leg.get('away', '')
                 leg_home = leg.get('home', '')
+                
+                if bet.id in [163, 164, 165, 166]:
+                    logging.warning(f"[DEBUG BET {bet.id}] Leg {i}: Looking for game {leg_away} vs {leg_home}")
+                
                 for game in games_data:
                     teams = game.get('teams', {})
                     game_away = teams.get('away', '')
@@ -200,16 +221,23 @@ def auto_move_completed_bets(user_id):
                     home_match = (leg_home == game_home or leg_home == game_home_abbr or game_home == leg_home or game_home_abbr == leg_home)
                     if away_match and home_match:
                         game_data = game
+                        if bet.id in [163, 164, 165, 166]:
+                            logging.warning(f"[DEBUG BET {bet.id}] Leg {i}: Found game match: {game_away} vs {game_home}, status={game.get('statusTypeName')}")
                         break
+                
                 if not game_data:
                     all_games_finished = False
                     has_any_not_finished = True
+                    if bet.id in [163, 164, 165, 166]:
+                        logging.warning(f"[DEBUG BET {bet.id}] Leg {i}: NO GAME FOUND for {leg_away} vs {leg_home}")
                     continue
                 processed_any_leg = True  # Mark that we found a matching game for this leg
                 game_status = game_data.get('statusTypeName', '')
                 if game_status != 'STATUS_FINAL':
                     all_games_finished = False
                     has_any_not_finished = True
+                    if bet.id in [163, 164, 165, 166]:
+                        logging.warning(f"[DEBUG BET {bet.id}] Leg {i}: Game not finished (status={game_status})")
                 else:
                     is_spread_or_ml = leg.get('stat') in ['spread', 'moneyline']
                     current = processed_leg.get('current', 0)
@@ -239,7 +267,7 @@ def auto_move_completed_bets(user_id):
                                     logging.info(f"Bet {bet.id} - Leg {i+1} MISS (total points over)")
             # Only update bet status if we actually processed at least one leg with complete data
             # AND the bet hasn't already been set to a final status
-            if processed_any_leg and all_games_finished and bet.status not in ['won', 'lost', 'completed']:
+            if processed_any_leg and all_games_finished and bet.status not in ['won', 'lost', 'completed'] and bet.id not in reverted_bets:
                 if has_confirmed_loss:
                     bet.status = 'lost'
                     logging.info(f"Auto-moved bet {bet.id} to LOST")
@@ -250,9 +278,14 @@ def auto_move_completed_bets(user_id):
             elif bet.status in ['won', 'lost'] and has_any_not_finished and processed_any_leg:
                 # CRITICAL: Bet was previously marked as won/lost but games are no longer finished
                 # Revert it back to 'live' since games are ongoing
+                if bet.id in [163, 164, 165, 166]:
+                    logging.warning(f"[DEBUG BET {bet.id}] REVERTING: processed_any_leg={processed_any_leg}, has_any_not_finished={has_any_not_finished}, all_games_finished={all_games_finished}")
                 logging.warning(f"REVERTING BET {bet.id}: Was marked as '{bet.status}' but games are no longer finished (has_any_not_finished={has_any_not_finished})")
                 bet.status = 'live'
+                reverted_bets.add(bet.id)  # Track that this bet was reverted
                 updated_count += 1
+            elif bet.id in [163, 164, 165, 166]:
+                logging.warning(f"[DEBUG BET {bet.id}] NO ACTION: status={bet.status}, processed_any_leg={processed_any_leg}, has_any_not_finished={has_any_not_finished}, all_games_finished={all_games_finished}")
         if updated_count > 0:
             db.session.commit()
             logging.info(f"Auto-move completed for {updated_count} bets")

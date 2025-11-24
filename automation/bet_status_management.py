@@ -50,7 +50,7 @@ def auto_move_bets_no_live_legs():
             has_unknown_status = False
             
             for leg in bet_legs:
-                if leg.game_status in ['STATUS_IN_PROGRESS', 'STATUS_HALFTIME']:
+                if leg.game_status in ['STATUS_IN_PROGRESS', 'STATUS_HALFTIME', 'STATUS_END_PERIOD']:
                     has_live_game = True
                     break
                 # If any leg has unknown status, we can't move yet
