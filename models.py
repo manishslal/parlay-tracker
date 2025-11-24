@@ -439,17 +439,28 @@ class Bet(db.Model):
                     # Default: show away team as opponent
                     opponent = bet_leg.away_team
             
+            # Calculate score differential for spread/moneyline bets early
+            # This will be used for both score_diff and current fields
+            score_diff_value = None
+            if bet_leg.home_score is not None and bet_leg.away_score is not None:
+                if bet_leg.bet_type in ['spread', 'moneyline']:
+                    # For team bets, player_name contains the team name
+                    bet_team_name = bet_leg.player_name or player_team or ''
+                    is_home_bet = False
+                    
+                    if bet_leg.home_team and bet_team_name:
+                        # Check if bet team is home team
+                        is_home_bet = (bet_team_name in bet_leg.home_team) or (bet_leg.home_team in bet_team_name)
+                    
+                    score_diff_value = bet_leg.home_score - bet_leg.away_score if is_home_bet else bet_leg.away_score - bet_leg.home_score
+            
             # Calculate current value based on bet type
             current_value = None
             if not use_live_data:
                 # For historical bets, calculate current from scores if available
-                if bet_leg.bet_type in ['spread', 'moneyline'] and bet_leg.home_score is not None and bet_leg.away_score is not None:
-                    # Calculate score differential for the bet team
-                    bet_team_name = bet_leg.player_name or player_team or ''
-                    is_home_bet = False
-                    if bet_leg.home_team and bet_team_name:
-                        is_home_bet = (bet_team_name in bet_leg.home_team) or (bet_leg.home_team in bet_team_name)
-                    current_value = float(bet_leg.home_score - bet_leg.away_score) if is_home_bet else float(bet_leg.away_score - bet_leg.home_score)
+                if bet_leg.bet_type in ['spread', 'moneyline'] and score_diff_value is not None:
+                    # Use the pre-calculated score differential
+                    current_value = float(score_diff_value)
                 elif bet_leg.achieved_value is not None:
                     # For player props and other bets, use achieved_value
                     current_value = float(bet_leg.achieved_value)
@@ -462,7 +473,8 @@ class Bet(db.Model):
                 'stat': bet_leg.bet_type,
                 'target': 0 if i == 0 else float(bet_leg.target_value) if bet_leg.target_value else 0,
                 # For live bets with achieved_value, show it; otherwise None
-                # For historical bets, use calculated current_value
+                # For historical bets with spread/moneyline, use score_diff (will be calculated below)
+                # For historical bets with player props, use achieved_value or None
                 'current': (float(bet_leg.achieved_value) if bet_leg.achieved_value is not None else None) if use_live_data else current_value,
                 'status': bet_leg.status or 'pending',
                 'gameId': bet_leg.game_id or '',
@@ -500,27 +512,14 @@ class Bet(db.Model):
             
             # Calculate score_diff for spread/moneyline bets
             # score_diff = (bet team's score) - (opponent's score)
-            if bet_leg.home_score is not None and bet_leg.away_score is not None:
-                # Determine which team the bet is on
-                if bet_leg.bet_type in ['spread', 'moneyline']:
-                    # For team bets, player_name contains the team name
-                    # Check if the bet team matches home or away
-                    bet_team_name = bet_leg.player_name or player_team or ''
-                    is_home_bet = False
-                    
-                    if bet_leg.home_team and bet_team_name:
-                        # Check if bet team is home team
-                        is_home_bet = (bet_team_name in bet_leg.home_team) or (bet_leg.home_team in bet_team_name)
-                    
-                    if is_home_bet:
-                        leg_dict['score_diff'] = bet_leg.home_score - bet_leg.away_score
-                    else:
-                        leg_dict['score_diff'] = bet_leg.away_score - bet_leg.home_score
-                elif player_team and bet_leg.home_team:
-                    # For player props, check if player's team is home or away
-                    is_home = player_team in bet_leg.home_team or bet_leg.home_team in player_team
-                    score_diff = bet_leg.home_score - bet_leg.away_score if is_home else bet_leg.away_score - bet_leg.home_score
-                    leg_dict['score_diff'] = score_diff
+            if score_diff_value is not None and bet_leg.bet_type in ['spread', 'moneyline']:
+                # Use pre-calculated score_diff from above
+                leg_dict['score_diff'] = int(score_diff_value)
+            elif bet_leg.home_score is not None and bet_leg.away_score is not None and player_team and bet_leg.home_team:
+                # For player props, check if player's team is home or away
+                is_home = player_team in bet_leg.home_team or bet_leg.home_team in player_team
+                score_diff = bet_leg.home_score - bet_leg.away_score if is_home else bet_leg.away_score - bet_leg.home_score
+                leg_dict['score_diff'] = int(score_diff)
             
             legs.append(leg_dict)
         

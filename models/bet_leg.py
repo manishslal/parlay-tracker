@@ -63,6 +63,31 @@ class BetLeg(db.Model):
     created_at = db.Column(db.DateTime, default=db.func.now())
     updated_at = db.Column(db.DateTime, default=db.func.now(), onupdate=db.func.now())
 
+    def _get_current_value(self):
+        """
+        Get the current value for this bet leg.
+        For moneyline/spread bets, use score_diff.
+        For other bets, use achieved_value.
+        """
+        # For moneyline and spread bets, use score_diff (current game difference)
+        if self.bet_type in ['moneyline', 'spread']:
+            if self.home_score is not None and self.away_score is not None:
+                # Calculate which team the bet is on
+                bet_team_name = self.player_name or self.player_team or ''
+                is_home_bet = False
+                
+                if self.home_team and bet_team_name:
+                    is_home_bet = (bet_team_name in self.home_team) or (self.home_team in bet_team_name)
+                
+                score_diff = self.home_score - self.away_score if is_home_bet else self.away_score - self.home_score
+                return float(score_diff)
+        
+        # For all other bets, use achieved_value
+        if self.achieved_value is not None:
+            return float(self.achieved_value)
+        
+        return None
+
     def to_dict(self):
         base_dict = {
             'id': self.id,
@@ -93,7 +118,8 @@ class BetLeg(db.Model):
             'stat_add': self.bet_line_type,  # Frontend expects 'stat_add'
             'target': float(self.target_value) if self.target_value is not None else None,  # Frontend expects 'target'
             'target_value': float(self.target_value) if self.target_value is not None else None,
-            'current': float(self.achieved_value) if self.achieved_value is not None else None,  # Frontend expects 'current'
+            # For moneyline/spread bets, use score_diff; for others, use achieved_value
+            'current': self._get_current_value(),  # Frontend expects 'current'
             'achieved_value': float(self.achieved_value) if self.achieved_value is not None else None,
             'player_season_avg': float(self.player_season_avg) if self.player_season_avg is not None else None,
             'player_last_5_avg': float(self.player_last_5_avg) if self.player_last_5_avg is not None else None,
