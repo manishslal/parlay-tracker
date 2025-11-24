@@ -583,12 +583,19 @@ def live():
 @db_error_handler
 def todays():
 	from automation import auto_move_bets_no_live_legs, auto_determine_leg_hit_status
+	from datetime import date
 	auto_move_pending_to_live()  # Move pending bets to live if their games started
 	auto_move_completed_bets(current_user.id)
 	auto_move_bets_no_live_legs()  # Also move bets with no live legs
 	auto_determine_leg_hit_status()  # Determine hit/miss status for legs
-	# Include all active statuses: pending, live, won, lost (for bets still marked active with completed games)
-	bets = Bet.query.filter(
+	
+	# Get today's date
+	today = date.today()
+	
+	# For /todays endpoint: return ONLY bets that have NO future games (all games today or earlier)
+	# This prevents duplicate display with /live endpoint which returns ALL active bets
+	# Strategy: Get all user's active bets, then filter those where MAX game_date <= today
+	all_bets = Bet.query.filter(
 		or_(
 			Bet.user_id == current_user.id,
 			db.text(f"secondary_bettors @> ARRAY[{current_user.id}]")
@@ -599,7 +606,16 @@ def todays():
 	).filter(
 		Bet.status.in_(['pending', 'live', 'won', 'lost', 'completed'])
 	).options(db.joinedload(Bet.bet_legs_rel)).all()
-	todays_parlays = [bet.to_dict_structured(use_live_data=True) for bet in bets]
+	
+	# Filter bets where all legs have game_date <= today (no future games)
+	todays_bets = []
+	for bet in all_bets:
+		if bet.bet_legs_rel:  # Only if bet has legs
+			max_game_date = max(leg.game_date.date() if hasattr(leg.game_date, 'date') else leg.game_date for leg in bet.bet_legs_rel)
+			if max_game_date <= today:  # Only include if no future games
+				todays_bets.append(bet)
+	
+	todays_parlays = [bet.to_dict_structured(use_live_data=True) for bet in todays_bets]
 	processed = process_parlay_data(todays_parlays)
 	return jsonify(sort_parlays_by_date(processed))
 
