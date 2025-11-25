@@ -112,7 +112,12 @@ def _get_player_stat_from_boxscore(player_name, category_name, stat_label, boxsc
     player_norm = _norm(player_name)
     for team_box in boxscore:
         for cat in team_box.get("statistics", []):
-            if cat.get("name", "").lower() == category_name.lower():
+            # ESPN API returns 'None' as a string for NBA stats, treat as empty category
+            cat_name = cat.get("name", "")
+            cat_name_normalized = "" if cat_name in ["None", None, ""] else cat_name
+            category_name_normalized = "" if category_name in ["None", None, ""] else category_name
+            
+            if cat_name_normalized.lower() == category_name_normalized.lower():
                 try:
                     labels = [l for l in cat.get("labels", [])]
                     if stat_label not in labels:
@@ -124,24 +129,61 @@ def _get_player_stat_from_boxscore(player_name, category_name, stat_label, boxsc
                         if all(tok in ath_name for tok in player_norm.split()):
                             stats = ath.get("stats", [])
                             if stat_idx < len(stats):
+                                val = stats[stat_idx]
+                                # Handle "made-attempted" format (e.g., "2-5") common in NBA stats
+                                if isinstance(val, str) and "-" in val:
+                                    try:
+                                        return int(val.split("-")[0])
+                                    except:
+                                        pass
+                                # Handle "made/attempted" format (e.g., "4/4") common in NFL kicking
+                                if isinstance(val, str) and "/" in val:
+                                    try:
+                                        return int(val.split("/")[0])
+                                    except:
+                                        pass
                                 try:
-                                    return int(float(stats[stat_idx]))
+                                    return int(float(val))
                                 except Exception:
                                     return 0
                     try:
                         # Fuzzy matching fallback - use normalized names for consistency
                         athlete_names_raw = [a.get('athlete', {}).get('displayName', '') for a in cat.get('athletes', [])]
                         athlete_names_norm = [_norm(name) for name in athlete_names_raw]
-                        matches = difflib.get_close_matches(player_norm, athlete_names_norm, n=1, cutoff=0.75)
-                        if matches:
-                            best_norm = matches[0]
-                            # Find the original athlete with this normalized name
-                            match_idx = athlete_names_norm.index(best_norm)
+                        
+                        # First try substring matching (e.g. "Mahomes" in "Patrick Mahomes II")
+                        match_idx = -1
+                        for idx, name in enumerate(athlete_names_norm):
+                            if player_norm in name or name in player_norm:
+                                match_idx = idx
+                                break
+                        
+                        # If no substring match, try fuzzy matching
+                        if match_idx == -1:
+                            matches = difflib.get_close_matches(player_norm, athlete_names_norm, n=1, cutoff=0.75)
+                            if matches:
+                                best_norm = matches[0]
+                                match_idx = athlete_names_norm.index(best_norm)
+                        
+                        if match_idx != -1:
                             ath = cat.get('athletes', [])[match_idx]
                             stats = ath.get('stats', [])
                             if stat_idx < len(stats):
+                                val = stats[stat_idx]
+                                # Handle "made-attempted" format (e.g., "2-5") common in NBA stats
+                                if isinstance(val, str) and "-" in val:
+                                    try:
+                                        return int(val.split("-")[0])
+                                    except:
+                                        pass
+                                # Handle "made/attempted" format (e.g., "4/4") common in NFL kicking
+                                if isinstance(val, str) and "/" in val:
+                                    try:
+                                        return int(val.split("/")[0])
+                                    except:
+                                        pass
                                 try:
-                                    return int(float(stats[stat_idx]))
+                                    return int(float(val))
                                 except Exception:
                                     return 0
                     except Exception:

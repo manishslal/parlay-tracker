@@ -52,6 +52,7 @@ def calculate_bet_value(bet, game_data):
         
         # Simple Box Score Stats
         stat_map = {
+            # NFL
             "passing_yards": ("passing", "YDS"), "alt_passing_yards": ("passing", "YDS"),
             "pass_attempts": ("passing", "ATT"),
             "pass_completions": ("passing", "COMP"), "passing_touchdowns": ("passing", "TD"),
@@ -62,12 +63,38 @@ def calculate_bet_value(bet, game_data):
             "receiving_yards": ("receiving", "YDS"), "alt_receiving_yards": ("receiving", "YDS"),
             "receptions": ("receiving", "REC"), "receptions_alt": ("receiving", "REC"),
             "receiving_touchdowns": ("receiving", "TD"), "longest_reception": ("receiving", "LONG"),
-            "sacks": ("defensive", "SACK"), "tackles_assists": ("defensive", "TOT"),
-            "field_goals_made": ("kicking", "FGM"), "kicking_points": ("kicking", "PTS"),
+            "sacks": ("defensive", "SACKS"), "tackles_assists": ("defensive", "TOT"),
+            "solo_tackles": ("defensive", "SOLO"), "defensive_interceptions": ("interceptions", "INT"),
+            "field_goals_made": ("kicking", "FG"), "kicking_points": ("kicking", "PTS"),
+            "extra_points_made": ("kicking", "XP"),
+            
+            # NBA
+            # NBA - Category name is often None/Empty in ESPN API
+            "points": ("", "PTS"), "alt_points": ("", "PTS"),
+            "rebounds": ("", "REB"), "alt_rebounds": ("", "REB"),
+            "assists": ("", "AST"), "alt_assists": ("", "AST"),
+            "steals": ("", "STL"),
+            "blocks": ("", "BLK"),
+            "turnovers": ("", "TO"),
+            "three_pointers_made": ("", "3PT"), "threes_made": ("", "3PT"), "made_threes": ("", "3PT"),
+            "3-pointers_made": ("", "3PT"), "3_pointers_made": ("", "3PT"),
         }
+        
         if stat in stat_map:
             cat, label = stat_map[stat]
-            return _get_player_stat_from_boxscore(player_name, cat, label, boxscore)
+            # Special handling for NBA 3PT which might come as "1-5" (made-attempted)
+            val = _get_player_stat_from_boxscore(player_name, cat, label, boxscore)
+            
+            # DEBUG: Log the extraction
+            logger.info(f"[STAT-EXTRACT] Player='{player_name}', Stat='{stat}', Cat='{cat}', Label='{label}', Val={val}")
+            
+            # If it's a 3PT stat and we got a string like "1-5", parse it
+            if label == "3PT" and isinstance(val, str) and "-" in val:
+                try:
+                    return int(val.split("-")[0])
+                except:
+                    return 0
+            return val
 
         # Complex Player Stats
         if stat == "rushing_receiving_yards":
@@ -79,6 +106,47 @@ def calculate_bet_value(bet, game_data):
             pass_yds = _get_player_stat_from_boxscore(player_name, "passing", "YDS", boxscore)
             rush_yds = _get_player_stat_from_boxscore(player_name, "rushing", "YDS", boxscore)
             return pass_yds + rush_yds
+            
+        # NBA Complex Stats
+        if stat in ["points_rebounds_assists", "pra"]:
+            pts = _get_player_stat_from_boxscore(player_name, "", "PTS", boxscore)
+            reb = _get_player_stat_from_boxscore(player_name, "", "REB", boxscore)
+            ast = _get_player_stat_from_boxscore(player_name, "", "AST", boxscore)
+            return pts + reb + ast
+            
+        if stat in ["points_rebounds", "pr"]:
+            pts = _get_player_stat_from_boxscore(player_name, "", "PTS", boxscore)
+            reb = _get_player_stat_from_boxscore(player_name, "", "REB", boxscore)
+            return pts + reb
+            
+        if stat in ["points_assists", "pa"]:
+            pts = _get_player_stat_from_boxscore(player_name, "", "PTS", boxscore)
+            ast = _get_player_stat_from_boxscore(player_name, "", "AST", boxscore)
+            return pts + ast
+            
+        if stat in ["rebounds_assists", "ra"]:
+            reb = _get_player_stat_from_boxscore(player_name, "", "REB", boxscore)
+            ast = _get_player_stat_from_boxscore(player_name, "", "AST", boxscore)
+            return reb + ast
+            
+        # Double-Double / Triple-Double
+        if stat == "double_double":
+            cats = ["PTS", "REB", "AST", "STL", "BLK"]
+            count = 0
+            for label in cats:
+                val = _get_player_stat_from_boxscore(player_name, "", label, boxscore)
+                if val >= 10:
+                    count += 1
+            return 1 if count >= 2 else 0
+            
+        if stat == "triple_double":
+            cats = ["PTS", "REB", "AST", "STL", "BLK"]
+            count = 0
+            for label in cats:
+                val = _get_player_stat_from_boxscore(player_name, "", label, boxscore)
+                if val >= 10:
+                    count += 1
+            return 1 if count >= 3 else 0
         
         if stat in ["anytime_touchdown", "anytime_td_scorer", "player_to_score_2_touchdowns", "player_to_score_3_touchdowns"]:
             return _get_touchdowns(player_name, boxscore, scoring_plays)
@@ -112,6 +180,27 @@ def calculate_bet_value(bet, game_data):
         if scoring_plays:
             return scoring_plays[-1].get("team", {}).get("displayName")
         return "N/A"
+
+    if stat == "moneyline" or stat == "spread" or stat == "point_spread":
+        if "team" not in bet:
+            return 0
+        bet_team = bet["team"]
+        home_team = game_data["teams"]["home"]
+        away_team = game_data["teams"]["away"]
+        
+        bet_team_norm = (bet_team or "").lower().strip()
+        home_team_norm = (home_team or "").lower().strip()
+        away_team_norm = (away_team or "").lower().strip()
+        
+        score_diff = 0
+        if (bet_team_norm == home_team_norm or bet_team_norm in home_team_norm or home_team_norm in bet_team_norm):
+            score_diff = home_score - away_score
+        elif (bet_team_norm == away_team_norm or bet_team_norm in away_team_norm or away_team_norm in bet_team_norm):
+            score_diff = away_score - home_score
+            
+        return score_diff
+        
+    return 0
 
 def fetch_game_details_from_espn(game_date, away_team, home_team, sport='NFL'):
     """Fetch detailed game data for a single game.
@@ -349,7 +438,7 @@ def process_parlay_data(parlays):
                     
                     leg["current"] = calculate_bet_value(leg, game_data)
                     # Add score differential for spread/moneyline bets
-                    if leg["stat"] in ["spread", "moneyline"]:
+                    if leg["stat"] in ["spread", "moneyline", "point_spread"]:
                         home_team = game_data.get("teams", {}).get("home", "")
                         away_team = game_data.get("teams", {}).get("away", "")
                         
@@ -364,12 +453,18 @@ def process_parlay_data(parlays):
                         # Also check if one team name contains the other (e.g., "LA Chargers" vs "Los Angeles Chargers")
                         if bet_team_norm == home_team_norm or bet_team_norm in home_team_norm or home_team_norm in bet_team_norm:
                             leg["score_diff"] = home_score - away_score
+                            leg["bet_team_score"] = home_score
+                            leg["opponent_score"] = away_score
                             logger.info(f"Matched home team: '{bet_team}' == '{home_team}', score_diff = {home_score - away_score}")
                         elif bet_team_norm == away_team_norm or bet_team_norm in away_team_norm or away_team_norm in bet_team_norm:
                             leg["score_diff"] = away_score - home_score
+                            leg["bet_team_score"] = away_score
+                            leg["opponent_score"] = home_score
                             logger.info(f"Matched away team: '{bet_team}' == '{away_team}', score_diff = {away_score - home_score}")
                         else:
                             leg["score_diff"] = 0
+                            leg["bet_team_score"] = 0
+                            leg["opponent_score"] = 0
                             logger.warning(f"NO MATCH for team '{bet_team}' - ESPN has home:'{home_team}' away:'{away_team}'")
                             
                 except Exception as e:

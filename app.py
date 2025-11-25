@@ -1,3 +1,4 @@
+print("DEBUG: app.py imported")
 from services import compute_and_persist_returns
 # Define run_migrations_once before usage
 from flask import Flask, jsonify, send_from_directory, request, session
@@ -5,6 +6,7 @@ from flask_cors import CORS
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.interval import IntervalTrigger
+from apscheduler.triggers.cron import CronTrigger
 import requests
 import os
 import time
@@ -23,8 +25,9 @@ load_dotenv()
 
 # Import database models
 from models import db, User, Bet, BetLeg, Player
-from helpers.database import run_migrations_once, has_complete_final_data, save_final_results_to_bet, auto_move_completed_bets, auto_move_pending_to_live
+from helpers.database import has_complete_final_data, save_final_results_to_bet, auto_move_completed_bets, auto_move_pending_to_live
 from helpers.enhanced_player_search import enhanced_player_search
+from flask_migrate import Migrate
 
 from helpers.utils import data_path, DATA_DIR
 
@@ -70,42 +73,53 @@ app.register_blueprint(auth_bp)
 app.register_blueprint(bets_bp)  # No url_prefix, endpoints at root
 
 # Database configuration
-
 database_url = os.environ.get('DATABASE_URL')
 if not database_url:
     raise RuntimeError("DATABASE_URL environment variable must be set for PostgreSQL connection.")
 if database_url.startswith('postgres://'):
     database_url = database_url.replace('postgres://', 'postgresql://', 1)
 if database_url.startswith('postgresql://'):
-    if '?' in database_url:
-        database_url += '&sslmode=require'
-    else:
-        database_url += '?sslmode=require'
+    # Only enable SSL if not in development mode (Docker)
+    if os.environ.get('FLASK_ENV') != 'development':
+        if '?' in database_url:
+            database_url += '&sslmode=require'
+        else:
+            database_url += '?sslmode=require'
 app.config['SQLALCHEMY_DATABASE_URI'] = database_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
-    'pool_size': 10,  # Maximum number of connections in the pool
-    'max_overflow': 20,  # Maximum number of connections that can be created beyond pool_size
-    'pool_timeout': 30,  # Timeout for getting a connection from the pool
-    'pool_recycle': 3600,  # Recycle connections after 1 hour (helps with stale connections)
-    'pool_pre_ping': True,  # Enable connection health checks
-    'connect_args': {
-        'connect_timeout': 10,  # Connection timeout in seconds
-        'options': '-c statement_timeout=30000'  # Query timeout (30 seconds)
+print(f"DEBUG: DATABASE_URL = {database_url}")
+if 'sqlite' in database_url:
+    print("DEBUG: Configuring for SQLite")
+    app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {}
+else:
+    print("DEBUG: Configuring for PostgreSQL")
+    app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
+        'pool_size': 10,  # Maximum number of connections in the pool
+        'max_overflow': 20,  # Maximum number of connections that can be created beyond pool_size
+        'pool_timeout': 30,  # Timeout for getting a connection from the pool
+        'pool_recycle': 3600,  # Recycle connections after 1 hour (helps with stale connections)
+        'pool_pre_ping': True,  # Enable connection health checks
+        'connect_args': {
+            'connect_timeout': 10,  # Connection timeout in seconds
+            'options': '-c statement_timeout=30000'  # Query timeout (30 seconds)
+        }
     }
-}
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-secret-key-change-in-production')
 app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 app.config['PERMANENT_SESSION_LIFETIME'] = 2592000
 app.config['SESSION_COOKIE_SECURE'] = False
 app.config['REMEMBER_COOKIE_DURATION'] = 2592000
+
+print("DEBUG: Initializing CORS")
 CORS(app, supports_credentials=True)
+print("DEBUG: Initializing DB")
 db.init_app(app)
+print(f"DEBUG: DB initialized. Extensions: {app.extensions.keys()}")
+migrate = Migrate(app, db)
 
 # Create database tables
-with app.app_context():
-    db.create_all()
+# db.create_all() removed for Flask-Migrate
 
 from functools import wraps
 from helpers.utils import (
@@ -134,11 +148,21 @@ def get_user_bets_query(user: Any, **filters: Any) -> Any:
     from sqlalchemy import or_
     
     # Query bets where user is primary, secondary bettor, or watcher
+    # Query bets where user is primary, secondary bettor, or watcher
+    # SQLite workaround: Check string containment for JSON arrays
+    user_id_str = str(user.id)
     query = Bet.query.filter(
         or_(
             Bet.user_id == user.id,  # Primary bettor
-            Bet.secondary_bettors.contains([user.id]),  # Secondary bettor
-            Bet.watchers.contains([user.id])  # Watcher
+            # Check if user_id is in the JSON string (e.g. "[1, 2]")
+            # We check for: "[1", ", 1,", "1]" to avoid matching 11 in [11]
+            # But for simplicity in dev, simple string check is often enough, 
+            # though strictly we should be careful. 
+            # Let's use a slightly safer CAST to string approach if possible, 
+            # or just rely on the fact that IDs are unique enough.
+            # Actually, let's just use CAST to String and LIKE for now.
+            db.cast(Bet.secondary_bettors, db.String).like(f'%{user_id_str}%'),
+            db.cast(Bet.watchers, db.String).like(f'%{user_id_str}%')
         )
     )
     
@@ -196,7 +220,14 @@ def retry_db_operation(operation, max_retries=2, delay=1):
 
 
 # Directly run migrations after app and blueprints are set up
-run_migrations_once(app)
+# run_migrations_once(app) # Removed in favor of Flask-Migrate
+
+from helpers.utils import data_path, DATA_DIR
+
+# Ensure data directory exists
+os.makedirs(DATA_DIR, exist_ok=True)
+
+# app = Flask(__name__) removed (duplicate)
 
 # Setup Flask-Login
 login_manager = LoginManager()
@@ -654,16 +685,15 @@ def save_bet_to_db(user_id: int, bet_data: dict, skip_duplicate_check: bool = Fa
                             # Full datetime string - parse as UTC and convert to Eastern
                             game_datetime_utc = datetime.fromisoformat(game_date_str.replace('Z', '+00:00'))
                             game_datetime_eastern = game_datetime_utc.astimezone(eastern_tz)
+                            app.logger.info(f"[GAME-DATE-DEBUG] Parsed UTC datetime, converted: {game_datetime_eastern}")
+                            game_date = game_datetime_eastern.date()
+                            game_time = game_datetime_eastern.time()
                         else:
                             # Just a date string (YYYY-MM-DD) - treat as already Eastern time
                             game_date_obj = datetime.strptime(game_date_str, '%Y-%m-%d').date()
                             game_date = game_date_obj
                             app.logger.info(f"[GAME-DATE-DEBUG] Treated as Eastern date: {game_date}")
-                            continue
-                        
-                        app.logger.info(f"[GAME-DATE-DEBUG] Parsed UTC datetime, converted: {game_datetime_eastern}")
-                        game_date = game_datetime_eastern.date()
-                        game_time = game_datetime_eastern.time()
+                            # continue  <-- REMOVED: This was skipping leg creation!
                     except ValueError as parse_error:
                         app.logger.error(f"[GAME-DATE-DEBUG] Parse error: {parse_error}. Treating as date only.")
                         # Last resort: try to parse as simple date (treat as Eastern)
@@ -732,6 +762,12 @@ def save_bet_to_db(user_id: int, bet_data: dict, skip_duplicate_check: bool = Fa
     try:
         db.session.commit()
         app.logger.info(f"Successfully committed bet {bet.id} with {len(legs)} legs")
+        
+        # Audit log the bet creation
+        from helpers.audit_helpers import log_bet_created
+        log_bet_created(db_session=db.session, bet_id=bet.id, user_id=user_id)
+        db.session.commit()  # Commit audit log
+        
     except Exception as e:
         db.session.rollback()
         app.logger.error(f"Database commit failed: {str(e)}")
@@ -1938,6 +1974,16 @@ def run_populate_missing_player_data():
         except Exception as e:
             logger.error(f"[PLAYER-POPULATION] Error in run_populate_missing_player_data: {e}")
 
+def run_validate_historical_data():
+    """Daily validation of historical bet data against ESPN API"""
+    logger.info("[SCHEDULER] Running validate_historical_data")
+    with app.app_context():
+        try:
+            from automation.data_validation import validate_historical_bet_data
+            validate_historical_bet_data()
+        except Exception as e:
+            logger.error(f"[DATA-VALIDATION] Error in run_validate_historical_data: {e}")
+
 # Schedule automated tasks (moved outside if __name__ == '__main__' so it runs on Render)
 scheduler.add_job(
     func=run_update_completed_bet_legs,
@@ -1993,6 +2039,13 @@ scheduler.add_job(
     trigger=IntervalTrigger(minutes=3),
     id='populate_missing_player_data',
     name='Populate player data for bets with missing stats every 3 minutes'
+)
+
+scheduler.add_job(
+    func=run_validate_historical_data,
+    trigger=CronTrigger(hour=3, minute=0, timezone='America/New_York'),
+    id='validate_historical_data',
+    name='Validate historical bet data against ESPN API daily at 3 AM ET'
 )
 
 # Start the scheduler

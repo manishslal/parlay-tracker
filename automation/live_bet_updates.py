@@ -53,9 +53,10 @@ def update_live_bet_legs():
                     processed_bet = processed_bets[0]
                     
                     # Get all bet legs ordered by leg_order
+                    # Use with_for_update() to lock rows and prevent race conditions with other automations
                     bet_legs = db.session.query(BetLeg).filter(
                         BetLeg.bet_id == bet.id
-                    ).order_by(BetLeg.leg_order).all()
+                    ).with_for_update().order_by(BetLeg.leg_order).all()
                     
                     # Update bet legs in database with live data
                     processed_legs = processed_bet.get('legs', [])
@@ -94,9 +95,43 @@ def update_live_bet_legs():
                                 # Update current value if it changed
                                 new_current = leg_data.get('current')
                                 if new_current is not None and bet_leg.achieved_value != new_current:
-                                    bet_leg.achieved_value = float(new_current)
-                                    updated_legs += 1
-                                    logging.debug(f"[LIVE-UPDATE] Bet {bet.id} Leg {bet_leg.leg_order}: achieved_value = {new_current}")
+                                    # Validate the new value before updating
+                                    from automation.validators import validate_achieved_value, log_validation_failure
+                                    is_valid, reason = validate_achieved_value(
+                                        bet_leg.stat_type, 
+                                        new_current, 
+                                        bet_leg.player_name
+                                    )
+                                    
+                                    if is_valid:
+                                        old_val = bet_leg.achieved_value
+                                        bet_leg.achieved_value = float(new_current)
+                                        
+                                        # Audit log the value update
+                                        from helpers.audit_helpers import log_leg_value_update
+                                        log_leg_value_update(
+                                            db_session=db.session,
+                                            bet_id=bet.id,
+                                            leg_id=bet_leg.id,
+                                            player_name=bet_leg.player_name,
+                                            stat_type=bet_leg.stat_type,
+                                            old_value=old_val,
+                                            new_value=new_current,
+                                            automation_name='live_bet_updates'
+                                        )
+                                        
+                                        updated_legs += 1
+                                        logging.debug(f"[LIVE-UPDATE] Bet {bet.id} Leg {bet_leg.leg_order}: achieved_value = {new_current}")
+                                    else:
+                                        log_validation_failure(
+                                            "[LIVE-UPDATE]",
+                                            reason,
+                                            bet_id=bet.id,
+                                            leg_order=bet_leg.leg_order,
+                                            player=bet_leg.player_name,
+                                            stat=bet_leg.stat_type,
+                                            proposed_value=new_current
+                                        )
                                 
                                 # Update game status if available
                                 if 'gameStatus' in leg_data and leg_data['gameStatus']:

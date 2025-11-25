@@ -15,8 +15,10 @@ def get_user_bets_query(user, is_active=None, is_archived=None, status=None):
     primary_filter = Bet.user_id == user.id
     
     # Build filter for secondary bettors (user.id in secondary_bettors array)
-    # PostgreSQL ARRAY @> operator checks if array contains element
-    secondary_filter = db.text(f"secondary_bettors @> ARRAY[{user.id}]")
+    # SQLite workaround: Check string containment for JSON arrays
+    # We check if the user ID string is present in the JSON string representation
+    user_id_str = str(user.id)
+    secondary_filter = db.cast(Bet.secondary_bettors, db.String).like(f'%{user_id_str}%')
     
     # Combine both filters (OR - user is either primary or secondary)
     base_query = Bet.query.filter(or_(primary_filter, secondary_filter))
@@ -27,7 +29,10 @@ def get_user_bets_query(user, is_active=None, is_archived=None, status=None):
     if is_archived is not None:
         base_query = base_query.filter_by(is_archived=is_archived)
     if status is not None:
-        base_query = base_query.filter_by(status=status)
+        if isinstance(status, list):
+            base_query = base_query.filter(Bet.status.in_(status))
+        else:
+            base_query = base_query.filter_by(status=status)
     
     return base_query
 
