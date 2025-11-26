@@ -182,22 +182,27 @@ class BetLeg(db.Model):
         # Try to match team by name OR abbreviation
         team_name = self.player_team or self.home_team or self.away_team
         if team_name:
+            # Base query
+            query = Team.query
+            if self.sport:
+                query = query.filter_by(sport=self.sport)
+
             # Try exact match first
-            team = Team.query.filter(Team.team_name.ilike(team_name)).first()
+            team = query.filter(Team.team_name.ilike(team_name)).first()
             
             # If no exact match, try abbreviation
             if not team:
-                team = Team.query.filter(Team.team_abbr.ilike(team_name)).first()
+                team = query.filter(Team.team_abbr.ilike(team_name)).first()
             
             # If still no match, try partial match (e.g. "Lakers" in "Los Angeles Lakers")
             if not team:
-                team = Team.query.filter(Team.team_name.ilike(f'%{team_name}%')).first()
+                team = query.filter(Team.team_name.ilike(f'%{team_name}%')).first()
             
             # If still no match, try checking if the first word is an abbreviation (e.g. "ATL Falcons" -> "ATL")
             if not team:
                 first_word = team_name.split(' ')[0]
                 if len(first_word) <= 3: # Abbreviations are usually short
-                    team = Team.query.filter(Team.team_abbr.ilike(first_word)).first()
+                    team = query.filter(Team.team_abbr.ilike(first_word)).first()
                 
             if team:
                 if team.color:
