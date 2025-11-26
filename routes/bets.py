@@ -563,15 +563,12 @@ def live():
 	auto_move_bets_no_live_legs()  # Move bets with no live legs to historical
 	auto_determine_leg_hit_status()  # Ensure hit/miss status is up to date
 	# /live shows only bets with status='live'
-	bets = Bet.query.filter(
-		or_(
-			Bet.user_id == current_user.id,
-			db.text(f"secondary_bettors @> ARRAY[{current_user.id}]")
-		)
-	).filter_by(
+	# /live shows only bets with status='live'
+	bets = get_user_bets_query(
+		current_user,
+		status='live',
 		is_active=True,
-		is_archived=False,
-		status='live'
+		is_archived=False
 	).options(db.joinedload(Bet.bet_legs_rel)).all()
 	live_parlays = [bet.to_dict_structured(use_live_data=True) for bet in bets]
 	processed = process_parlay_data(live_parlays)
@@ -588,15 +585,12 @@ def todays():
 	auto_determine_leg_hit_status()  # Determine hit/miss status for legs
 	
 	# /todays shows only bets with status='pending'
-	bets = Bet.query.filter(
-		or_(
-			Bet.user_id == current_user.id,
-			db.text(f"secondary_bettors @> ARRAY[{current_user.id}]")
-		)
-	).filter_by(
+	# /todays shows only bets with status='pending'
+	bets = get_user_bets_query(
+		current_user,
+		status='pending',
 		is_active=True,
-		is_archived=False,
-		status='pending'
+		is_archived=False
 	).options(db.joinedload(Bet.bet_legs_rel)).all()
 	
 	todays_parlays = [bet.to_dict_structured(use_live_data=True) for bet in bets]
@@ -613,13 +607,10 @@ def historical():
 		app.logger.info(f"[HISTORICAL] Starting historical bets request for user {current_user.id}")
 		auto_determine_leg_hit_status()  # Ensure hit/miss status is determined
 		# /historical shows bets with status in ['won', 'lost', 'completed']
-		bets = Bet.query.filter(
-			or_(
-				Bet.user_id == current_user.id,
-				db.text(f"secondary_bettors @> ARRAY[{current_user.id}]")
-			)
-		).filter(
-			Bet.status.in_(['won', 'lost', 'completed'])
+		# /historical shows bets with status in ['won', 'lost', 'completed']
+		bets = get_user_bets_query(
+			current_user,
+			status=['won', 'lost', 'completed']
 		).options(db.joinedload(Bet.bet_legs_rel)).all()
 		app.logger.info(f"[HISTORICAL] Found {len(bets)} historical bets")
 		

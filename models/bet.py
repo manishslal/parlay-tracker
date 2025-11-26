@@ -36,8 +36,8 @@ class Bet(db.Model):
     legs_live = db.Column(db.Integer)
     legs_void = db.Column(db.Integer)
     last_api_update = db.Column(db.DateTime)
-    secondary_bettors = db.Column(db.ARRAY(db.Integer))
-    watchers = db.Column(db.ARRAY(db.Integer))
+    secondary_bettors = db.Column(db.JSON, default=list)
+    watchers = db.Column(db.JSON, default=list)
     bet_legs_rel = db.relationship('BetLeg', backref='bet', lazy=True)
 
     __mapper_args__ = {

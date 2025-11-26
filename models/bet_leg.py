@@ -146,11 +146,66 @@ class BetLeg(db.Model):
             'updated_at': self.updated_at.isoformat() if self.updated_at else None,
         }
         
+        # Add jersey and team branding info
+        self._add_branding_info(base_dict)
+        
         # Add display values for moneyline and spread bets
         display_values = self.get_display_values()
         base_dict.update(display_values)
         
         return base_dict
+
+    def _add_branding_info(self, data):
+        """Add jersey number, team colors, and logo to the dictionary."""
+        from models.player import Player
+        from models.team import Team
+        
+        # Default values
+        data['player_jersey_number'] = None
+        data['team_color'] = '#000000' # Default black
+        data['team_alternate_color'] = '#ffffff' # Default white
+        data['team_logo'] = '/media/unknown-logo.svg'
+        
+        # 1. Fetch Player Jersey Number
+        if self.player_id:
+            player = Player.query.get(self.player_id)
+            if player and player.jersey_number:
+                data['player_jersey_number'] = player.jersey_number
+        
+        # If not found by ID (e.g. new player), try matching by name and sport
+        if data['player_jersey_number'] is None and self.player_name and self.sport:
+            player = Player.query.filter_by(player_name=self.player_name, sport=self.sport).first()
+            if player and player.jersey_number:
+                data['player_jersey_number'] = player.jersey_number
+
+        # 2. Fetch Team Colors and Logo
+        # Try to match team by name
+        team_name = self.player_team or self.home_team or self.away_team
+        if team_name:
+            # Try exact match first
+            team = Team.query.filter(Team.team_name.ilike(team_name)).first()
+            
+            # If no exact match, try partial match (e.g. "Lakers" in "Los Angeles Lakers")
+            if not team:
+                team = Team.query.filter(Team.team_name.ilike(f'%{team_name}%')).first()
+                
+            if team:
+                if team.color:
+                    data['team_color'] = team.color
+                if team.alternate_color:
+                    data['team_alternate_color'] = team.alternate_color
+                if team.logo_url:
+                    data['team_logo'] = team.logo_url
+        
+        # Logic to determine WHICH color to use for the jersey (Home vs Away)
+        # If player's team is the home team, use primary color. Else use alternate/white.
+        is_home = False
+        if self.player_team and self.home_team:
+            if self.player_team.lower() in self.home_team.lower() or self.home_team.lower() in self.player_team.lower():
+                is_home = True
+        
+        data['jersey_primary_color'] = data['team_color'] if is_home else (data['team_alternate_color'] or '#ffffff')
+        data['jersey_secondary_color'] = '#ffffff' if is_home else data['team_color']
 
     def get_display_values(self):
         """Calculate display values for Current and Progress fields for moneyline and spread bets."""
