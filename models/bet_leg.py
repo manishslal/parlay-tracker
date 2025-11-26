@@ -179,21 +179,35 @@ class BetLeg(db.Model):
                 data['player_jersey_number'] = player.jersey_number
 
         # 2. Fetch Team Colors and Logo
-        # Try to match team by name
+        # Try to match team by name OR abbreviation
         team_name = self.player_team or self.home_team or self.away_team
         if team_name:
             # Try exact match first
             team = Team.query.filter(Team.team_name.ilike(team_name)).first()
             
-            # If no exact match, try partial match (e.g. "Lakers" in "Los Angeles Lakers")
+            # If no exact match, try abbreviation
+            if not team:
+                team = Team.query.filter(Team.team_abbr.ilike(team_name)).first()
+            
+            # If still no match, try partial match (e.g. "Lakers" in "Los Angeles Lakers")
             if not team:
                 team = Team.query.filter(Team.team_name.ilike(f'%{team_name}%')).first()
                 
             if team:
                 if team.color:
-                    data['team_color'] = team.color
+                    # Ensure hex prefix
+                    color = team.color.strip()
+                    if not color.startswith('#'):
+                        color = f"#{color}"
+                    data['team_color'] = color
+                
                 if team.alternate_color:
-                    data['team_alternate_color'] = team.alternate_color
+                    # Ensure hex prefix
+                    alt_color = team.alternate_color.strip()
+                    if not alt_color.startswith('#'):
+                        alt_color = f"#{alt_color}"
+                    data['team_alternate_color'] = alt_color
+
                 if team.logo_url:
                     data['team_logo'] = team.logo_url
         
