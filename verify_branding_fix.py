@@ -28,6 +28,9 @@ with app.app_context():
     mooney = BetLeg.query.filter(BetLeg.player_name.ilike('%Mooney%')).first()
     if mooney:
         print(f"Found Mooney: {mooney.player_name}, Team: {mooney.player_team}")
+        data = {}
+        mooney._add_branding_info(data)
+        print(f"Mooney Branding: Color={data.get('team_color')}, Logo={data.get('team_logo')}")
     else:
         print("Mooney not found.")
 

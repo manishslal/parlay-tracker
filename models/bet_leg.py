@@ -192,6 +192,12 @@ class BetLeg(db.Model):
             # If still no match, try partial match (e.g. "Lakers" in "Los Angeles Lakers")
             if not team:
                 team = Team.query.filter(Team.team_name.ilike(f'%{team_name}%')).first()
+            
+            # If still no match, try checking if the first word is an abbreviation (e.g. "ATL Falcons" -> "ATL")
+            if not team:
+                first_word = team_name.split(' ')[0]
+                if len(first_word) <= 3: # Abbreviations are usually short
+                    team = Team.query.filter(Team.team_abbr.ilike(first_word)).first()
                 
             if team:
                 if team.color:
