@@ -88,10 +88,12 @@ def save_final_results_to_bet(bet: Any, processed_data: List[dict]) -> bool:
                             bet_leg.away_score = processed_leg['awayScore']
                             updated = True
                         if bet_leg.status == 'pending':
-                            leg_status = 'lost'
+                            leg_status = None
                             stat_type = bet_leg.bet_type.lower()
+                            
                             if stat_type == 'moneyline':
-                                leg_status = 'won' if bet_leg.achieved_value and bet_leg.achieved_value > 0 else 'lost'
+                                if bet_leg.achieved_value is not None:
+                                    leg_status = 'won' if bet_leg.achieved_value > 0 else 'lost'
                             elif stat_type == 'spread':
                                 if bet_leg.achieved_value is not None and bet_leg.target_value is not None:
                                     leg_status = 'won' if (bet_leg.achieved_value + bet_leg.target_value) > 0 else 'lost'
@@ -101,10 +103,12 @@ def save_final_results_to_bet(bet: Any, processed_data: List[dict]) -> bool:
                                         leg_status = 'won' if bet_leg.achieved_value < bet_leg.target_value else 'lost'
                                     else:
                                         leg_status = 'won' if bet_leg.achieved_value >= bet_leg.target_value else 'lost'
-                            bet_leg.status = leg_status
-                            bet_leg.is_hit = True if leg_status == 'won' else False
-                            updated = True
-                            logging.info(f"Set status={leg_status}, is_hit={bet_leg.is_hit} for leg {i}: {bet_leg.player_name or bet_leg.team}")
+                            
+                            if leg_status:
+                                bet_leg.status = leg_status
+                                bet_leg.is_hit = True if leg_status == 'won' else False
+                                updated = True
+                                logging.info(f"Set status={leg_status}, is_hit={bet_leg.is_hit} for leg {i}: {bet_leg.player_name or bet_leg.team}")
         if updated:
             bet.set_bet_data(bet_data, preserve_status=True)
             db.session.commit()

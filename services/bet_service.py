@@ -100,11 +100,13 @@ def calculate_bet_value(bet, game_data):
         if stat == "rushing_receiving_yards":
             rush = _get_player_stat_from_boxscore(player_name, "rushing", "YDS", boxscore)
             rec = _get_player_stat_from_boxscore(player_name, "receiving", "YDS", boxscore)
+            if rush is None or rec is None: return None
             return rush + rec
         
         if stat == "passing_rushing_yards":
             pass_yds = _get_player_stat_from_boxscore(player_name, "passing", "YDS", boxscore)
             rush_yds = _get_player_stat_from_boxscore(player_name, "rushing", "YDS", boxscore)
+            if pass_yds is None or rush_yds is None: return None
             return pass_yds + rush_yds
             
         # NBA Complex Stats
@@ -112,21 +114,25 @@ def calculate_bet_value(bet, game_data):
             pts = _get_player_stat_from_boxscore(player_name, "", "PTS", boxscore)
             reb = _get_player_stat_from_boxscore(player_name, "", "REB", boxscore)
             ast = _get_player_stat_from_boxscore(player_name, "", "AST", boxscore)
+            if pts is None or reb is None or ast is None: return None
             return pts + reb + ast
             
         if stat in ["points_rebounds", "pr"]:
             pts = _get_player_stat_from_boxscore(player_name, "", "PTS", boxscore)
             reb = _get_player_stat_from_boxscore(player_name, "", "REB", boxscore)
+            if pts is None or reb is None: return None
             return pts + reb
             
         if stat in ["points_assists", "pa"]:
             pts = _get_player_stat_from_boxscore(player_name, "", "PTS", boxscore)
             ast = _get_player_stat_from_boxscore(player_name, "", "AST", boxscore)
+            if pts is None or ast is None: return None
             return pts + ast
             
         if stat in ["rebounds_assists", "ra"]:
             reb = _get_player_stat_from_boxscore(player_name, "", "REB", boxscore)
             ast = _get_player_stat_from_boxscore(player_name, "", "AST", boxscore)
+            if reb is None or ast is None: return None
             return reb + ast
             
         # Double-Double / Triple-Double
@@ -135,6 +141,7 @@ def calculate_bet_value(bet, game_data):
             count = 0
             for label in cats:
                 val = _get_player_stat_from_boxscore(player_name, "", label, boxscore)
+                if val is None: return None
                 if val >= 10:
                     count += 1
             return 1 if count >= 2 else 0
@@ -144,6 +151,7 @@ def calculate_bet_value(bet, game_data):
             count = 0
             for label in cats:
                 val = _get_player_stat_from_boxscore(player_name, "", label, boxscore)
+                if val is None: return None
                 if val >= 10:
                     count += 1
             return 1 if count >= 3 else 0

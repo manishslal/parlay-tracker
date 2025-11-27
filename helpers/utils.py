@@ -158,6 +158,21 @@ def _get_player_stat_from_boxscore(player_name, category_name, stat_label, boxsc
                                 match_idx = idx
                                 break
                         
+                        # Try First Initial + Last Name matching (e.g. "J. Gibbs" -> "Jahmyr Gibbs")
+                        if match_idx == -1:
+                            # Extract initial and last name from search query
+                            parts = player_norm.split()
+                            if len(parts) >= 2 and len(parts[0]) == 1:
+                                initial = parts[0]
+                                lastname = parts[-1]
+                                for idx, name in enumerate(athlete_names_norm):
+                                    name_parts = name.split()
+                                    if len(name_parts) >= 2:
+                                        # Check if initial matches first char of first name AND lastname matches
+                                        if name_parts[0].startswith(initial) and lastname in name_parts[-1]:
+                                            match_idx = idx
+                                            break
+
                         # If no substring match, try fuzzy matching
                         if match_idx == -1:
                             matches = difflib.get_close_matches(player_norm, athlete_names_norm, n=1, cutoff=0.75)
@@ -190,7 +205,7 @@ def _get_player_stat_from_boxscore(player_name, category_name, stat_label, boxsc
                         pass
                 except (ValueError, IndexError):
                     continue
-    return 0
+    return None
 
 def _get_touchdowns(player_name, boxscore, scoring_plays=None):
     td_cats = {
