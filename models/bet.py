@@ -1,5 +1,6 @@
 
 from models import db
+from sqlalchemy.dialects.postgresql import ARRAY
 import json
 
 
@@ -36,8 +37,8 @@ class Bet(db.Model):
     legs_live = db.Column(db.Integer)
     legs_void = db.Column(db.Integer)
     last_api_update = db.Column(db.DateTime)
-    secondary_bettors = db.Column(db.JSON, default=list)
-    watchers = db.Column(db.JSON, default=list)
+    secondary_bettors = db.Column(ARRAY(db.Integer), default=list)
+    watchers = db.Column(ARRAY(db.Integer), default=list)
     bet_legs_rel = db.relationship('BetLeg', backref='bet', lazy=True)
 
     __mapper_args__ = {
@@ -105,7 +106,12 @@ class Bet(db.Model):
         }
         
         # Add name field for process_parlay_data compatibility
-        if self.bet_type == 'SGP':
+        # Add name field for process_parlay_data compatibility
+        # Check if name exists in bet_data first
+        bet_data_obj = self.get_bet_data()
+        if bet_data_obj.get('name'):
+            result['name'] = bet_data_obj['name']
+        elif self.bet_type == 'SGP':
             result['name'] = f"{self.total_legs} Leg SGP"
         elif self.bet_type == 'Parlay':
             result['name'] = f"{self.total_legs} Pick Parlay"
