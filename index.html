@@ -31,7 +31,7 @@
   <meta name="description" content="Track your sports betting parlays and monitor live stats in real-time">
 
   <!-- App Version for Cache Busting -->
-  <meta name="app-version" content="2.0.0">
+  <meta name="app-version" content="2.0.1">
 
   <!-- Roboto Font Import -->
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
@@ -1849,7 +1849,7 @@
       tr {
         display: block;
         margin-bottom: 0.10rem;
-        padding: 0.05rem 0.10rem;
+        padding: 0.025rem 0.10rem;
         background: var(--surface);
         border-radius: 8px;
         border: 1px solid rgba(255, 204, 0, 0.2);
@@ -1919,7 +1919,7 @@
       }
 
       .progress-bar {
-        height: 1.35rem;
+        height: 1.7rem;
         /* Increased by 50% from 0.9rem */
       }
 
@@ -1985,7 +1985,7 @@
       }
 
       .progress-bar {
-        height: 1rem;
+        height: 1.25rem;
         font-size: 0.65rem;
       }
 
@@ -2562,7 +2562,7 @@
         // Clear historical cache on first login to ensure fresh data from database
         // (in case user switched from JSON to database system)
         const cacheVersion = localStorage.getItem('parlay_tracker_cache_version');
-        const CURRENT_CACHE_VERSION = '2.0'; // Increment when data structure changes
+        const CURRENT_CACHE_VERSION = '2.0.1'; // Increment when data structure changes
         if (cacheVersion !== CURRENT_CACHE_VERSION) {
           console.log('🔄 Cache version mismatch, clearing historical cache...');
           clearHistoricalCache();
