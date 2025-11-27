@@ -4162,7 +4162,7 @@
       }
 
       // Get jersey number if available
-      const jerseyNum = leg.jersey_number ? `#${leg.jersey_number}` : '';
+      const jerseyNum = (leg.jersey_number != null && leg.jersey_number !== '') ? `#${leg.jersey_number}` : '';
 
       // Build display string: "SEA RB #55" or "SEA RB" or "SEA #55"
       if (position && teamAbbr && jerseyNum) {

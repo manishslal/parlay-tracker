@@ -166,7 +166,7 @@ def search_espn_player(player_name: str, sport: str = "football", league: str = 
                             'espn_player_id': str(player_data.get('id', '')),
                             'player_name': player_data.get('displayName', ''),
                             'position': position if position else None,
-                            'jersey_number': jersey_number if jersey_number else None,
+                            'jersey_number': jersey_number if jersey_number not in [None, ''] else None,
                             'team_abbreviation': player_data.get('team', {}).get('abbreviation', ''),
                             'current_team': player_data.get('team', {}).get('displayName', ''),
                             'sport': correct_sport
@@ -476,7 +476,7 @@ def get_espn_player_details(player_id: str, sport: str = "football", league: str
                 'espn_player_id': str(athlete.get('id', '')),
                 'player_name': athlete.get('displayName', ''),
                 'position': position if position else None,
-                'jersey_number': jersey_number if jersey_number else None,
+                'jersey_number': jersey_number if jersey_number not in [None, ''] else None,
                 'team_abbreviation': team.get('abbreviation', ''),
                 'current_team': team.get('displayName', ''),
                 'sport': correct_sport
