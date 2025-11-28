@@ -38,7 +38,7 @@ def log_audit_event(db_session, event_type, action, actor_type, actor_name,
              old_value, new_value, metadata, success, error_message)
             VALUES 
             (:event_type, :action, :actor_type, :actor_name, :entity_type, :entity_id,
-             :old_value, :new_value, :metadata::jsonb, :success, :error_message)
+             :old_value, :new_value, CAST(:metadata AS jsonb), :success, :error_message)
         """), {
             'event_type': event_type,
             'action': action,

@@ -1093,7 +1093,15 @@ def auto_move_completed_bets(user_id):
                 game_status = game_data.get('statusTypeName', '')
                 
                 # Check if game is finished
-                if game_status != 'STATUS_FINAL':
+                # Treat STATUS_END_PERIOD as final if it's the 4th quarter (or later) and clock is 0
+                is_final = game_status == 'STATUS_FINAL'
+                if not is_final and game_status == 'STATUS_END_PERIOD':
+                    period = game_data.get('period', 0)
+                    if period >= 4:
+                        is_final = True
+                        app.logger.info(f"Treating STATUS_END_PERIOD as FINAL for bet {bet.id} leg {i+1} (Period {period})")
+
+                if not is_final:
                     all_games_finished = False
                 else:
                     # Game is final - check if this leg is a loss

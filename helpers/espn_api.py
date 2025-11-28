@@ -194,19 +194,23 @@ def _get_player_stats_from_boxscore(player_name: str, sport: str, boxscore: dict
         return {}
     
     players_data = boxscore.get('players', [])
+    combined_stats = {}
+    player_found = False
     
     for team_data in players_data:
         statistics = team_data.get('statistics', [])
         for stat_group in statistics:
+            group_name = stat_group.get('name', '').lower()
             athletes = stat_group.get('athletes', [])
+            
             for athlete in athletes:
                 athlete_name = athlete.get('athlete', {}).get('displayName', '')
+                # Check for match
                 if player_name.lower() in athlete_name.lower() or athlete_name.lower() in player_name.lower():
-                    # Found the player, extract stats
+                    player_found = True
                     stats_list = athlete.get('stats', [])
                     labels = stat_group.get('labels', [])
                     
-                    stats_dict = {}
                     for i, label in enumerate(labels):
                         if i < len(stats_list):
                             try:
@@ -227,14 +231,19 @@ def _get_player_stats_from_boxscore(player_name: str, sport: str, boxscore: dict
                                 elif isinstance(stat_value, (int, float)):
                                     stat_value = float(stat_value)
                                 
-                                stats_dict[normalized_label] = stat_value
+                                # Store with group prefix (e.g., rushing_yds)
+                                prefixed_key = f"{group_name}_{normalized_label}"
+                                combined_stats[prefixed_key] = stat_value
+                                
+                                # Also store without prefix if not exists (for backward compatibility)
+                                if normalized_label not in combined_stats:
+                                    combined_stats[normalized_label] = stat_value
+                                    
                             except (ValueError, TypeError, AttributeError):
                                 normalized_label = label.lower().strip()
-                                stats_dict[normalized_label] = stats_list[i]
-                    
-                    return stats_dict
+                                combined_stats[normalized_label] = stats_list[i]
     
-    return {}
+    return combined_stats if player_found else {}
 
 
 def _extract_achieved_value(stats: dict, stat_type: str, bet_type: str, bet_line_type: str) -> float:
@@ -256,33 +265,93 @@ def _extract_achieved_value(stats: dict, stat_type: str, bet_type: str, bet_line
     stat_type_lower = (stat_type or '').lower().strip()
     bet_type_lower = (bet_type or '').lower().strip()
     
-    # NBA stat mappings - ordered by specificity
-    # ESPN uses abbreviations: PTS, AST, REB, 3PT, STL, BLK, TO
+    # Helper to check keys
+    def check_keys(keys):
+        for key in keys:
+            if key in stats:
+                return stats[key]
+        return None
+
+    # --- NFL Mappings ---
+    
+    # Rushing Yards
+    if 'rushing_yards' in stat_type_lower or 'rush_yds' in stat_type_lower:
+        val = check_keys(['rushing_yds', 'yds'])
+        if val is not None: return val
+
+    # Receiving Yards
+    if 'receiving_yards' in stat_type_lower or 'rec_yds' in stat_type_lower:
+        val = check_keys(['receiving_yds', 'yds'])
+        if val is not None: return val
+
+    # Passing Yards
+    if 'passing_yards' in stat_type_lower or 'pass_yds' in stat_type_lower:
+        val = check_keys(['passing_yds', 'yds'])
+        if val is not None: return val
+        
+    # Receptions
+    if 'receptions' in stat_type_lower or 'catches' in stat_type_lower:
+        val = check_keys(['receiving_rec', 'rec'])
+        if val is not None: return val
+        
+    # Touchdowns (Anytime / Total)
+    if 'touchdown' in stat_type_lower or 'td' in stat_type_lower:
+        # Special case: Passing TDs
+        if 'passing' in stat_type_lower or 'pass' in stat_type_lower:
+            if 'passing_td' in stats:
+                return float(stats['passing_td'])
+            return None
+
+        # Sum up all TDs found (excluding passing_td and generic 'td')
+        total_td = 0
+        found_td = False
+        for key, val in stats.items():
+            # Skip generic 'td' to avoid double counting
+            if key == 'td':
+                continue
+            
+            # Skip 'passing_td' for non-passing TD bets (Anytime TD)
+            if key == 'passing_td':
+                continue
+                
+            if key.endswith('_td'):
+                try:
+                    total_td += float(val)
+                    found_td = True
+                except:
+                    pass
+        
+        # Fallback: If no specific TDs found but generic 'td' exists, use it
+        if not found_td and 'td' in stats:
+            try:
+                return float(stats['td'])
+            except:
+                pass
+                
+        if found_td:
+            return total_td
+
+    # --- NBA Mappings ---
     
     if 'point' in stat_type_lower or 'point' in bet_type_lower or 'pts' in stat_type_lower:
-        for key in ['pts', 'points']:
-            if key in stats:
-                return stats[key]
+        val = check_keys(['pts', 'points'])
+        if val is not None: return val
     
     if 'assist' in stat_type_lower or 'ast' in stat_type_lower:
-        for key in ['ast', 'assists']:
-            if key in stats:
-                return stats[key]
+        val = check_keys(['ast', 'assists'])
+        if val is not None: return val
     
     if 'rebound' in stat_type_lower or 'reb' in stat_type_lower:
-        for key in ['reb', 'rebounds']:
-            if key in stats:
-                return stats[key]
+        val = check_keys(['reb', 'rebounds'])
+        if val is not None: return val
     
     # Three pointers - ESPN uses "3PT" label
     if 'three' in stat_type_lower or '3p' in stat_type_lower.replace('-', '').replace('_', '') or 'three' in bet_type_lower or '3p' in bet_type_lower.replace('-', '').replace('_', ''):
         # Try ESPN abbreviations first
-        for key in ['3pt', '3p', '3-pt']:
-            if key in stats:
-                val = stats[key]
-                # If it's a float already, return it
-                if isinstance(val, (int, float)):
-                    return val
+        val = check_keys(['3pt', '3p', '3-pt'])
+        if val is not None:
+             if isinstance(val, (int, float)):
+                 return val
         
         # Then try full names
         possible_keys = [
@@ -294,27 +363,23 @@ def _extract_achieved_value(stats: dict, stat_type: str, bet_type: str, bet_line
             'made 3-pointers',
             'made 3-pt',
         ]
-        for key in possible_keys:
-            if key in stats:
-                return stats[key]
+        val = check_keys(possible_keys)
+        if val is not None: return val
     
     # Steals
     if 'steal' in stat_type_lower or 'stl' in stat_type_lower:
-        for key in ['stl', 'steals']:
-            if key in stats:
-                return stats[key]
+        val = check_keys(['stl', 'steals'])
+        if val is not None: return val
     
     # Blocks
     if 'block' in stat_type_lower or 'blk' in stat_type_lower:
-        for key in ['blk', 'blocks']:
-            if key in stats:
-                return stats[key]
+        val = check_keys(['blk', 'blocks'])
+        if val is not None: return val
     
     # Turnovers
     if 'turnover' in stat_type_lower or 'to' in stat_type_lower:
-        for key in ['to', 'turnovers']:
-            if key in stats:
-                return stats[key]
+        val = check_keys(['to', 'turnovers'])
+        if val is not None: return val
     
     # Try direct key match first
     if stat_type_lower in stats:

@@ -215,7 +215,9 @@ def _get_touchdowns(player_name, boxscore, scoring_plays=None):
     }
     total_tds = 0
     for cat, label in td_cats.items():
-        total_tds += _get_player_stat_from_boxscore(player_name, cat, label, boxscore)
+        val = _get_player_stat_from_boxscore(player_name, cat, label, boxscore)
+        if val is not None:
+            total_tds += val
     if total_tds > 0:
         return total_tds
     if scoring_plays:
