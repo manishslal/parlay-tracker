@@ -96,10 +96,12 @@ class Team(db.Model):
         if current_time - getattr(Team, '_team_cache_time', 0) > 3600:
             all_teams = Team.query.all()
             Team._team_cache = {t.team_name.lower(): t for t in all_teams}
-            # Also index by abbreviation
+            # Also index by abbreviation and short name
             for t in all_teams:
                 if t.team_abbr:
                     Team._team_cache[t.team_abbr.lower()] = t
+                if t.team_name_short:
+                    Team._team_cache[t.team_name_short.lower()] = t
             Team._team_cache_time = current_time
             
         team_name_lower = team_name.lower()

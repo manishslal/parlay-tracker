@@ -255,16 +255,11 @@ def _update_bet_status_from_legs(bet):
     elif 'pending' in leg_statuses:
         bet.status = 'pending'
     elif all(status in ['won', 'lost'] for status in leg_statuses):
-        # All legs are finished - determine if overall bet is won or lost
-        # Parlay is won only if ALL legs are won
-        all_won = all(status == 'won' for status in leg_statuses)
-        bet.status = 'won' if all_won else 'lost'
+        # All legs are finished - mark bet as completed
+        bet.status = 'completed'
     else:
-        # Mixed - if any are won/lost, mark as that
-        if 'won' in leg_statuses:
-            bet.status = 'won'
-        elif 'lost' in leg_statuses:
-            bet.status = 'lost'
+        # Mixed - if any are won/lost, mark as completed (should be unreachable if logic above is correct)
+        bet.status = 'completed'
 
 
 def _update_bet_stats_from_legs(bet):

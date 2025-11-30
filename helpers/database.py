@@ -273,11 +273,11 @@ def auto_move_completed_bets(user_id):
             # AND the bet hasn't already been set to a final status
             if processed_any_leg and all_games_finished and bet.status not in ['won', 'lost', 'completed'] and bet.id not in reverted_bets:
                 if has_confirmed_loss:
-                    bet.status = 'lost'
-                    logging.info(f"Auto-moved bet {bet.id} to LOST")
+                    bet.status = 'completed'
+                    logging.info(f"Auto-moved bet {bet.id} to COMPLETED (lost)")
                 else:
-                    bet.status = 'won'
-                    logging.info(f"Auto-moved bet {bet.id} to WON")
+                    bet.status = 'completed'
+                    logging.info(f"Auto-moved bet {bet.id} to COMPLETED (won)")
                 updated_count += 1
             elif bet.status in ['won', 'lost'] and has_any_not_finished and processed_any_leg:
                 # CRITICAL: Bet was previously marked as won/lost but games are no longer finished

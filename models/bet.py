@@ -228,9 +228,9 @@ class Bet(db.Model):
             # Determine status from legs if present
             if legs:
                 if all(leg.get('status') == 'won' for leg in legs):
-                    self.status = 'won'
+                    self.status = 'completed'
                 elif any(leg.get('status') == 'lost' for leg in legs):
-                    self.status = 'lost'
+                    self.status = 'completed'
                 elif any(leg.get('status') == 'live' for leg in legs):
                     self.status = 'live'
                 else:
