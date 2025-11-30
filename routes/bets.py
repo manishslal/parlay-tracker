@@ -911,11 +911,18 @@ def cache_bust():
 	try:
 		clear_game_cache()  # Clear all cached game data
 		
-		# TRIGGER AUTOMATION: Run hit status determination
+		# TRIGGER AUTOMATION: 
+		# 1. Update live bet legs (fetch fresh data from ESPN and save to DB)
+		# 2. Run hit status determination (check if new data means a win/loss)
 		# This ensures that when user clicks "Refresh Stats", we update the database status
 		# to match the latest data, including early wins/losses.
 		try:
+			from automation.live_bet_updates import update_live_bet_legs
 			from automation.bet_status_management import auto_determine_leg_hit_status
+			
+			logger.info("Triggering update_live_bet_legs from cache-bust")
+			update_live_bet_legs()
+			
 			logger.info("Triggering auto_determine_leg_hit_status from cache-bust")
 			auto_determine_leg_hit_status()
 		except Exception as e:
@@ -923,7 +930,7 @@ def cache_bust():
 			
 		return jsonify({
 			'success': True,
-			'message': 'Game cache cleared and status updated.'
+			'message': 'Game cache cleared, data updated, and status checked.'
 		})
 	except Exception as e:
 		logger.error(f"Error clearing cache: {e}")
