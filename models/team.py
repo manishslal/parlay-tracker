@@ -108,12 +108,13 @@ class Team(db.Model):
         
         # Try exact match from cache
         if team_name_lower in Team._team_cache:
-            return Team._team_cache[team_name_lower]
+            t = Team._team_cache[team_name_lower]
+            return db.session.merge(t) if t else None
         
         # Try partial match if not found
         for key, t in Team._team_cache.items():
             if team_name_lower in key or key in team_name_lower:
-                return t
+                return db.session.merge(t) if t else None
         
         # Fallback for specific known issues
         if team_name_lower.startswith('los angeles'):
@@ -127,6 +128,6 @@ class Team(db.Model):
                     # Try to find the team with this suffix in cache
                     for key, t in Team._team_cache.items():
                         if suffix in key:
-                            return t
+                            return db.session.merge(t) if t else None
                             
         return None

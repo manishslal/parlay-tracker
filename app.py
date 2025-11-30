@@ -2129,6 +2129,15 @@ scheduler.add_job(
 scheduler.start()
 
 if __name__ == '__main__':
+    # Run migrations on startup to ensure DB schema is up to date
+    try:
+        print("Running database migrations...")
+        import subprocess
+        subprocess.run(['flask', 'db', 'upgrade'], check=True)
+        print("Database migrations completed successfully.")
+    except Exception as e:
+        print(f"Database migration failed: {e}")
+
     # Run debug script on startup to diagnose production issues
     try:
         from debug_scoreboard import debug_scoreboard
