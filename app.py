@@ -2129,4 +2129,13 @@ scheduler.add_job(
 scheduler.start()
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=8000, debug=True)
+    # Run debug script on startup to diagnose production issues
+    try:
+        from debug_scoreboard import debug_scoreboard
+        print("Running startup debug...")
+        debug_scoreboard()
+    except Exception as e:
+        print(f"Startup debug failed: {e}")
+        
+    port = int(os.environ.get('PORT', 10000))
+    app.run(host='0.0.0.0', port=port)
