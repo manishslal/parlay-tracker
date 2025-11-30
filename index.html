@@ -31,7 +31,7 @@
   <meta name="description" content="Track your sports betting parlays and monitor live stats in real-time">
 
   <!-- App Version for Cache Busting -->
-  <meta name="app-version" content="2.0.5">
+  <meta name="app-version" content="2.0.6">
 
   <!-- Roboto Font Import -->
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
@@ -4352,6 +4352,10 @@
     }
 
     function render(parlays, container) {
+      // Save scroll position to prevent jumping on refresh
+      const scrollX = window.scrollX;
+      const scrollY = window.scrollY;
+
       console.log('Render called with parlays:', parlays);
       console.log('Container:', container);
       container.innerHTML = '';
@@ -5674,6 +5678,11 @@
 
       // Initialize DataTables on newly rendered tables
       setTimeout(initializeDataTables, 100); // Small delay to ensure DOM is updated
+
+      // Restore scroll position
+      if (typeof scrollX !== 'undefined' && typeof scrollY !== 'undefined') {
+        window.scrollTo(scrollX, scrollY);
+      }
     }
 
     // Update tab label with bet count
