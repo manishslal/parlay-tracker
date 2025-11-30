@@ -31,7 +31,7 @@
   <meta name="description" content="Track your sports betting parlays and monitor live stats in real-time">
 
   <!-- App Version for Cache Busting -->
-  <meta name="app-version" content="2.0.7">
+  <meta name="app-version" content="2.0.8">
 
   <!-- Roboto Font Import -->
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
@@ -6190,7 +6190,9 @@
         }
 
         // Success!
-        alert(`✅ ${result.message}\n\nBet ID: ${result.bet.betting_site_id}`);
+        // Use betting_site_id from the returned bet object
+        const displayId = result.bet.betting_site_id || result.bet.id || 'N/A';
+        alert(`✅ ${result.message}\n\nBet ID: ${displayId}`);
 
         // Close modal and reset
         ocrModal.style.display = 'none';
@@ -6199,16 +6201,20 @@
         selectedSecondaryBettors = [];
         renderSelectedBettors();
 
-        // Refresh the bets list
+        // Reset button state
+        confirmSaveBtn.disabled = false;
+        confirmSaveBtn.textContent = 'Save Bet';
+
+        // Refresh bets
         update();
 
       } catch (error) {
-        console.error('Save error:', error);
-        alert(`❌ Failed to save bet: ${error.message}`);
+        console.error('Save bet error:', error);
+        alert(`Error saving bet: ${error.message}`);
 
-        // Re-enable button
+        // Reset button state on error so user can try again
         confirmSaveBtn.disabled = false;
-        confirmSaveBtn.textContent = '✓ Confirm & Save Bet';
+        confirmSaveBtn.textContent = 'Save Bet';
       }
     });
 
