@@ -114,5 +114,19 @@ class Team(db.Model):
         for key, t in Team._team_cache.items():
             if team_name_lower in key or key in team_name_lower:
                 return t
-                
+        
+        # Fallback for specific known issues
+        if team_name_lower.startswith('los angeles'):
+            # Try to disambiguate based on sport if possible, but here we only have name
+            # If it's just "Los Angeles", we can't do much.
+            # But if it's "Los Angeles Lakers" and it didn't match above, something is wrong with the cache keys.
+            # Let's try matching against specific known LA teams
+            la_teams = ['lakers', 'clippers', 'rams', 'chargers', 'dodgers', 'angels', 'kings', 'galaxy', 'la fc']
+            for suffix in la_teams:
+                if suffix in team_name_lower:
+                    # Try to find the team with this suffix in cache
+                    for key, t in Team._team_cache.items():
+                        if suffix in key:
+                            return t
+                            
         return None
