@@ -22,8 +22,46 @@ def run_startup():
     except Exception as e:
         print(f"Migration failed: {e}")
 
-    # 2. Run Debug Script
-    print("\n[2/2] Running Scoreboard Debugger...")
+    # 2. Force Create Audit Tables (Fallback)
+    print("\n[2/3] Verifying Audit Tables...")
+    try:
+        from app import db
+        from sqlalchemy import text
+        with app.app_context():
+            # Check if table exists
+            result = db.session.execute(text("SELECT to_regclass('public.audit_log')")).scalar()
+            if not result:
+                print("Table 'audit_log' missing. Creating manually...")
+                # SQL from migration file
+                sql = """
+                CREATE TABLE IF NOT EXISTS audit_log (
+                    id SERIAL PRIMARY KEY,
+                    timestamp TIMESTAMP WITHOUT TIME ZONE DEFAULT NOW() NOT NULL,
+                    event_type VARCHAR(50) NOT NULL,
+                    action VARCHAR(100) NOT NULL,
+                    actor_type VARCHAR(50) NOT NULL,
+                    actor_name VARCHAR(100) NOT NULL,
+                    entity_type VARCHAR(50) NOT NULL,
+                    entity_id INTEGER,
+                    old_value TEXT,
+                    new_value TEXT,
+                    metadata TEXT,
+                    success BOOLEAN DEFAULT true NOT NULL,
+                    error_message TEXT
+                );
+                CREATE INDEX IF NOT EXISTS idx_audit_timestamp ON audit_log (timestamp);
+                CREATE INDEX IF NOT EXISTS idx_audit_entity ON audit_log (entity_type, entity_id);
+                """
+                db.session.execute(text(sql))
+                db.session.commit()
+                print("Table 'audit_log' created successfully.")
+            else:
+                print("Table 'audit_log' already exists.")
+    except Exception as e:
+        print(f"Manual table creation failed: {e}")
+
+    # 3. Run Debug Script
+    print("\n[3/3] Running Scoreboard Debugger...")
     try:
         with app.app_context():
             debug_scoreboard()
