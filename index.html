@@ -31,7 +31,7 @@
   <meta name="description" content="Track your sports betting parlays and monitor live stats in real-time">
 
   <!-- App Version for Cache Busting -->
-  <meta name="app-version" content="2.0.4">
+  <meta name="app-version" content="2.0.5">
 
   <!-- Roboto Font Import -->
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
@@ -5370,8 +5370,11 @@
               (!gameData && (areAllGamesScheduled || (!isAnyGameLive && !areAllGamesFinal))));
 
           // For Live Bets that haven't started: hide progress bar and current stat, center the target
+          // User Request: Center "Target: [Value]" and increase font size
           const mobileLine2Content = gameNotStarted ?
-            `<span style="grid-column: 1 / -1; text-align: center;">${mobileTargetDisplay}<div style="font-size:0.65rem;color:#999;margin-top:0.0375rem;">Target</div></span>` :
+            `<div style="grid-column: 1 / -1; text-align: center; font-size: 0.9rem; margin-top: 2px;">
+               <span style="color: #999;">Target:</span> <span style="font-weight: 500; color: var(--text);">${mobileTargetDisplay}</span>
+             </div>` :
             `<span>${mobileCurrentDisplay}<div style="font-size:0.65rem;color:#999;margin-top:0.0375rem;">Current</div></span>
                       <span>${progressCol}</span>
                       <span>${mobileTargetDisplay}<div style="font-size:0.65rem;color:#999;margin-top:0.0375rem;">Target</div></span>`;
