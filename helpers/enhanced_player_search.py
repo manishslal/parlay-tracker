@@ -72,7 +72,30 @@ def enhanced_player_search(player_name: str, sport: str = "football", league: st
     print(f"Enhanced search for player: {player_name}")
 
     # Strategy 1: Full name search (original method)
+    # Initial search
     player_data = search_espn_player(player_name, sport=sport, league=league)
+    
+    # Smart Fallback: If no data or incomplete data (missing position), try the other sport
+    # This handles cases where an NBA player is searched as NFL (or vice versa)
+    if not player_data or not player_data.get('position'):
+        original_sport = sport
+        
+        if original_sport == "football":
+            # Try NBA
+            print(f"Enhanced Search: No complete data for {player_name} as NFL, trying NBA...")
+            alt_data = search_espn_player(player_name, sport="basketball", league="nba")
+            if alt_data and alt_data.get('position'):
+                print(f"Enhanced Search: Found {player_name} in NBA!")
+                return alt_data
+                
+        elif original_sport == "basketball":
+            # Try NFL
+            print(f"Enhanced Search: No complete data for {player_name} as NBA, trying NFL...")
+            alt_data = search_espn_player(player_name, sport="football", league="nfl")
+            if alt_data and alt_data.get('position'):
+                print(f"Enhanced Search: Found {player_name} in NFL!")
+                return alt_data
+
     if player_data and player_data.get('espn_player_id'):
         print(f"  ✓ Found by full name: {player_data['player_name']}")
         return player_data

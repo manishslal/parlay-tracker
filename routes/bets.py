@@ -558,11 +558,7 @@ def db_health_check():
 @login_required
 @db_error_handler
 def live():
-	from automation import auto_move_bets_no_live_legs, auto_determine_leg_hit_status
-	auto_move_pending_to_live()  # Move pending bets to live if their games started
-	auto_move_bets_no_live_legs()  # Move bets with no live legs to historical
-	auto_determine_leg_hit_status()  # Ensure hit/miss status is up to date
-	# /live shows only bets with status='live'
+	# Removed synchronous automation calls - relying on background jobs
 	# /live shows only bets with status='live'
 	bets = get_user_bets_query(
 		current_user,
@@ -570,21 +566,18 @@ def live():
 		is_active=True,
 		is_archived=False
 	).options(db.joinedload(Bet.bet_legs_rel)).all()
-	live_parlays = [bet.to_dict_structured(use_live_data=True) for bet in bets]
-	processed = process_parlay_data(live_parlays)
+	
+	# Do NOT fetch live data synchronously
+	live_parlays = [bet.to_dict_structured(use_live_data=False) for bet in bets]
+	processed = process_parlay_data(live_parlays, fetch_live=False)
 	return jsonify(sort_parlays_by_date(processed))
 
 @bets_bp.route("/todays")
 @login_required
 @db_error_handler
 def todays():
-	from automation import auto_move_bets_no_live_legs, auto_determine_leg_hit_status
-	auto_move_pending_to_live()  # Move pending bets to live if their games started
-	auto_move_completed_bets(current_user.id)
-	auto_move_bets_no_live_legs()  # Also move bets with no live legs
-	auto_determine_leg_hit_status()  # Determine hit/miss status for legs
+	# Removed synchronous automation calls - relying on background jobs
 	
-	# /todays shows only bets with status='pending'
 	# /todays shows only bets with status='pending'
 	bets = get_user_bets_query(
 		current_user,
@@ -593,8 +586,8 @@ def todays():
 		is_archived=False
 	).options(db.joinedload(Bet.bet_legs_rel)).all()
 	
-	todays_parlays = [bet.to_dict_structured(use_live_data=True) for bet in bets]
-	processed = process_parlay_data(todays_parlays)
+	todays_parlays = [bet.to_dict_structured(use_live_data=False) for bet in bets]
+	processed = process_parlay_data(todays_parlays, fetch_live=False)
 	return jsonify(sort_parlays_by_date(processed))
 
 @bets_bp.route("/historical")
@@ -602,10 +595,9 @@ def todays():
 @db_error_handler
 def historical():
 	from app import app  # Import here to avoid circular import
-	from automation import auto_determine_leg_hit_status
 	try:
 		app.logger.info(f"[HISTORICAL] Starting historical bets request for user {current_user.id}")
-		auto_determine_leg_hit_status()  # Ensure hit/miss status is determined
+		# Removed synchronous automation calls
 		# /historical shows bets with status in ['won', 'lost', 'completed']
 		# /historical shows bets with status in ['won', 'lost', 'completed']
 		bets = get_user_bets_query(

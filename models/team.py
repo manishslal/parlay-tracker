@@ -77,3 +77,40 @@ class Team(db.Model):
     
     def __repr__(self):
         return f'<Team {self.team_name} ({self.sport})>'
+
+    @staticmethod
+    def get_team_by_name_cached(team_name):
+        """Get team by name or abbreviation using a cache to avoid DB hits."""
+        if not team_name:
+            return None
+            
+        # Initialize cache if needed
+        if not hasattr(Team, '_team_cache'):
+            Team._team_cache = {}
+            Team._team_cache_time = 0
+            
+        import time
+        current_time = time.time()
+        
+        # Refresh cache every hour
+        if current_time - getattr(Team, '_team_cache_time', 0) > 3600:
+            all_teams = Team.query.all()
+            Team._team_cache = {t.team_name.lower(): t for t in all_teams}
+            # Also index by abbreviation
+            for t in all_teams:
+                if t.team_abbr:
+                    Team._team_cache[t.team_abbr.lower()] = t
+            Team._team_cache_time = current_time
+            
+        team_name_lower = team_name.lower()
+        
+        # Try exact match from cache
+        if team_name_lower in Team._team_cache:
+            return Team._team_cache[team_name_lower]
+        
+        # Try partial match if not found
+        for key, t in Team._team_cache.items():
+            if team_name_lower in key or key in team_name_lower:
+                return t
+                
+        return None

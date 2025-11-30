@@ -224,12 +224,32 @@ def _get_touchdowns(player_name, boxscore, scoring_plays=None):
         player_norm = _norm(player_name)
         td_count = 0
         for play in scoring_plays:
-            participants = play.get("participants", [])
-            for p in participants:
-                name = p.get("displayName") or p.get("athlete", {}).get("displayName")
-                if name and player_norm in _norm(name):
-                    td_count += 1
-                    break
+            participants = play.get("participants")
+            # If participants is present (scoreboard endpoint), use it
+            if participants:
+                for p in participants:
+                    name = p.get("displayName") or p.get("athlete", {}).get("displayName")
+                    if name and player_norm in _norm(name):
+                        td_count += 1
+                        break
+            # Fallback: Check text description if participants is missing (summary endpoint)
+            # Text format: "Player Name 1 Yd Run..."
+            else:
+                text = play.get("text", "")
+                if text:
+                    text_norm = _norm(text)
+                    # Check if player name is in the text
+                    # We use a stricter check here to avoid false positives
+                    if player_norm in text_norm:
+                        # Special handling for Passing TDs to avoid counting the passer
+                        # If play type is "Passing Touchdown", the text usually starts with the passer's name
+                        # e.g. "Sam Darnold 5 Yd Pass to..."
+                        play_type = play.get("type", {}).get("text", "")
+                        if "Passing Touchdown" in play_type:
+                            if text_norm.startswith(player_norm):
+                                continue
+                        
+                        td_count += 1
         return td_count
     return total_tds
 

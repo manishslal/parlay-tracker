@@ -26,10 +26,15 @@ def update_completed_bet_legs():
         
         # Get all bet legs with STATUS_FINAL games that haven't been processed yet
         # (achieved_value is None indicates it hasn't been processed)
+        # OPTIMIZATION: Only check games from the last 48 hours to avoid re-checking old games
+        from datetime import datetime, timedelta
+        cutoff_date = datetime.now().date() - timedelta(days=2)
+        
         # Use with_for_update() to lock rows and prevent race conditions
         legs_to_update = BetLeg.query.filter(
             BetLeg.game_status == 'STATUS_FINAL',
-            BetLeg.achieved_value.is_(None)
+            BetLeg.achieved_value.is_(None),
+            BetLeg.game_date >= cutoff_date
         ).with_for_update().all()
         
         if not legs_to_update:

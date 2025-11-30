@@ -49,6 +49,75 @@ def service_worker():
     return app.send_static_file('service-worker.js')
 
 # Serve manifest.json for PWA
+@app.route('/admin/players')
+def admin_players():
+    """Admin dashboard for players with missing data"""
+    incomplete_players = Player.query.filter(
+        (Player.position == None) | 
+        (Player.jersey_number == None) | 
+        (Player.current_team == None) | 
+        (Player.current_team == '')
+    ).all()
+    return render_template('admin_players.html', players=incomplete_players)
+
+@app.route('/admin/players/enrich/<int:player_id>', methods=['POST'])
+def admin_enrich_player(player_id):
+    """Manually trigger enrichment for a player"""
+    from jobs.player_enrichment_job import enrich_player_data
+    # We'll just run the full job for simplicity, or we could target one.
+    # For now, let's just re-run the job logic for this specific player
+    # But since the job is robust, triggering the full job is fine too, 
+    # or we can just call the search logic here.
+    
+    player = Player.query.get_or_404(player_id)
+    try:
+        from helpers.enhanced_player_search import enhanced_player_search
+        sport = "football" if player.sport == 'NFL' else "basketball"
+        league = "nfl" if player.sport == 'NFL' else "nba"
+        
+        data = enhanced_player_search(player.player_name, sport=sport, league=league)
+        
+        if data:
+            if player.sport != data['sport']:
+                player.sport = data['sport']
+            if data['position']:
+                player.position = data['position']
+            if data['jersey_number']:
+                try:
+                    player.jersey_number = int(data['jersey_number'])
+                except:
+                    pass
+            if data['current_team']:
+                player.current_team = data['current_team']
+            if data['team_abbreviation']:
+                player.team_abbreviation = data['team_abbreviation']
+            if data['espn_player_id']:
+                player.espn_player_id = data['espn_player_id']
+                
+            db.session.commit()
+            flash(f"Successfully enriched {player.player_name}", "success")
+        else:
+            flash(f"No data found for {player.player_name}", "warning")
+            
+    except Exception as e:
+        db.session.rollback()
+        flash(f"Error enriching player: {e}", "error")
+        
+    return redirect(url_for('admin_players'))
+
+@app.route('/admin/players/delete/<int:player_id>', methods=['POST'])
+def admin_delete_player(player_id):
+    """Delete a player record"""
+    player = Player.query.get_or_404(player_id)
+    try:
+        db.session.delete(player)
+        db.session.commit()
+        flash(f"Deleted {player.player_name}", "success")
+    except Exception as e:
+        db.session.rollback()
+        flash(f"Error deleting player: {e}", "error")
+    return redirect(url_for('admin_players'))
+
 @app.route('/manifest.json')
 def manifest():
     return app.send_static_file('manifest.json')

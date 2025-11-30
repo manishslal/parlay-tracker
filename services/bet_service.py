@@ -347,41 +347,53 @@ def fetch_game_details_from_espn(game_date, away_team, home_team, sport='NFL'):
         logger.error(f"Error in fetch_game_details_from_espn: {str(e)}")
         return None
 
-def process_parlay_data(parlays):
-    """Process a list of parlays with game data."""
+def process_parlay_data(parlays, fetch_live=True):
+    """Process a list of parlays with game data.
+    
+    Args:
+        parlays: List of parlay dictionaries
+        fetch_live: If True, fetch fresh data from ESPN API if cache is stale.
+                   If False, rely on existing data in the leg (from DB) and do not make external calls.
+    """
     if not parlays:
         return []
     
-    logger.info("Starting process_parlay_data")
+    logger.info(f"Starting process_parlay_data (fetch_live={fetch_live})")
     processed_parlays = []
     
     for parlay in parlays:
-        logger.info(f"Processing parlay: {parlay.get('name')}")
+        # logger.info(f"Processing parlay: {parlay.get('name')}")
         parlay_games = {}
         
         for leg in parlay.get("legs", []):
             player_name = leg.get('player', 'Unknown Player')
             stat_name = leg.get('stat', 'Unknown Stat')
             game_date = leg.get('game_date', 'Unknown Date')
-            logger.info(f"[Sport Detection] Processing leg for {player_name} - {stat_name} on {game_date}")
+            # logger.info(f"[Sport Detection] Processing leg for {player_name} - {stat_name} on {game_date}")
             
             sport = leg.get('sport', 'NFL')  # Default to NFL if not specified
             game_key = f"{leg['game_date']}_{sport}_{leg['away']}_{leg['home']}"
-            logger.info(f"Game key: {game_key} | Sport: {sport}")
+            # logger.info(f"Game key: {game_key} | Sport: {sport}")
             
-            if game_key not in game_data_cache or not cache_is_fresh(game_key):
-                game_data = fetch_game_details_from_espn(leg['game_date'], leg['away'], leg['home'], sport)
-                game_data_cache[game_key] = (game_data, time.time())
-            else:
+            game_data = None
+            
+            # Try to get from cache first
+            if game_key in game_data_cache and cache_is_fresh(game_key):
                 game_data, _ = game_data_cache[game_key]
+            
+            # If not in cache and fetch_live is True, fetch from ESPN
+            elif fetch_live:
+                game_data = fetch_game_details_from_espn(leg['game_date'], leg['away'], leg['home'], sport)
+                if game_data:
+                    game_data_cache[game_key] = (game_data, time.time())
             
             if game_data:
                 parlay_games[game_key] = game_data
-                logger.info(f"✓ [ESPN Match Success] Found game for {leg['away']} vs {leg['home']} on {game_date} (Sport: {sport})")
+                # logger.info(f"✓ [ESPN Match Success] Found game for {leg['away']} vs {leg['home']} on {game_date} (Sport: {sport})")
             else:
-                # Create a minimal game object from leg data when ESPN API fails
+                # Create a minimal game object from leg data when ESPN API fails or fetch_live is False
                 # This ensures games array is populated even if ESPN is unreachable
-                logger.warning(f"❌ [SPORT MISMATCH WARNING] ESPN API returned no games for {player_name} ({stat_name}) | {leg['away']} vs {leg['home']} on {game_date} (Sport: {sport}) - This may indicate incorrect sport classification")
+                # logger.warning(f"Using fallback game data for {game_key}")
                 game_data = {
                     "espn_game_id": leg.get("gameId", ""),
                     "teams": {
@@ -393,18 +405,22 @@ def process_parlay_data(parlays):
                     "startTime": "",
                     "startDateTime": leg.get("game_date", ""),
                     "game_date": leg.get("game_date", ""),
-                    "statusTypeName": "unknown",  # Will be updated by automation
-                    "period": 0,
-                    "clock": "00:00",
-                    "score": {"away": 0, "home": 0},
+                    "statusTypeName": leg.get("gameStatus") or "unknown",  # Use existing status from DB
+                    "period": leg.get("current_quarter") or 0,
+                    "clock": leg.get("time_remaining") or "00:00",
+                    "score": {
+                        "away": leg.get("awayScore") or 0, 
+                        "home": leg.get("homeScore") or 0
+                    },
                     "boxscore": [],
                     "scoring_plays": [],
                     "leaders": []
                 }
                 parlay_games[game_key] = game_data
-                # Mark this leg with a warning for frontend to highlight
-                leg["sport_match_warning"] = f"No ESPN game found for {sport}. Using fallback data. Please verify sport classification."
-                logger.info(f"Created fallback game object for {game_key} due to ESPN API unavailability")
+                if fetch_live:
+                    # Only warn if we EXPECTED to find it
+                    leg["sport_match_warning"] = f"No ESPN game found for {sport}. Using fallback data."
+                # logger.info(f"Created fallback game object for {game_key}")
 
         for leg in parlay.get("legs", []):
             # Fix target value for moneyline bets (should be 0, not None)
@@ -444,7 +460,14 @@ def process_parlay_data(parlays):
                     if espn_game_id:
                         leg["gameId"] = str(espn_game_id)
                     
-                    leg["current"] = calculate_bet_value(leg, game_data)
+                    leg["gameId"] = str(espn_game_id)
+                    
+                    # Only recalculate current value if we have live data or if it's missing
+                    # If fetch_live=False, we trust the existing 'current' value from the DB (via to_dict)
+                    if fetch_live:
+                        calculated_value = calculate_bet_value(leg, game_data)
+                        if calculated_value is not None:
+                            leg["current"] = calculated_value
                     # Add score differential for spread/moneyline bets
                     if leg["stat"] in ["spread", "moneyline", "point_spread"]:
                         home_team = game_data.get("teams", {}).get("home", "")

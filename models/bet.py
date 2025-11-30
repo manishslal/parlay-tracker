@@ -141,9 +141,9 @@ class Bet(db.Model):
                     
                     game_key = f"{leg['away_team']}-{leg['home_team']}"
                     if game_key not in games_map:
-                        # Look up team abbreviations from teams table using partial matching
-                        home_team_obj = Team.query.filter(Team.team_name.ilike(f'%{leg["home_team"]}%')).first()
-                        away_team_obj = Team.query.filter(Team.team_name.ilike(f'%{leg["away_team"]}%')).first()
+                        # Look up team abbreviations from teams table using cached lookup
+                        home_team_obj = Team.get_team_by_name_cached(leg["home_team"])
+                        away_team_obj = Team.get_team_by_name_cached(leg["away_team"])
                         
                         home_abbr = home_team_obj.team_abbr if home_team_obj else leg['home_team'][:3].upper()
                         away_abbr = away_team_obj.team_abbr if away_team_obj else leg['away_team'][:3].upper()

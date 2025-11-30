@@ -44,6 +44,7 @@ def auto_move_bets_no_live_legs():
             bet_legs = BetLeg.query.filter(BetLeg.bet_id == bet.id).with_for_update().all()
             
             if not bet_legs:
+                logging.info(f"[AUTO-MOVE-NO-LIVE] Bet {bet.id} has NO legs - skipping")
                 continue
             
             # Check game statuses for all legs
@@ -53,7 +54,25 @@ def auto_move_bets_no_live_legs():
             all_legs_final = True
             final_count = 0
             
+            from datetime import datetime
+            today = datetime.now().date()
+            
             for leg in bet_legs:
+                # Fix stuck STATUS_END_PERIOD
+                # If game is in STATUS_END_PERIOD and date is before today, it's definitely final.
+                # Even if it's today, if it's been in END_PERIOD for a long time it's likely final,
+                # but checking date < today is the safest conservative check.
+                if leg.game_status == 'STATUS_END_PERIOD' and leg.game_date and leg.game_date < today:
+                    logging.info(f"[AUTO-MOVE-NO-LIVE] Fixing stuck STATUS_END_PERIOD for leg {leg.id} (date {leg.game_date}) -> STATUS_FINAL")
+                    leg.game_status = 'STATUS_FINAL'
+                    # We don't commit here, we commit at the end if updated_count > 0, 
+                    # OR we need to ensure this change gets committed even if the bet doesn't move yet.
+                    # Actually, if we change it here, the next checks will see it as FINAL.
+                    # But we need to make sure db.session.commit() is called.
+                    # The current logic only commits if updated_count > 0.
+                    # We should track if we made ANY changes (status fix or bet move).
+                    updated_count += 1 # Increment to ensure commit, even if bet doesn't move this round
+                
                 # Check for live/in-progress games
                 if leg.game_status in ['STATUS_IN_PROGRESS', 'STATUS_HALFTIME', 'STATUS_END_PERIOD']:
                     has_live_game = True
@@ -106,7 +125,7 @@ def auto_move_bets_no_live_legs():
                 updated_count += 1
             else:
                 # Log why bet was NOT moved (for debugging)
-                logging.debug(f"[AUTO-MOVE-NO-LIVE] Bet {bet.id} NOT moved - live:{has_live_game}, scheduled:{has_scheduled_game}, all_final:{all_legs_final}, final_count:{final_count}/{len(bet_legs)}")
+                logging.info(f"[AUTO-MOVE-NO-LIVE] Bet {bet.id} NOT moved - live:{has_live_game}, scheduled:{has_scheduled_game}, all_final:{all_legs_final}, final_count:{final_count}/{len(bet_legs)}")
         
         # Commit all changes
         if updated_count > 0:

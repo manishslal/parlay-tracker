@@ -155,20 +155,42 @@ def search_espn_player(player_name: str, sport: str = "football", league: str = 
                 if result.get('type') == 'player':
                     player_data = result.get('contents', [{}])[0]
                     if player_data:
-                        # Extract player information
+                        # Extract player ID (integer ID preferred for details API)
+                        # UID format: s:40~l:46~a:1966 -> 1966
+                        uid = player_data.get('uid', '')
+                        player_id = str(player_data.get('id', ''))
+                        
+                        if 'a:' in uid:
+                            try:
+                                player_id = uid.split('a:')[-1]
+                            except:
+                                pass
+                        
+                        # Fetch full details to get position, jersey, team
+                        details = get_espn_player_details(player_id, sport, league)
+                        if details:
+                            return details
+
+                        # Fallback: Extract what we can from search result
                         position = player_data.get('position', {}).get('abbreviation', '')
                         jersey_number = player_data.get('jersey', '')
                         
+                        # Try to parse team from subtitle if team object is empty
+                        # Subtitle format: "Los Angeles Lakers"
+                        current_team = player_data.get('team', {}).get('displayName', '')
+                        if not current_team:
+                            current_team = result.get('subtitle', '')
+                            
                         # Determine correct sport
                         correct_sport = 'NFL' if league.upper() == 'NFL' else 'NBA' if league.upper() == 'NBA' else sport.upper()
                         
                         player_info = {
-                            'espn_player_id': str(player_data.get('id', '')),
+                            'espn_player_id': player_id,
                             'player_name': player_data.get('displayName', ''),
                             'position': position if position else None,
                             'jersey_number': jersey_number if jersey_number not in [None, ''] else None,
                             'team_abbreviation': player_data.get('team', {}).get('abbreviation', ''),
-                            'current_team': player_data.get('team', {}).get('displayName', ''),
+                            'current_team': current_team,
                             'sport': correct_sport
                         }
                         return player_info
@@ -521,7 +543,7 @@ def get_espn_player_details(player_id: str, sport: str = "football", league: str
     """
     try:
         # ESPN player details API
-        url = f"https://site.api.espn.com/apis/site/v2/sports/{sport}/{league}/athletes/{player_id}"
+        url = f"https://site.web.api.espn.com/apis/common/v3/sports/{sport}/{league}/athletes/{player_id}"
         
         response = requests.get(url, timeout=10)
         response.raise_for_status()

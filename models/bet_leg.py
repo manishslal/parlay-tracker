@@ -167,6 +167,8 @@ class BetLeg(db.Model):
         data['team_logo'] = '/media/unknown-logo.svg'
         
         # 1. Fetch Player Jersey Number
+        # Optimization: Use joinedload in query instead of fetching here if possible, 
+        # but for now we'll just keep it simple. Player data is harder to cache globally.
         if self.player_id:
             player = Player.query.get(self.player_id)
             if player and player.jersey_number:
@@ -179,31 +181,11 @@ class BetLeg(db.Model):
                 data['player_jersey_number'] = player.jersey_number
 
         # 2. Fetch Team Colors and Logo
-        # Try to match team by name OR abbreviation
+        # Optimization: Use cached team lookup
         team_name = self.player_team or self.home_team or self.away_team
         if team_name:
-            # Base query
-            query = Team.query
-            if self.sport:
-                query = query.filter_by(sport=self.sport)
-
-            # Try exact match first
-            team = query.filter(Team.team_name.ilike(team_name)).first()
+            team = Team.get_team_by_name_cached(team_name)
             
-            # If no exact match, try abbreviation
-            if not team:
-                team = query.filter(Team.team_abbr.ilike(team_name)).first()
-            
-            # If still no match, try partial match (e.g. "Lakers" in "Los Angeles Lakers")
-            if not team:
-                team = query.filter(Team.team_name.ilike(f'%{team_name}%')).first()
-            
-            # If still no match, try checking if the first word is an abbreviation (e.g. "ATL Falcons" -> "ATL")
-            if not team:
-                first_word = team_name.split(' ')[0]
-                if len(first_word) <= 3: # Abbreviations are usually short
-                    team = query.filter(Team.team_abbr.ilike(first_word)).first()
-                
             if team:
                 if team.color:
                     # Ensure hex prefix
