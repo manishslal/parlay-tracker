@@ -508,6 +508,8 @@ def get_archived_bets() -> Any:
 	except Exception as e:
 		return jsonify({"error": str(e)}), 500
 
+
+
 @bets_bp.route('/api/bets/bulk-archive', methods=['POST'])
 @login_required
 def bulk_archive_bets() -> Any:
@@ -908,9 +910,20 @@ def cache_bust():
 	
 	try:
 		clear_game_cache()  # Clear all cached game data
+		
+		# TRIGGER AUTOMATION: Run hit status determination
+		# This ensures that when user clicks "Refresh Stats", we update the database status
+		# to match the latest data, including early wins/losses.
+		try:
+			from automation.bet_status_management import auto_determine_leg_hit_status
+			logger.info("Triggering auto_determine_leg_hit_status from cache-bust")
+			auto_determine_leg_hit_status()
+		except Exception as e:
+			logger.error(f"Error running automation from cache-bust: {e}")
+			
 		return jsonify({
 			'success': True,
-			'message': 'Game cache cleared. Stats will refresh on next fetch.'
+			'message': 'Game cache cleared and status updated.'
 		})
 	except Exception as e:
 		logger.error(f"Error clearing cache: {e}")
