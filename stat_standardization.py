@@ -12,14 +12,14 @@ Usage:
 
 # NFL stat type mapping
 NFL_STATS = {
-    'passing_yards': ['passing_yards', 'passing yards', 'pass yards', 'pass_yards', 'passing yds', 'pass yds', 'alt_passing_yards', 'alt_passing_yds', 'passing_yards_alt', 'alt passing yards', 'alt pass yds'],
+    'passing_yards': ['passing_yards', 'passing yards', 'pass yards', 'pass_yards', 'passing yds', 'pass yds', 'alt_passing_yards', 'alt_passing_yds', 'passing_yards_alt', 'alt passing yards', 'alt pass yds', 'alt passing yds'],
     'passing_touchdowns': ['passing_touchdowns', 'passing touchdowns', 'pass touchdowns', 'passing_td', 'passing td', 'pass td'],
     'interceptions_thrown': ['interceptions_thrown', 'interceptions thrown', 'interceptions', 'int_thrown'],
     'passing_completions': ['passing_completions', 'passing completions', 'completions', 'pass_completions'],
-    'rushing_yards': ['rushing_yards', 'rushing yards', 'rush yards', 'rush_yards', 'rushing yds', 'rush yds', 'alt_rushing_yards', 'alt_rushing_yds', 'rushing_yards_alt', 'alt rushing yards', 'alt rush yds'],
+    'rushing_yards': ['rushing_yards', 'rushing yards', 'rush yards', 'rush_yards', 'rushing yds', 'rush yds', 'alt_rushing_yards', 'alt_rushing_yds', 'rushing_yards_alt', 'alt rushing yards', 'alt rush yds', 'alt rushing yds'],
     'rushing_touchdowns': ['rushing_touchdowns', 'rushing touchdowns', 'rush touchdowns', 'rushing_td', 'rushing td', 'rush td'],
     'rushing_attempts': ['rushing_attempts', 'rushing attempts', 'rush attempts', 'rushing_att', 'rush_att', 'carries'],
-    'receiving_yards': ['receiving_yards', 'receiving yards', 'rec yards', 'rec_yards', 'receiving yds', 'rec yds', 'alt_receiving_yards', 'alt_receiving_yds', 'alt receiving yards', 'alt rec yds'],
+    'receiving_yards': ['receiving_yards', 'receiving yards', 'rec yards', 'rec_yards', 'receiving yds', 'rec yds', 'alt_receiving_yards', 'alt_receiving_yds', 'alt receiving yards', 'alt rec yds', 'alt receiving yds'],
     'receiving_touchdowns': ['receiving_touchdowns', 'receiving touchdowns', 'rec touchdowns', 'receiving_td', 'receiving td', 'rec td'],
     'receptions': ['receptions', 'reception', 'rec', 'catches', 'receptions_alt', 'alt_receptions', 'alt receptions'],
     'longest_reception': ['longest_reception', 'longest reception', 'longest rec'],
