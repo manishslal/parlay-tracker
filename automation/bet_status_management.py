@@ -156,11 +156,11 @@ def auto_determine_leg_hit_status():
             import logging
             logging.info("[AUTO-HIT-STATUS] Checking for legs needing hit status determination")
             
-            # Find all legs with achieved_value but no is_hit status AND game has finished
+            # Find all legs with achieved_value but no is_hit status
+            # REMOVED: BetLeg.game_status == 'STATUS_FINAL' check to allow early wins/losses
             legs_needing_status = BetLeg.query.filter(
                 BetLeg.achieved_value.isnot(None),
-                BetLeg.is_hit.is_(None),
-                BetLeg.game_status == 'STATUS_FINAL'  # Only process finished games
+                BetLeg.is_hit.is_(None)
             ).all()
             
             if not legs_needing_status:
@@ -173,34 +173,46 @@ def auto_determine_leg_hit_status():
             
             for leg in legs_needing_status:
                 # Determine if the bet was hit based on bet type
-                is_hit = False
+                is_hit = None # Default to None (undecided)
                 stat_type = leg.stat_type.lower() if leg.stat_type else ''
+                is_final = leg.game_status == 'STATUS_FINAL'
                 
                 if stat_type == 'moneyline':
-                    # Moneyline: won if score_diff > 0
-                    is_hit = leg.achieved_value > 0
+                    # Moneyline: won if score_diff > 0 (ONLY IF FINAL)
+                    if is_final:
+                        is_hit = leg.achieved_value > 0
                 elif stat_type == 'spread':
-                    # Spread: won if (score_diff + spread) > 0
-                    if leg.target_value is not None:
+                    # Spread: won if (score_diff + spread) > 0 (ONLY IF FINAL)
+                    if is_final and leg.target_value is not None:
                         is_hit = (leg.achieved_value + leg.target_value) > 0
                 else:
                     # Player props and other bets: compare achieved vs target
                     if leg.target_value is not None:
                         # Check for over/under
                         if leg.bet_line_type == 'under':
-                            is_hit = leg.achieved_value < leg.target_value
-                        else:  # 'over' or None (default to over)
-                            is_hit = leg.achieved_value >= leg.target_value
+                            # UNDER bet:
+                            # - Loss if achieved > target (Early Loss)
+                            # - Win if achieved < target AND Final (Final Win)
+                            if leg.achieved_value >= leg.target_value: # Strict inequality? usually over/under is half point, but if equal it's a push/loss depending on rules. Assuming >= is loss for under.
+                                is_hit = False # Early Loss
+                            elif is_final:
+                                is_hit = True # Final Win
+                        else:  
+                            # OVER bet (default):
+                            # - Win if achieved >= target (Early Win)
+                            # - Loss if achieved < target AND Final (Final Loss)
+                            if leg.achieved_value >= leg.target_value:
+                                is_hit = True # Early Win
+                            elif is_final:
+                                is_hit = False # Final Loss
                 
-                # Update the leg
-                leg.is_hit = is_hit
-                # Update status for completed games (allow correction of previously incorrect statuses)
-                # Only update if game is final to avoid overwriting correct statuses for in-progress games
-                if leg.game_status == 'STATUS_FINAL':
+                # Update the leg if we determined a status
+                if is_hit is not None:
+                    leg.is_hit = is_hit
                     leg.status = 'won' if is_hit else 'lost'
-                
-                logging.info(f"[AUTO-HIT-STATUS] Bet {leg.bet_id} Leg {leg.leg_order}: {leg.player_name} - {stat_type} - {'HIT' if is_hit else 'MISS'} (achieved: {leg.achieved_value}, target: {leg.target_value})")
-                updated_count += 1
+                    
+                    logging.info(f"[AUTO-HIT-STATUS] Bet {leg.bet_id} Leg {leg.leg_order}: {leg.player_name} - {stat_type} - {'HIT' if is_hit else 'MISS'} (achieved: {leg.achieved_value}, target: {leg.target_value}, final: {is_final})")
+                    updated_count += 1
             
             # Commit all changes
             if updated_count > 0:
