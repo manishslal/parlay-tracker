@@ -557,6 +557,39 @@ def populate_player_data_for_bet(bet: Any) -> None:
     app.logger.info(f"[PLAYER-POPULATION] Populating player data for {len(bet_legs)} legs in bet {bet.id}")
     
     for leg in bet_legs:
+        # SAFEGUARD: Skip player search for team props (moneyline, spread, totals, etc.)
+        # These bets are team-based, so "player_name" is actually a team name.
+        # Searching for them as players leads to incorrect fuzzy matches (e.g. "49ers" -> "Fred Warner")
+        is_team_prop = False
+        
+        # Check bet_type
+        if leg.bet_type and leg.bet_type.lower() in ['moneyline', 'spread', 'total', 'over_under', 'game_line', 'team_total']:
+            is_team_prop = True
+            
+        # Check stat_type
+        if leg.stat_type and leg.stat_type.lower() in ['moneyline', 'spread', 'total_points', 'over_under', 'team_total_points']:
+            is_team_prop = True
+            
+        # Check if player_name is actually a team name
+        # This is critical for OCR bets where "Rams" might be extracted as the player
+        nfl_teams = ['raiders', 'cowboys', 'chiefs', 'chargers', 'broncos', 'patriots', 'jets', 'giants', 'eagles', 'commanders', 'bears', 'lions', 'packers', 'vikings', 'falcons', 'panthers', 'saints', 'buccaneers', 'cardinals', 'rams', '49ers', 'seahawks', 'bengals', 'browns', 'steelers', 'ravens', 'bills', 'dolphins', 'texans', 'colts', 'jaguars', 'titans']
+        nba_teams = ['lakers', 'celtics', 'warriors', 'bulls', 'heat', 'knicks', 'nets', 'sixers', 'raptors', 'bucks', 'suns', 'nuggets', 'clippers', 'mavericks', 'thunder', 'jazz', 'blazers', 'kings', 'wizards', 'hornets', 'pelicans', 'grizzlies', 'hawks', 'cavaliers', 'pistons', 'pacers', 'magic', 'spurs', 'rockets', 'timberwolves']
+        mlb_teams = ['yankees', 'redsox', 'orioles', 'rays', 'bluejays', 'indians', 'guardians', 'twins', 'whitesox', 'royals', 'tigers', 'athletics', 'mariners', 'rangers', 'astros', 'angels', 'dodgers', 'padres', 'giants', 'rockies', 'braves', 'mets', 'nationals', 'marlins', 'phillies', 'cubs', 'cardinals', 'brewers', 'pirates', 'reds']
+        nhl_teams = ['rangers', 'bruins', 'maple leafs', 'canadiens', 'devils', 'flyers', 'penguins', 'sabres', 'red wings', 'lightning', 'hurricanes', 'capitals', 'panthers', 'islanders', 'stars', 'avalanche', 'wild', 'blues', 'jets', 'blackhawks', 'canucks', 'flames', 'oilers', 'ducks', 'sharks', 'kings', 'desert']
+        
+        player_name_lower = leg.player_name.lower().strip() if leg.player_name else ""
+        
+        if any(team in player_name_lower for team in nfl_teams) or \
+           any(team in player_name_lower for team in nba_teams) or \
+           any(team in player_name_lower for team in mlb_teams) or \
+           any(team in player_name_lower for team in nhl_teams):
+            is_team_prop = True
+            app.logger.info(f"[PLAYER-POPULATION] Detected team name in player_name '{leg.player_name}' - treating as team prop")
+
+        if is_team_prop:
+            app.logger.info(f"[PLAYER-POPULATION] Skipping player search for team prop leg {leg.id} ({leg.player_name} - {leg.bet_type}/{leg.stat_type})")
+            continue
+
         try:
             # First, try to find existing player by name
             existing_player = Player.query.filter(
@@ -1175,12 +1208,13 @@ def auto_move_completed_bets(user_id):
                 else:
                     # Game is final - check if this leg is a loss
                     is_spread_or_ml = leg.get('stat') in ['spread', 'moneyline']
-                    current = processed_leg.get('current', 0)
-                    target = leg.get('target', 0)
+                    # SAFEGUARD: Handle None values for current/target to avoid TypeError
+                    current = processed_leg.get('current') or 0
+                    target = leg.get('target') or 0
                     
                     if is_spread_or_ml:
                         # For spread/moneyline, check if bet lost
-                        score_diff = leg.get('score_diff', processed_leg.get('score_diff', 0))
+                        score_diff = leg.get('score_diff') or processed_leg.get('score_diff') or 0
                         
                         if leg.get('stat') == 'moneyline':
                             # Moneyline: team must win (score_diff > 0)
