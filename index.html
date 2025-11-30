@@ -31,7 +31,7 @@
   <meta name="description" content="Track your sports betting parlays and monitor live stats in real-time">
 
   <!-- App Version for Cache Busting -->
-  <meta name="app-version" content="2.0.3">
+  <meta name="app-version" content="2.0.4">
 
   <!-- Roboto Font Import -->
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
@@ -4658,17 +4658,9 @@
           if (g.statusTypeName === 'STATUS_SCHEDULED' || g.statusTypeName === 'STATUS_PRE_GAME') {
             gameStatus = 'PREGAME';
             gameCls = 'status-pregame';
-            // Calculate countdown
-            const now = new Date();
-            const start = new Date(g.startDateTime);
-            const diffMs = start - now;
-            const diffMins = Math.floor(diffMs / 60000);
-            let countdown = '';
-            if (diffMins > 0 && diffMins < 60) {
-              countdown = `Starts in ${diffMins}m`;
-            } else if (diffMins <= 0) {
-              countdown = 'Starting soon';
-            }
+
+            // Use existing getCountdown helper
+            const countdown = getCountdown(g.startDateTime);
 
             const awayAbbr = g.teams.away_abbr || getTeamAbbr(g.teams.away);
             const homeAbbr = g.teams.home_abbr || getTeamAbbr(g.teams.home);
