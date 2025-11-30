@@ -2128,27 +2128,24 @@ scheduler.add_job(
 # Start the scheduler
 scheduler.start()
 
-# Run migrations on startup to ensure DB schema is up to date
-# Placed here to run when Gunicorn imports the app
-try:
-    with app.app_context():
+if __name__ == '__main__':
+    # Run migrations on startup (Local dev only)
+    try:
         print("Running database migrations...")
         import subprocess
-        # Use sys.executable to ensure we use the same python environment
         import sys
         subprocess.run([sys.executable, '-m', 'flask', 'db', 'upgrade'], check=True)
         print("Database migrations completed successfully.")
-except Exception as e:
-    print(f"Database migration failed: {e}")
+    except Exception as e:
+        print(f"Database migration failed: {e}")
 
-# Run debug script on startup to diagnose production issues
-try:
-    from debug_scoreboard import debug_scoreboard
-    print("Running startup debug...")
-    debug_scoreboard()
-except Exception as e:
-    print(f"Startup debug failed: {e}")
+    # Run debug script (Local dev only)
+    try:
+        from debug_scoreboard import debug_scoreboard
+        print("Running startup debug...")
+        debug_scoreboard()
+    except Exception as e:
+        print(f"Startup debug failed: {e}")
 
-if __name__ == '__main__':
     port = int(os.environ.get('PORT', 10000))
     app.run(host='0.0.0.0', port=port)
