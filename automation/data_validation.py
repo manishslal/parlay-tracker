@@ -123,13 +123,13 @@ def validate_historical_bet_data():
                     leg_dict = {
                         'player': leg.player_name,
                         'stat': leg.stat_type,
-                        'target': float(leg.target_value),
+                        'target': float(leg.target_value) if leg.target_value is not None else 0.0,
                     }
                     
                     espn_value = calculate_bet_value(leg_dict, game_data)
                     
                     # Compare with stored achieved_value
-                    stored_value = float(leg.achieved_value)
+                    stored_value = float(leg.achieved_value) if leg.achieved_value is not None else 0.0
                     
                     # Allow small floating point differences
                     if abs(espn_value - stored_value) > 0.01:

@@ -216,15 +216,19 @@ def _update_leg_status(leg):
     if is_game_finished and leg.achieved_value is not None and leg.target_value is not None:
         stat_type = leg.bet_type.lower()
         
+        # SAFEGUARD: Ensure values are numbers
+        achieved = float(leg.achieved_value)
+        target = float(leg.target_value)
+        
         if stat_type == 'moneyline':
-            leg.is_hit = leg.achieved_value > 0
+            leg.is_hit = achieved > 0
         elif stat_type == 'spread':
-            leg.is_hit = (leg.achieved_value + leg.target_value) > 0
+            leg.is_hit = (achieved + target) > 0
         elif stat_type in ['total_points', 'player_prop', 'total', 'made_threes', 'assists', 'points']:
             if leg.bet_line_type == 'under':
-                leg.is_hit = leg.achieved_value < leg.target_value
+                leg.is_hit = achieved < target
             else:  # over
-                leg.is_hit = leg.achieved_value >= leg.target_value
+                leg.is_hit = achieved >= target
         else:
             leg.is_hit = False  # Default to not hit
         
