@@ -33,7 +33,10 @@ def update_completed_bet_legs():
         # Use with_for_update() to lock rows and prevent race conditions
         legs_to_update = BetLeg.query.filter(
             BetLeg.game_status == 'STATUS_FINAL',
-            BetLeg.achieved_value.is_(None),
+            db.or_(
+                BetLeg.achieved_value.is_(None),
+                BetLeg.home_score.is_(None)
+            ),
             BetLeg.game_date >= cutoff_date
         ).with_for_update().all()
         
@@ -84,6 +87,11 @@ def update_completed_bet_legs():
                                     logging.warning(f"[COMPLETED-UPDATES] Leg {leg.leg_order} matched by order but stat mismatch: '{leg.stat_type}' vs '{proc_stat}'")
                                     continue
                             
+                            # Update scores if available
+                            if processed_leg.get('homeScore') is not None:
+                                leg.home_score = processed_leg['homeScore']
+                                leg.away_score = processed_leg['awayScore']
+                            
                             achieved_value = processed_leg.get('current')
                             if achieved_value is not None:
                                 # Validate the value before updating
@@ -111,7 +119,7 @@ def update_completed_bet_legs():
                                         automation_name='completed_bet_updates'
                                     )
                                     
-                                    logging.info(f"[COMPLETED-UPDATES] Updated bet {leg.bet_id} leg {leg.leg_order}: {leg.player_name} {leg.stat_type} = {achieved_value}")
+                                    logging.info(f"[COMPLETED-UPDATES] Updated bet {leg.bet_id} leg {leg.leg_order}: {leg.player_name} {leg.stat_type} = {achieved_value}, Score: {leg.home_score}-{leg.away_score}")
                                     updated_count += 1
                                 else:
                                     log_validation_failure(
@@ -123,6 +131,10 @@ def update_completed_bet_legs():
                                         stat=leg.stat_type,
                                         proposed_value=achieved_value
                                     )
+                            elif processed_leg.get('homeScore') is not None:
+                                # If we only updated scores but not achieved_value (e.g. achieved_value was already set)
+                                logging.info(f"[COMPLETED-UPDATES] Updated scores for bet {leg.bet_id} leg {leg.leg_order}: {leg.home_score}-{leg.away_score}")
+                                updated_count += 1
                             break
                 
             except Exception as e:

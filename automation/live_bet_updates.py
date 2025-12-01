@@ -88,6 +88,12 @@ def update_live_bet_legs():
                                     # Update game status if available
                                     if 'game_status' in game_data:
                                         bet_leg.game_status = game_data['game_status']
+                                        
+                                    # Update scores if available
+                                    if 'home_score' in game_data:
+                                        bet_leg.home_score = game_data['home_score']
+                                    if 'away_score' in game_data:
+                                        bet_leg.away_score = game_data['away_score']
                                 except Exception as e:
                                     logging.debug(f"[LIVE-UPDATE] Could not fetch ESPN player stats for leg {bet_leg.id}: {e}")
                             
