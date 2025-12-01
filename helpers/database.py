@@ -244,10 +244,11 @@ def auto_move_completed_bets(user_id):
                         logging.warning(f"[DEBUG BET {bet.id}] Leg {i}: Game not finished (status={game_status})")
                 else:
                     is_spread_or_ml = leg.get('stat') in ['spread', 'moneyline']
-                    current = processed_leg.get('current', 0)
-                    target = leg.get('target', 0)
+                    # SAFEGUARD: Handle None values for current/target to avoid TypeError
+                    current = processed_leg.get('current') or 0
+                    target = leg.get('target') or 0
                     if is_spread_or_ml:
-                        score_diff = leg.get('score_diff', processed_leg.get('score_diff', 0))
+                        score_diff = leg.get('score_diff') or processed_leg.get('score_diff') or 0
                         if leg.get('stat') == 'moneyline':
                             if score_diff <= 0:
                                 has_confirmed_loss = True
