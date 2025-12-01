@@ -621,8 +621,13 @@ def historical():
 		
 		app.logger.info(f"[HISTORICAL] Successfully processed {len(historical_parlays)} bets")
 		
-		# Historical bets don't need live processing - return data as-is
-		sorted_data = sort_parlays_by_date(historical_parlays)
+		# Historical bets don't need live processing (fetch_live=False)
+		# BUT we DO need to run process_parlay_data to ensure score_diff and other calculated fields
+		# are correct based on the stored homeScore/awayScore.
+		# This fixes issues where "Down X" vs "Up X" might be inverted in the raw JSON.
+		processed_data = process_parlay_data(historical_parlays, fetch_live=False)
+		
+		sorted_data = sort_parlays_by_date(processed_data)
 		app.logger.info(f"[HISTORICAL] Successfully sorted {len(sorted_data)} bets")
 		
 		return jsonify(sorted_data)
