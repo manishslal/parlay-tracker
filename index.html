@@ -394,8 +394,8 @@
       justify-content: center;
       align-items: center;
       gap: 1rem;
-      margin: 0.75rem 0 0.75rem 0;
-      /* Reduced from 1rem */
+      margin: 0.25rem 0 0.5rem 0;
+      /* Reduced vertical distance by 50% */
       /* Consistent margin */
       flex-wrap: wrap;
       min-height: 40px;
@@ -700,13 +700,28 @@
     #add-bet-button {
       display: inline-block;
       margin: 0;
-      padding: 0.75rem 1.5rem;
+      padding: 0.6rem 1.2rem;
+      /* Match filter-button */
       background: var(--primary);
       color: #fff;
-      font-weight: bold;
+      font-weight: 600;
+      /* Match filter-button */
       border: none;
       border-radius: 8px;
       cursor: pointer;
+      height: 40px;
+      /* Fixed height */
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-sizing: border-box;
+      line-height: 1;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+      /* Match filter-button */
+      font-size: 1rem;
+      /* Ensure text size matches */
+      min-width: 140px;
+      /* Ensure width accommodates text */
     }
 
     .button-container>div {
@@ -1093,11 +1108,25 @@
       opacity: .9;
     }
 
+    .status-container {
+      height: 24px;
+      /* Fixed height to prevent layout jump */
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0.5rem 0 0.5rem 0;
+      /* Consistent margin */
+    }
+
     #status-message {
       text-align: center;
-      margin: 0.5rem 0 0.75rem 0;
-      /* Reduced bottom margin from 1.5rem */
+      margin: 0;
       color: #aaa;
+      font-size: 0.8rem;
+      /* Reduced by 1pt (approx) */
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     /* Added bottom margin for spacing */
@@ -2388,7 +2417,9 @@
       </div>
       <button id="clear-cache-button" style="display: none;">Clear Cache 🗑️</button>
     </div>
-    <div id="status-message"></div>
+    <div class="status-container">
+      <div id="status-message"></div>
+    </div>
 
     <!-- Hidden file input for bet slip upload (removed capture attribute) -->
     <input type="file" id="betslip-file-input" accept="image/*" style="display: none;">
