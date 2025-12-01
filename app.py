@@ -563,26 +563,43 @@ def populate_player_data_for_bet(bet: Any) -> None:
         is_team_prop = False
         
         # Check bet_type
-        if leg.bet_type and leg.bet_type.lower() in ['moneyline', 'spread', 'total', 'over_under', 'game_line', 'team_total']:
-            is_team_prop = True
+        if leg.bet_type and leg.bet_type.lower() in ['moneyline', 'spread', 'total', 'over_under', 'game_line', 'team_total', 'parlay', 'sgp']:
+            # For Parlay/SGP, we need to check the stat_type or if player_name is a team
+            if leg.bet_type.lower() in ['moneyline', 'spread', 'total', 'over_under', 'game_line', 'team_total']:
+                is_team_prop = True
             
-        # Check stat_type
-        if leg.stat_type and leg.stat_type.lower() in ['moneyline', 'spread', 'total_points', 'over_under', 'team_total_points']:
+        # Check stat_type (definitive for team props)
+        if leg.stat_type and leg.stat_type.lower() in ['moneyline', 'spread', 'total_points', 'over_under', 'team_total_points', 'point_spread', 'total']:
             is_team_prop = True
             
         # Check if player_name is actually a team name
         # This is critical for OCR bets where "Rams" might be extracted as the player
-        nfl_teams = ['raiders', 'cowboys', 'chiefs', 'chargers', 'broncos', 'patriots', 'jets', 'giants', 'eagles', 'commanders', 'bears', 'lions', 'packers', 'vikings', 'falcons', 'panthers', 'saints', 'buccaneers', 'cardinals', 'rams', '49ers', 'seahawks', 'bengals', 'browns', 'steelers', 'ravens', 'bills', 'dolphins', 'texans', 'colts', 'jaguars', 'titans']
-        nba_teams = ['lakers', 'celtics', 'warriors', 'bulls', 'heat', 'knicks', 'nets', 'sixers', 'raptors', 'bucks', 'suns', 'nuggets', 'clippers', 'mavericks', 'thunder', 'jazz', 'blazers', 'kings', 'wizards', 'hornets', 'pelicans', 'grizzlies', 'hawks', 'cavaliers', 'pistons', 'pacers', 'magic', 'spurs', 'rockets', 'timberwolves']
-        mlb_teams = ['yankees', 'redsox', 'orioles', 'rays', 'bluejays', 'indians', 'guardians', 'twins', 'whitesox', 'royals', 'tigers', 'athletics', 'mariners', 'rangers', 'astros', 'angels', 'dodgers', 'padres', 'giants', 'rockies', 'braves', 'mets', 'nationals', 'marlins', 'phillies', 'cubs', 'cardinals', 'brewers', 'pirates', 'reds']
-        nhl_teams = ['rangers', 'bruins', 'maple leafs', 'canadiens', 'devils', 'flyers', 'penguins', 'sabres', 'red wings', 'lightning', 'hurricanes', 'capitals', 'panthers', 'islanders', 'stars', 'avalanche', 'wild', 'blues', 'jets', 'blackhawks', 'canucks', 'flames', 'oilers', 'ducks', 'sharks', 'kings', 'desert']
+        # Expanded list of team identifiers
+        team_identifiers = [
+            # NFL
+            'raiders', 'cowboys', 'chiefs', 'chargers', 'broncos', 'patriots', 'jets', 'giants', 'eagles', 'commanders', 
+            'bears', 'lions', 'packers', 'vikings', 'falcons', 'panthers', 'saints', 'buccaneers', 'cardinals', 'rams', 
+            '49ers', 'seahawks', 'bengals', 'browns', 'steelers', 'ravens', 'bills', 'dolphins', 'texans', 'colts', 
+            'jaguars', 'titans',
+            # NBA
+            'lakers', 'celtics', 'warriors', 'bulls', 'heat', 'knicks', 'nets', 'sixers', 'raptors', 'bucks', 'suns', 
+            'nuggets', 'clippers', 'mavericks', 'thunder', 'jazz', 'blazers', 'kings', 'wizards', 'hornets', 'pelicans', 
+            'grizzlies', 'hawks', 'cavaliers', 'pistons', 'pacers', 'magic', 'spurs', 'rockets', 'timberwolves',
+            # MLB
+            'yankees', 'redsox', 'orioles', 'rays', 'bluejays', 'indians', 'guardians', 'twins', 'whitesox', 'royals', 
+            'tigers', 'athletics', 'mariners', 'rangers', 'astros', 'angels', 'dodgers', 'padres', 'giants', 'rockies', 
+            'braves', 'mets', 'nationals', 'marlins', 'phillies', 'cubs', 'cardinals', 'brewers', 'pirates', 'reds',
+            # NHL
+            'rangers', 'bruins', 'maple leafs', 'canadiens', 'devils', 'flyers', 'penguins', 'sabres', 'red wings', 
+            'lightning', 'hurricanes', 'capitals', 'panthers', 'islanders', 'stars', 'avalanche', 'wild', 'blues', 
+            'jets', 'blackhawks', 'canucks', 'flames', 'oilers', 'ducks', 'sharks', 'kings', 'kraken', 'golden knights', 'predators',
+            # Generic
+            'team', 'total', 'over', 'under', 'game'
+        ]
         
         player_name_lower = leg.player_name.lower().strip() if leg.player_name else ""
         
-        if any(team in player_name_lower for team in nfl_teams) or \
-           any(team in player_name_lower for team in nba_teams) or \
-           any(team in player_name_lower for team in mlb_teams) or \
-           any(team in player_name_lower for team in nhl_teams):
+        if any(team in player_name_lower for team in team_identifiers):
             is_team_prop = True
             app.logger.info(f"[PLAYER-POPULATION] Detected team name in player_name '{leg.player_name}' - treating as team prop")
 
