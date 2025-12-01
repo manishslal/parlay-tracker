@@ -54,13 +54,16 @@ def calculate_bet_value(bet, game_data):
         stat_map = {
             # NFL
             "passing_yards": ("passing", "YDS"), "alt_passing_yards": ("passing", "YDS"),
+            "alt passing yds": ("passing", "YDS"), "alt_passing_yds": ("passing", "YDS"), "passing yds": ("passing", "YDS"),
             "pass_attempts": ("passing", "ATT"),
             "pass_completions": ("passing", "COMP"), "passing_touchdowns": ("passing", "TD"),
             "interceptions_thrown": ("passing", "INT"), "longest_pass_completion": ("passing", "LONG"),
             "rushing_yards": ("rushing", "YDS"), "alt_rushing_yards": ("rushing", "YDS"),
+            "alt rushing yds": ("rushing", "YDS"), "alt_rushing_yds": ("rushing", "YDS"), "rushing yds": ("rushing", "YDS"),
             "rushing_attempts": ("rushing", "CAR"),
             "rushing_touchdowns": ("rushing", "TD"), "longest_rush": ("rushing", "LONG"),
             "receiving_yards": ("receiving", "YDS"), "alt_receiving_yards": ("receiving", "YDS"),
+            "alt receiving yds": ("receiving", "YDS"), "alt_receiving_yds": ("receiving", "YDS"), "receiving yds": ("receiving", "YDS"),
             "receptions": ("receiving", "REC"), "receptions_alt": ("receiving", "REC"),
             "receiving_touchdowns": ("receiving", "TD"), "longest_reception": ("receiving", "LONG"),
             "sacks": ("defensive", "SACKS"), "tackles_assists": ("defensive", "TOT"),
