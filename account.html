@@ -1,53 +1,70 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>Account - Double Down</title>
-  
+
   <!-- PWA Configuration -->
   <link rel="manifest" href="/manifest.json">
   <meta name="theme-color" content="#140d52">
-  
+
   <!-- Design System Stylesheets -->
   <link rel="stylesheet" href="design-system.css">
   <link rel="stylesheet" href="bottom-nav.css">
-  
+
   <!-- Roboto Font Import -->
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
-  
+
   <style>
     :root {
       /* Dark mode colors (default) */
-      --bg:#121212;--surface:#252525;--primary:#140d52;
-      --text:#e0e0e0;--border:#ffcc00a4;--green:#4caf50;
-      --orange:#ff9800;--yellow:#ffeb3b;--pregame:#ffc107;
-      --error:#f44336;--progress-bg:#444;--section-bg:#1a1a1a;
+      --bg: #121212;
+      --surface: #252525;
+      --primary: #140d52;
+      --text: #e0e0e0;
+      --border: #ffcc00a4;
+      --green: #4caf50;
+      --orange: #ff9800;
+      --yellow: #ffeb3b;
+      --pregame: #ffc107;
+      --error: #f44336;
+      --progress-bg: #444;
+      --section-bg: #1a1a1a;
       --text-lg: 1.125rem;
       --text-base: 1rem;
       --weight-bold: 700;
     }
-    
+
     body.light-mode {
-      --bg:#f5f5f5;--surface:#f0f0f0;--primary:#5e35b1;
-      --text:#212121;--border:#ffcc00;--green:#388e3c;
-      --orange:#f57c00;--yellow:#fbc02d;--pregame:#ff6f00;
-      --error:#c62828;--progress-bg:#e0e0e0;--section-bg:#ffffff;
+      --bg: #f5f5f5;
+      --surface: #f0f0f0;
+      --primary: #5e35b1;
+      --text: #212121;
+      --border: #ffcc00;
+      --green: #388e3c;
+      --orange: #f57c00;
+      --yellow: #fbc02d;
+      --pregame: #ff6f00;
+      --error: #c62828;
+      --progress-bg: #e0e0e0;
+      --section-bg: #ffffff;
     }
-    
+
     * {
       margin: 0;
       padding: 0;
       box-sizing: border-box;
     }
-    
+
     body {
       background: var(--bg);
       color: var(--text);
       font-family: 'Roboto', sans-serif;
       padding-bottom: 80px;
     }
-    
+
     .page-header {
       display: flex;
       justify-content: flex-start;
@@ -59,12 +76,13 @@
       background: var(--primary);
       z-index: 100;
       padding: 0;
-      height: 62.5px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+      height: 44px;
+      /* Reduced from 62.5px */
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
       border-radius: 0;
       gap: 1rem;
     }
-    
+
     /* App Logo in Header */
     .page-header-logo {
       height: 100%;
@@ -74,40 +92,45 @@
       align-items: center;
       justify-content: center;
     }
-    
+
     .page-header-logo img,
     .page-header-logo svg {
       height: 90%;
       width: auto;
       max-width: 100%;
     }
-    
+
     h1 {
       color: #fff;
       margin: 0;
       flex: 0;
       text-align: left;
-      font-size: var(--text-lg);
+      font-size: 1rem;
+      /* Reduced from var(--text-lg) */
       font-weight: var(--weight-bold);
-      line-height: 62.5px;
+      line-height: 44px;
+      /* Reduced from 62.5px */
       padding: 0 1rem;
       white-space: nowrap;
       margin-left: -3rem;
     }
-    
+
     .menu-button {
       background: var(--primary);
       color: #fff;
       border: none;
       border-radius: 8px;
-      width: 30px;  /* 75% of 50px */
-      height: 30px; /* 75% of 50px */
+      width: 30px;
+      /* 75% of 50px */
+      height: 30px;
+      /* 75% of 50px */
       cursor: pointer;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: 3px;     /* 75% of 5px */
+      gap: 3px;
+      /* 75% of 5px */
       box-shadow: none;
       transition: transform 0.2s, opacity 0.3s;
       flex-shrink: 0;
@@ -116,47 +139,51 @@
       outline: none;
       -webkit-tap-highlight-color: transparent;
     }
-    
+
     .menu-button:hover {
       transform: scale(1.05);
     }
-    
+
     .menu-button span {
-      width: 15px;  /* 75% of 20px */
-      height: 2px; /* 75% of 2.4px */
+      width: 15px;
+      /* 75% of 20px */
+      height: 2px;
+      /* 75% of 2.4px */
       background: #fff;
       border-radius: 2px;
       transition: all 0.3s;
     }
-    
+
     .menu-button.active span:nth-child(1) {
       transform: rotate(45deg) translate(4.2px, 4.2px);
     }
-    
+
     .menu-button.active span:nth-child(2) {
       opacity: 0;
     }
-    
+
     .menu-button.active span:nth-child(3) {
       transform: rotate(-45deg) translate(4.2px, -4.2px);
     }
-    
+
     .container {
-      padding-top: calc(2rem + 50px);
+      padding-top: calc(2rem + 44px);
+      /* Header height + spacing */
       padding-bottom: calc(2rem + 80px);
       max-width: 100%;
       padding-left: 2rem;
       padding-right: 2rem;
     }
-    
+
     @media (max-width: 768px) {
       .container {
-        padding-top: calc(0.5rem + 50px);
+        padding-top: calc(0.5rem + 44px);
+        /* Header height + spacing */
         padding-left: 1rem;
         padding-right: 1rem;
       }
     }
-    
+
     /* Account Page Styles */
     .account-header {
       text-align: center;
@@ -167,7 +194,7 @@
       position: relative;
       overflow: hidden;
     }
-    
+
     .account-header::before {
       content: '';
       position: absolute;
@@ -178,7 +205,7 @@
       background: rgba(255, 235, 59, 0.1);
       border-radius: 50%;
     }
-    
+
     .account-header::after {
       content: '';
       position: absolute;
@@ -189,7 +216,7 @@
       background: rgba(255, 235, 59, 0.05);
       border-radius: 50%;
     }
-    
+
     .account-avatar {
       width: 80px;
       height: 80px;
@@ -204,7 +231,7 @@
       position: relative;
       z-index: 1;
     }
-    
+
     .account-title {
       font-size: 1.75rem;
       font-weight: var(--weight-bold);
@@ -213,14 +240,14 @@
       position: relative;
       z-index: 1;
     }
-    
+
     .account-subtitle {
       font-size: 0.9rem;
       color: rgba(255, 255, 255, 0.8);
       position: relative;
       z-index: 1;
     }
-    
+
     .account-section {
       background: var(--section-bg);
       border: 1px solid var(--border);
@@ -229,12 +256,12 @@
       margin-bottom: 1.5rem;
       transition: all 0.3s ease;
     }
-    
+
     .account-section:hover {
       border-color: var(--yellow);
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
     }
-    
+
     .section-title {
       font-size: 1.1rem;
       font-weight: var(--weight-bold);
@@ -244,16 +271,16 @@
       align-items: center;
       gap: 0.5rem;
     }
-    
+
     .section-title::before {
       content: '🔐';
       font-size: 1.2rem;
     }
-    
+
     .account-field {
       margin-bottom: 1rem;
     }
-    
+
     .field-label {
       font-size: 0.85rem;
       font-weight: 500;
@@ -264,7 +291,7 @@
       margin-bottom: 0.5rem;
       display: block;
     }
-    
+
     .field-value {
       font-size: 1rem;
       font-weight: 500;
@@ -275,11 +302,11 @@
       border: 1px solid var(--border);
       word-break: break-all;
     }
-    
+
     .form-group {
       margin-bottom: 1rem;
     }
-    
+
     .form-group label {
       display: block;
       margin-bottom: 0.5rem;
@@ -287,7 +314,7 @@
       font-weight: 500;
       font-size: 0.9rem;
     }
-    
+
     .form-group input {
       width: 100%;
       padding: 0.75rem;
@@ -298,17 +325,17 @@
       font-family: 'Roboto', sans-serif;
       transition: all 0.3s ease;
     }
-    
+
     .form-group input:focus {
       outline: none;
       border-color: var(--yellow);
       box-shadow: 0 0 0 2px rgba(255, 235, 59, 0.2);
     }
-    
+
     .form-group input::placeholder {
       color: rgba(224, 224, 224, 0.5);
     }
-    
+
     .btn {
       padding: 0.75rem 1.5rem;
       border: none;
@@ -320,32 +347,32 @@
       text-transform: uppercase;
       letter-spacing: 0.5px;
     }
-    
+
     .btn-primary {
       background: linear-gradient(135deg, var(--yellow) 0%, #ffc107 100%);
       color: var(--primary);
     }
-    
+
     .btn-primary:hover {
       transform: translateY(-2px);
       box-shadow: 0 6px 16px rgba(255, 235, 59, 0.3);
     }
-    
+
     .btn-primary:active {
       transform: translateY(0);
     }
-    
+
     .btn-secondary {
       background: transparent;
       color: var(--yellow);
       border: 2px solid var(--yellow);
     }
-    
+
     .btn-secondary:hover {
       background: rgba(255, 235, 59, 0.1);
       transform: translateY(-2px);
     }
-    
+
     .status-message {
       padding: 0.75rem 1rem;
       border-radius: 8px;
@@ -353,25 +380,25 @@
       font-weight: 500;
       text-align: center;
     }
-    
+
     .status-message.success {
       background: rgba(76, 175, 80, 0.2);
       color: var(--green);
       border: 1px solid var(--green);
     }
-    
+
     .status-message.error {
       background: rgba(244, 67, 54, 0.2);
       color: var(--error);
       border: 1px solid var(--error);
     }
-    
+
     .status-message.loading {
       background: rgba(255, 235, 59, 0.2);
       color: var(--yellow);
       border: 1px solid var(--yellow);
     }
-    
+
     .logout-btn {
       width: 100%;
       padding: 1rem;
@@ -385,13 +412,13 @@
       font-size: 0.95rem;
       text-transform: uppercase;
     }
-    
+
     .logout-btn:hover {
       opacity: 0.9;
       transform: translateY(-2px);
       box-shadow: 0 6px 16px rgba(244, 67, 54, 0.3);
     }
-    
+
     /* Side Menu */
     .menu-overlay {
       display: none;
@@ -400,14 +427,14 @@
       left: 0;
       right: 0;
       bottom: 0;
-      background: rgba(0,0,0,0.5);
+      background: rgba(0, 0, 0, 0.5);
       z-index: 998;
     }
-    
+
     .menu-overlay.active {
       display: block;
     }
-    
+
     .side-menu {
       position: fixed;
       right: 0;
@@ -422,11 +449,11 @@
       flex-direction: column;
       gap: 0.4rem;
     }
-    
+
     .side-menu:not(.active) {
       right: -250px;
     }
-    
+
     .menu-item {
       padding: 0.65rem 0.8rem;
       cursor: pointer;
@@ -437,17 +464,17 @@
       background: var(--section-bg);
       border-radius: 6px;
     }
-    
+
     .menu-item:hover {
       background: var(--yellow);
       color: var(--primary);
     }
-    
+
     .menu-item:hover .menu-icon {
       color: var(--primary);
       stroke: var(--primary);
     }
-    
+
     .menu-icon {
       width: 20px;
       height: 20px;
@@ -455,20 +482,21 @@
       color: var(--text);
       transition: color 0.2s ease;
     }
-    
+
     body.light-mode .account-header {
       background: linear-gradient(135deg, #5e35b1 0%, rgba(94, 53, 177, 0.8) 100%);
     }
-    
+
     body.light-mode .section-title {
       color: #5e35b1;
     }
   </style>
 </head>
+
 <body>
   <!-- Menu Overlay -->
   <div class="menu-overlay" id="menu-overlay"></div>
-  
+
   <!-- Side Menu -->
   <div class="side-menu" id="side-menu">
     <div class="menu-item" id="add-bet-item">
@@ -478,7 +506,7 @@
       </svg>
       <span>Add New Bet</span>
     </div>
-    
+
     <div class="menu-item" id="issues-item">
       <svg class="menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <circle cx="12" cy="12" r="10"></circle>
@@ -487,7 +515,7 @@
       </svg>
       <span>Issues</span>
     </div>
-    
+
     <div class="menu-item" id="theme-toggle">
       <svg class="menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <circle cx="12" cy="12" r="5"></circle>
@@ -502,7 +530,7 @@
       </svg>
       <span id="theme-text">Light Mode</span>
     </div>
-    
+
     <div class="menu-item" id="profile-item">
       <svg class="menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
@@ -510,7 +538,7 @@
       </svg>
       <span>Profile</span>
     </div>
-    
+
     <div class="menu-item" id="logout-item">
       <svg class="menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
@@ -546,17 +574,17 @@
     <!-- Account Information Section -->
     <div class="account-section">
       <div class="section-title" style="margin-bottom: 1.5rem;">Account Information</div>
-      
+
       <div class="account-field">
         <span class="field-label">Username</span>
         <div class="field-value" id="account-display-username">Loading...</div>
       </div>
-      
+
       <div class="account-field">
         <span class="field-label">Email Address</span>
         <div class="field-value" id="account-display-email">Loading...</div>
       </div>
-      
+
       <div class="account-field">
         <span class="field-label">Member Since</span>
         <div class="field-value" id="account-member-since">-</div>
@@ -566,23 +594,24 @@
     <!-- Password Change Section -->
     <div class="account-section">
       <div class="section-title" style="margin-bottom: 1.5rem;">🔑 Change Password</div>
-      
+
       <form id="password-change-form">
         <div class="form-group">
           <label for="current-password">Current Password</label>
           <input type="password" id="current-password" placeholder="Enter your current password" required>
         </div>
-        
+
         <div class="form-group">
           <label for="new-password">New Password</label>
-          <input type="password" id="new-password" placeholder="Enter a new password (min 6 characters)" required minlength="6">
+          <input type="password" id="new-password" placeholder="Enter a new password (min 6 characters)" required
+            minlength="6">
         </div>
-        
+
         <div class="form-group">
           <label for="confirm-password">Confirm New Password</label>
           <input type="password" id="confirm-password" placeholder="Confirm your new password" required minlength="6">
         </div>
-        
+
         <button type="submit" class="btn btn-primary">Change Password</button>
         <div id="password-status" class="status-message" style="display: none;"></div>
       </form>
@@ -602,40 +631,52 @@
   <nav class="bottom-nav">
     <a href="/" class="bottom-nav-item" data-action="my-bets" title="My Bets">
       <span class="nav-icon">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M9 11l3 3L22 4M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+          stroke-linecap="round" stroke-linejoin="round">
+          <path d="M9 11l3 3L22 4M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11" />
         </svg>
       </span>
       <span class="nav-label">My Bets</span>
     </a>
     <a href="/explore" class="bottom-nav-item" data-action="explore" title="Explore">
       <span class="nav-icon">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="12" cy="12" r="10"/><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+          stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10" />
+          <polygon
+            points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
         </svg>
       </span>
       <span class="nav-label">Explore</span>
     </a>
     <a href="/watched" class="bottom-nav-item" data-action="watched" title="Watched">
       <span class="nav-icon">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+          stroke-linecap="round" stroke-linejoin="round">
+          <polygon
+            points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
         </svg>
       </span>
       <span class="nav-label">Watched</span>
     </a>
     <a href="/social" class="bottom-nav-item" data-action="social" title="Social">
       <span class="nav-icon">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+          stroke-linecap="round" stroke-linejoin="round">
+          <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
+          <circle cx="9" cy="7" r="4" />
+          <path d="M23 21v-2a4 4 0 00-3-3.87" />
+          <path d="M16 3.13a4 4 0 010 7.75" />
         </svg>
       </span>
       <span class="nav-label">Social</span>
     </a>
     <a href="/account" class="bottom-nav-item active" data-action="account" title="Account">
       <span class="nav-icon">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+          stroke-linecap="round" stroke-linejoin="round">
+          <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" />
+          <circle cx="12" cy="7" r="4" />
         </svg>
       </span>
       <span class="nav-label">Account</span>
@@ -643,20 +684,20 @@
   </nav>
 
   <script src="bottom-nav.js"></script>
-  
+
   <script>
     // Load user account information
     async function loadAccountInfo() {
       try {
         const response = await fetch('/auth/check', { credentials: 'include' });
         const data = await response.json();
-        
+
         if (data.authenticated && data.user) {
           const username = data.user.username;
           document.getElementById('account-username').textContent = username;
           document.getElementById('account-display-username').textContent = username;
           document.getElementById('account-display-email').textContent = data.user.email || 'Not provided';
-          
+
           // Calculate member since date (could be improved with actual user creation date)
           const memberSince = new Date().toLocaleDateString('en-US', {
             year: 'numeric',
@@ -677,7 +718,7 @@
     if (savedTheme === 'light') {
       document.body.classList.add('light-mode');
     }
-    
+
     function updateThemeText() {
       const themeText = document.getElementById('theme-text');
       if (themeText) {
@@ -691,20 +732,20 @@
     const menuButton = document.getElementById('menu-button');
     const sideMenu = document.getElementById('side-menu');
     const menuOverlay = document.getElementById('menu-overlay');
-    
+
     if (menuButton && sideMenu && menuOverlay) {
       menuButton.addEventListener('click', () => {
         menuButton.classList.toggle('active');
         sideMenu.classList.toggle('active');
         menuOverlay.classList.toggle('active');
       });
-      
+
       menuOverlay.addEventListener('click', () => {
         menuButton.classList.remove('active');
         sideMenu.classList.remove('active');
         menuOverlay.classList.remove('active');
       });
-      
+
       sideMenu.querySelectorAll('.menu-item').forEach(item => {
         item.addEventListener('click', () => {
           menuButton.classList.remove('active');
@@ -730,23 +771,23 @@
     if (passwordForm) {
       passwordForm.addEventListener('submit', async (e) => {
         e.preventDefault();
-        
+
         const currentPassword = document.getElementById('current-password').value;
         const newPassword = document.getElementById('new-password').value;
         const confirmPassword = document.getElementById('confirm-password').value;
         const statusDiv = document.getElementById('password-status');
-        
+
         if (newPassword !== confirmPassword) {
           statusDiv.textContent = '❌ Passwords do not match!';
           statusDiv.className = 'status-message error';
           statusDiv.style.display = 'block';
           return;
         }
-        
+
         statusDiv.textContent = '⏳ Changing password...';
         statusDiv.className = 'status-message loading';
         statusDiv.style.display = 'block';
-        
+
         try {
           const response = await fetch('/auth/change_password', {
             method: 'POST',
@@ -757,9 +798,9 @@
             }),
             credentials: 'include'
           });
-          
+
           const result = await response.json();
-          
+
           if (response.ok) {
             statusDiv.textContent = '✅ Password changed successfully!';
             statusDiv.className = 'status-message success';
@@ -785,7 +826,7 @@
               method: 'POST',
               credentials: 'include'
             });
-            
+
             if (response.ok) {
               window.location.href = '/login.html?message=logged_out';
             }
@@ -804,14 +845,14 @@
         window.location.href = '/';
       });
     }
-    
+
     const addBetItem = document.getElementById('add-bet-item');
     if (addBetItem) {
       addBetItem.addEventListener('click', () => {
         window.location.href = '/';
       });
     }
-    
+
     const issuesItem = document.getElementById('issues-item');
     if (issuesItem) {
       issuesItem.addEventListener('click', () => {
@@ -823,4 +864,5 @@
     document.addEventListener('DOMContentLoaded', loadAccountInfo);
   </script>
 </body>
+
 </html>
