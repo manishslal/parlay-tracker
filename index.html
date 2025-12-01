@@ -1359,12 +1359,14 @@
     /* Show Scores toggle button */
     .show-scores-btn {
       position: absolute;
-      bottom: 0.5rem;
+      top: 0.5rem;
+      /* Fixed to top */
       right: 0.5rem;
       background: rgba(20, 13, 82, 0.8);
       color: #fff;
       border: 1px solid rgba(255, 204, 0, 0.3);
-      padding: 0.25rem 0.5rem;
+      padding: 0;
+      /* Removed padding for compactness */
       border-radius: 4px;
       font-size: 0.7rem;
       cursor: pointer;
@@ -1374,6 +1376,11 @@
       /* Fixed width to prevent button movement */
       text-align: center;
       /* Center text within fixed width */
+      height: 24px;
+      /* Fixed height */
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
 
     .show-scores-btn:hover {
