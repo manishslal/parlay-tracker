@@ -248,7 +248,7 @@
       gap: 0.4rem;
     }
 
-    .side-menu.open {
+    .side-menu.active {
       right: 0;
     }
 
@@ -321,6 +321,15 @@
 </head>
 
 <body>
+  <script>
+    // Initialize theme immediately to prevent flash
+    (function () {
+      const savedTheme = localStorage.getItem('theme-preference');
+      if (savedTheme === 'light') {
+        document.body.classList.add('light-mode');
+      }
+    })();
+  </script>
   <!-- Menu Overlay -->
   <div class="menu-overlay" id="menu-overlay"></div>
 

@@ -1,0 +1,20 @@
+2025-11-24 19:24:02,992 - apscheduler.scheduler - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2025-11-24 19:24:02,992 - apscheduler.scheduler - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2025-11-24 19:24:02,992 - apscheduler.scheduler - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2025-11-24 19:24:02,992 - apscheduler.scheduler - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2025-11-24 19:24:02,992 - apscheduler.scheduler - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2025-11-24 19:24:02,992 - apscheduler.scheduler - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2025-11-24 19:24:02,992 - apscheduler.scheduler - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2025-11-24 19:24:02,993 - apscheduler.scheduler - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2025-11-24 19:24:02,993 - apscheduler.scheduler - INFO - Added job "Update completed bet legs with final results every 30 minutes" to job store "default"
+2025-11-24 19:24:02,993 - apscheduler.scheduler - INFO - Added job "Update live bet legs with real-time data every minute" to job store "default"
+2025-11-24 19:24:02,993 - apscheduler.scheduler - INFO - Added job "Standardize team names in bet_legs to use team_name_short daily" to job store "default"
+2025-11-24 19:24:02,993 - apscheduler.scheduler - INFO - Added job "Move bets with no live legs to historical every 5 minutes" to job store "default"
+2025-11-24 19:24:02,993 - apscheduler.scheduler - INFO - Added job "Determine hit/miss status for legs with achieved values every 10 minutes" to job store "default"
+2025-11-24 19:24:02,993 - apscheduler.scheduler - INFO - Added job "Process historical bets with ESPN API data and update status hourly" to job store "default"
+2025-11-24 19:24:02,993 - apscheduler.scheduler - INFO - Added job "Populate game IDs for bets with missing ESPN game links every 2 minutes" to job store "default"
+2025-11-24 19:24:02,993 - apscheduler.scheduler - INFO - Added job "Populate player data for bets with missing stats every 3 minutes" to job store "default"
+2025-11-24 19:24:02,993 - apscheduler.scheduler - INFO - Scheduler started
+Address already in use
+Port 8000 is in use by another program. Either identify and stop that program, or start the server with a different port.
+2025-11-24 19:24:03,021 - apscheduler.scheduler - INFO - Scheduler has been shut down

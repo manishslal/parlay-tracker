@@ -21,3 +21,5 @@ venv/
 
 # Node/npm
 node_modules/
+
+.env.bak

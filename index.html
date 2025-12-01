@@ -344,6 +344,8 @@
       align-items: center;
       justify-content: center;
       stroke: currentColor;
+      color: var(--text);
+      /* Ensure color is set for currentColor */
     }
 
     .menu-item-text {
@@ -393,9 +395,10 @@
       display: flex;
       justify-content: center;
       align-items: center;
-      gap: 1rem;
-      margin: 0.25rem 0 0.5rem 0;
-      /* Reduced vertical distance by 50% */
+      gap: 0.5rem;
+      /* Reduced gap from 1rem */
+      margin: 0.5rem 0 0.5rem 0;
+      /* Increased top margin for balance */
       /* Consistent margin */
       flex-wrap: wrap;
       min-height: 40px;
@@ -692,36 +695,33 @@
       align-items: center;
       gap: 1rem;
       flex-wrap: wrap;
-      margin-bottom: 0.75rem;
-      /* Reduced from 1.5rem */
+      margin-bottom: 0.5rem;
+      /* Reduced from 0.75rem for better vertical centering */
     }
 
     #refresh-button,
     #add-bet-button {
       display: inline-block;
       margin: 0;
-      padding: 0.6rem 1.2rem;
-      /* Match filter-button */
+      padding: 0.4rem 0.8rem;
+      /* Reduced padding */
       background: var(--primary);
       color: #fff;
       font-weight: 600;
-      /* Match filter-button */
       border: none;
       border-radius: 8px;
       cursor: pointer;
       height: 40px;
-      /* Fixed height */
       display: flex;
       align-items: center;
       justify-content: center;
       box-sizing: border-box;
       line-height: 1;
       box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-      /* Match filter-button */
-      font-size: 1rem;
-      /* Ensure text size matches */
-      min-width: 140px;
-      /* Ensure width accommodates text */
+      font-size: 0.9rem;
+      /* Reduced font size to match filter button */
+      min-width: 90px;
+      /* Reduced width by ~33% */
     }
 
     .button-container>div {
@@ -874,7 +874,8 @@
     /* Pull to refresh indicator */
     .pull-refresh {
       position: fixed;
-      top: 50px;
+      top: 84px;
+      /* Below header (44px) + tabs (40px) */
       left: 50%;
       transform: translateX(-50%);
       background: var(--primary);
@@ -1114,8 +1115,8 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      margin: 0.5rem 0 0.5rem 0;
-      /* Consistent margin */
+      margin: 0.25rem 0;
+      /* Reduced vertical margin for centering */
     }
 
     #status-message {
@@ -2295,6 +2296,15 @@
 </head>
 
 <body>
+  <script>
+    // Initialize theme immediately to prevent flash
+    (function () {
+      const savedTheme = localStorage.getItem('theme-preference');
+      if (savedTheme === 'light') {
+        document.body.classList.add('light-mode');
+      }
+    })();
+  </script>
   <!-- Menu Overlay -->
   <div class="menu-overlay" id="menu-overlay"></div>
 

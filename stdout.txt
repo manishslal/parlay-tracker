@@ -1,0 +1,8 @@
+DEBUG: app.py imported
+DEBUG: DATABASE_URL = sqlite:///app.db
+DEBUG: Configuring for SQLite
+DEBUG: Initializing CORS
+DEBUG: Initializing DB
+DEBUG: DB initialized. Extensions: dict_keys(['sqlalchemy'])
+ * Serving Flask app 'app'
+ * Debug mode: on

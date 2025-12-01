@@ -1,0 +1,29 @@
+2025-11-24 19:24:21,061 - apscheduler.scheduler - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2025-11-24 19:24:21,061 - apscheduler.scheduler - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2025-11-24 19:24:21,061 - apscheduler.scheduler - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2025-11-24 19:24:21,061 - apscheduler.scheduler - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2025-11-24 19:24:21,061 - apscheduler.scheduler - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2025-11-24 19:24:21,061 - apscheduler.scheduler - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2025-11-24 19:24:21,061 - apscheduler.scheduler - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2025-11-24 19:24:21,061 - apscheduler.scheduler - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2025-11-24 19:24:21,062 - apscheduler.scheduler - INFO - Added job "Update completed bet legs with final results every 30 minutes" to job store "default"
+2025-11-24 19:24:21,062 - apscheduler.scheduler - INFO - Added job "Update live bet legs with real-time data every minute" to job store "default"
+2025-11-24 19:24:21,062 - apscheduler.scheduler - INFO - Added job "Standardize team names in bet_legs to use team_name_short daily" to job store "default"
+2025-11-24 19:24:21,062 - apscheduler.scheduler - INFO - Added job "Move bets with no live legs to historical every 5 minutes" to job store "default"
+2025-11-24 19:24:21,062 - apscheduler.scheduler - INFO - Added job "Determine hit/miss status for legs with achieved values every 10 minutes" to job store "default"
+2025-11-24 19:24:21,062 - apscheduler.scheduler - INFO - Added job "Process historical bets with ESPN API data and update status hourly" to job store "default"
+2025-11-24 19:24:21,062 - apscheduler.scheduler - INFO - Added job "Populate game IDs for bets with missing ESPN game links every 2 minutes" to job store "default"
+2025-11-24 19:24:21,062 - apscheduler.scheduler - INFO - Added job "Populate player data for bets with missing stats every 3 minutes" to job store "default"
+2025-11-24 19:24:21,062 - apscheduler.scheduler - INFO - Scheduler started
+DEBUG: app.py imported
+DEBUG: DATABASE_URL = sqlite:///app.db
+DEBUG: Configuring for SQLite
+DEBUG: Initializing CORS
+DEBUG: Initializing DB
+DEBUG: DB initialized. Extensions: dict_keys(['sqlalchemy'])
+app.db id: 4467898896
+models.db id: 4467898896
+app id: 4502744080
+App extensions: dict_keys([])
+Error: The current Flask app is not registered with this 'SQLAlchemy' instance. Did you forget to call 'init_app', or did you create multiple 'SQLAlchemy' instances?
+2025-11-24 19:24:21,062 - apscheduler.scheduler - INFO - Scheduler has been shut down
