@@ -22,10 +22,7 @@
 
   <!-- App Icons -->
   <link rel="icon" type="image/svg+xml" href="/media/app-1.svg">
-  <link rel="icon" type="image/png" sizes="192x192" href="/media/icons/icon-192x192.png">
-  <link rel="apple-touch-icon" sizes="180x180" href="/media/app-1.svg">
-  <link rel="apple-touch-icon" sizes="192x192" href="/media/app-1.svg">
-  <link rel="apple-touch-icon" sizes="512x512" href="/media/app-1.svg">
+  <link rel="apple-touch-icon" href="/media/app-1.svg">
 
   <!-- Description for search engines and sharing -->
   <meta name="description" content="Track your sports betting parlays and monitor live stats in real-time">
@@ -2299,6 +2296,13 @@
       color: #666;
       font-style: italic;
     }
+
+    /* Theme Toggle Icon Visibility */
+    #theme-toggle .menu-item-icon {
+      opacity: 1;
+      color: var(--text);
+      stroke: var(--text);
+    }
   </style>
 </head>
 
@@ -4346,7 +4350,46 @@
       return '';
     }
 
+    // === STATE PERSISTENCE ===
+    let uiState = { collapsed: [], selected: [], openScoreboards: [] };
+
+    function saveState() {
+      uiState.collapsed = Array.from(document.querySelectorAll('.parlay-section.collapsed')).map(el => el.dataset.id).filter(id => id);
+      uiState.selected = Array.from(document.querySelectorAll('.parlay-section.selected')).map(el => el.dataset.id).filter(id => id);
+      uiState.openScoreboards = Array.from(document.querySelectorAll('.scoreboard-block.active')).map(el => {
+        const section = el.closest('.parlay-section');
+        return section ? section.dataset.id : null;
+      }).filter(id => id);
+      console.log('State saved:', uiState);
+    }
+
+    function restoreState() {
+      console.log('Restoring state:', uiState);
+      document.querySelectorAll('.parlay-section').forEach(section => {
+        const id = section.dataset.id;
+        if (!id) return;
+
+        if (uiState.collapsed.includes(id)) {
+          section.classList.add('collapsed');
+          const icon = section.querySelector('.collapse-icon');
+          if (icon) icon.style.transform = 'rotate(-180deg)';
+        }
+
+        if (uiState.selected.includes(id)) {
+          section.classList.add('selected');
+        }
+
+        if (uiState.openScoreboards.includes(id)) {
+          const scoreboard = section.querySelector('.scoreboard-block');
+          const btn = section.querySelector('.show-scores-btn');
+          if (scoreboard) scoreboard.classList.add('active');
+          if (btn) btn.textContent = 'Hide Scores ▲';
+        }
+      });
+    }
+
     async function update() {
+      saveState(); // Save state before update
       msg.textContent = 'Fetching data...';
       try {
         // Clear ALL caches to get fresh data (same as login)
@@ -4449,6 +4492,7 @@
           msg.textContent = `Last updated: ${new Date().toLocaleTimeString()}`;
         }        // Update cache display after rendering
         updateCacheDisplay();
+        restoreState(); // Restore state after rendering
       } catch (e) {
         console.error('Error during update:', e);
         msg.textContent = `Error loading data: ${e.message}`;
@@ -4618,6 +4662,8 @@
         section.dataset.site = parlay.betting_site || 'Unknown'; // For color-coding and filtering
         section.dataset.sport = parlay.sport || ''; // For sport filtering
         section.dataset.betDate = parlay.bet_date || ''; // For date filtering
+        // Set unique ID for state persistence
+        section.dataset.id = parlay.id || parlay.name || (parlay.bet_date + '-' + parlay.sport);
 
         const header = document.createElement('div');
         header.className = 'parlay-header';
@@ -5274,23 +5320,43 @@
               // For moneyline: current shows winning/losing status, target shows "Win"
               if (p.stat === 'moneyline') {
                 targetDisplay = 'Win';
-                if (gameData && gameData.statusTypeName !== 'STATUS_SCHEDULED') {
-                  const isFinal = gameData.statusTypeName === 'STATUS_FINAL';
+
+                // Check explicit status first (especially for historical)
+                if (p.status === 'won') {
+                  currentDisplay = 'Win';
+                  progressColor = 'color: #4caf50;'; // Green
+                } else if (p.status === 'lost') {
+                  currentDisplay = 'Loss';
+                  progressColor = 'color: #f44336;'; // Red
+                } else if (gameData && gameData.statusTypeName !== 'STATUS_SCHEDULED') {
+                  // Live/In-Progress logic
+                  const isFinal = gameData.statusTypeName === 'STATUS_FINAL' || gameData.statusTypeName === 'STATUS_COMPLETED';
+
+                  // Recalculate scoreDiff if needed to ensure direction
+                  // scoreDiff should be (Team Score - Opponent Score)
+                  let diff = scoreDiff;
+
                   if (scoreDiff > 0) {
                     currentDisplay = isFinal ? 'Win' : `Up ${scoreDiff}`;
+                    progressColor = 'color: #4caf50;'; // Green
                   } else if (scoreDiff < 0) {
                     currentDisplay = isFinal ? 'Loss' : `Down ${Math.abs(scoreDiff)}`;
+                    progressColor = 'color: #f44336;'; // Red
                   } else {
                     currentDisplay = 'Tied';
+                    progressColor = 'color: #ffc107;'; // Yellow
                   }
                 } else if (p.homeScore !== undefined && p.awayScore !== undefined) {
-                  // Historical/completed games with scores from database
+                  // Fallback for historical without p.status (shouldn't happen)
                   if (scoreDiff > 0) {
                     currentDisplay = 'Win';
+                    progressColor = 'color: #4caf50;';
                   } else if (scoreDiff < 0) {
                     currentDisplay = 'Loss';
+                    progressColor = 'color: #f44336;';
                   } else {
                     currentDisplay = 'Tied';
+                    progressColor = 'color: #ffc107;';
                   }
                 } else {
                   // No game data yet
