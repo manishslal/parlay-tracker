@@ -230,6 +230,17 @@ def _get_touchdowns(player_name, boxscore, scoring_plays=None):
                 for p in participants:
                     name = p.get("displayName") or p.get("athlete", {}).get("displayName")
                     if name and player_norm in _norm(name):
+                        # Special handling for Passing TDs to avoid counting the passer
+                        # If play type is "Passing Touchdown", the text usually starts with the passer's name
+                        play_type = play.get("type", {}).get("text", "")
+                        if "Passing Touchdown" in play_type:
+                            text = play.get("text", "")
+                            if text:
+                                text_norm = _norm(text)
+                                # If the text starts with the player's name, they are the passer
+                                if text_norm.startswith(player_norm):
+                                    continue
+                        
                         td_count += 1
                         break
             # Fallback: Check text description if participants is missing (summary endpoint)
