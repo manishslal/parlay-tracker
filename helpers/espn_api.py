@@ -441,6 +441,9 @@ def get_espn_game_data(home_team: str, away_team: str, game_date: str, player_na
     """
     try:
         # Convert date format
+        if not game_date or str(game_date).lower() == 'none':
+            return None
+            
         date_obj = datetime.strptime(game_date, '%Y-%m-%d')
         espn_date = date_obj.strftime('%Y%m%d')
         

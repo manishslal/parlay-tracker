@@ -1929,9 +1929,14 @@ def process_parlays(current_parlays):
     return new_today_parlays
 
 def is_past_date(game_date_str):
-    today = datetime.now().date()
-    game_date = datetime.strptime(game_date_str, "%Y-%m-%d").date()
-    return game_date < today
+    if not game_date_str or str(game_date_str).lower() == 'none':
+        return False
+    try:
+        today = datetime.now().date()
+        game_date = datetime.strptime(game_date_str, "%Y-%m-%d").date()
+        return game_date < today
+    except ValueError:
+        return False
 
 def get_events(date_str, sport='NFL'):
     """Fetch events from ESPN API for a given date and sport.

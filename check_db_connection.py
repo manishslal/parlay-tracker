@@ -11,7 +11,8 @@ if not db_url:
 else:
     try:
         conn = psycopg2.connect(db_url)
-        print("Successfully connected to the database!")
+        dsn_parameters = conn.get_dsn_parameters()
+        print(f"Successfully connected to database at host: {dsn_parameters.get('host')} dbname: {dsn_parameters.get('dbname')}")
         conn.close()
     except Exception as e:
         print(f"Failed to connect: {e}")

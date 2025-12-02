@@ -13,7 +13,7 @@ from sqlalchemy.dialects import postgresql
 
 # revision identifiers
 revision = 'create_audit_tables'
-down_revision = None  # Update this if you have previous migrations
+down_revision = '0f30369770ee'  # Chained to initial setup
 branch_labels = None
 depends_on = None
 
