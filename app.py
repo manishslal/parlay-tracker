@@ -2241,10 +2241,22 @@ scheduler.add_job(
 
 scheduler.add_job(
     func=run_validate_historical_data,
-    trigger=CronTrigger(hour=3, minute=0, timezone='America/New_York'),
+    trigger=CronTrigger(hour=3, minute=0, timezone='US/Eastern'),
     id='validate_historical_data',
     name='Validate historical bet data against ESPN API daily at 3 AM ET'
 )
+
+# Run diagnostics on startup
+try:
+    from automation.bet_status_management import log_bet_status_distribution
+    scheduler.add_job(
+        func=log_bet_status_distribution,
+        trigger='date', # Run once immediately
+        id='startup_diagnostics',
+        name='Run bet status diagnostics on startup'
+    )
+except ImportError:
+    pass
 
 # Start the scheduler
 scheduler.start()

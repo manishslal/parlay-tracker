@@ -258,4 +258,56 @@ if __name__ == "__main__":
     else:
         print("Running both automations...")
         auto_move_bets_no_live_legs()
+
+def log_bet_status_distribution():
+    """Diagnostic function to log the distribution of bet statuses."""
+    from app import app, db
+    from models import Bet
+    from sqlalchemy import func
+    import logging
+    
+    with app.app_context():
+        try:
+            logging.info("--- BET STATUS DIAGNOSTICS ---")
+            
+            # 1. Total Count
+            total = Bet.query.count()
+            logging.info(f"Total Bets: {total}")
+            
+            # 2. Status Distribution
+            status_counts = db.session.query(Bet.status, func.count(Bet.id)).group_by(Bet.status).all()
+            logging.info("Status Distribution:")
+            for status, count in status_counts:
+                logging.info(f"  {status}: {count}")
+                
+            # 3. Active vs Inactive
+            active_counts = db.session.query(Bet.is_active, func.count(Bet.id)).group_by(Bet.is_active).all()
+            logging.info("Active Distribution:")
+            for is_active, count in active_counts:
+                logging.info(f"  is_active={is_active}: {count}")
+                
+            # 4. Archived
+            archived_counts = db.session.query(Bet.is_archived, func.count(Bet.id)).group_by(Bet.is_archived).all()
+            logging.info("Archived Distribution:")
+            for is_archived, count in archived_counts:
+                logging.info(f"  is_archived={is_archived}: {count}")
+                
+            # 5. Check for 'Limbo' Bets (Inactive but not Historical Status)
+            historical_statuses = ['won', 'lost', 'completed']
+            limbo_bets = Bet.query.filter(
+                Bet.is_active == False,
+                Bet.status.notin_(historical_statuses)
+            ).all()
+            
+            if limbo_bets:
+                logging.warning(f"⚠️ FOUND {len(limbo_bets)} LIMBO BETS (Inactive but not Historical):")
+                for b in limbo_bets:
+                    logging.warning(f"  Bet {b.id}: status='{b.status}', is_active={b.is_active}")
+            else:
+                logging.info("✅ No limbo bets found (all inactive bets have historical statuses)")
+                
+            logging.info("------------------------------")
+            
+        except Exception as e:
+            logging.error(f"Error in diagnostics: {e}")
         auto_determine_leg_hit_status()
