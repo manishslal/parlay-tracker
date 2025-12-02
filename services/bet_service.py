@@ -325,14 +325,34 @@ def fetch_game_details_from_espn(game_date, away_team, home_team, sport='NFL'):
             except Exception as e:
                 logger.error(f"Error fetching {sport} summary for event {ev.get('id')}: {e}")
 
-        game = {
-            "espn_game_id": ev["id"],
-            "teams": {
-                "away": away["team"]["displayName"], 
-                "home": home["team"]["displayName"],
-                "away_abbr": away["team"].get("abbreviation", ""),
-                "home_abbr": home["team"].get("abbreviation", "")
-            },
+            # Use DB to get correct abbreviations if possible
+            away_name = away["team"]["displayName"]
+            home_name = home["team"]["displayName"]
+            away_abbr = away["team"].get("abbreviation", "")
+            home_abbr = home["team"].get("abbreviation", "")
+            
+            try:
+                from models import Team
+                # Lookup Away Team
+                away_team_db = Team.get_team_by_name_cached(away_name)
+                if away_team_db and away_team_db.team_abbr:
+                    away_abbr = away_team_db.team_abbr
+                    
+                # Lookup Home Team
+                home_team_db = Team.get_team_by_name_cached(home_name)
+                if home_team_db and home_team_db.team_abbr:
+                    home_abbr = home_team_db.team_abbr
+            except Exception as e:
+                logger.error(f"Error looking up team abbreviations from DB: {e}")
+
+            game = {
+                "espn_game_id": ev["id"],
+                "teams": {
+                    "away": away_name, 
+                    "home": home_name,
+                    "away_abbr": away_abbr,
+                    "home_abbr": home_abbr
+                },
             "startTime": ev.get("date", "").split("T")[1][:5] + " ET" if "T" in ev.get("date", "") else "",
             "startDateTime": ev.get("date", ""),  # Full ISO datetime for countdown calculations
             "game_date": game_date,
@@ -397,13 +417,33 @@ def process_parlay_data(parlays, fetch_live=True):
                 # Create a minimal game object from leg data when ESPN API fails or fetch_live is False
                 # This ensures games array is populated even if ESPN is unreachable
                 # logger.warning(f"Using fallback game data for {game_key}")
+                # Use DB to get correct abbreviations if possible
+                away_name = leg.get("away", "")
+                home_name = leg.get("home", "")
+                away_abbr = ""
+                home_abbr = ""
+                
+                try:
+                    from models import Team
+                    # Lookup Away Team
+                    away_team_db = Team.get_team_by_name_cached(away_name)
+                    if away_team_db and away_team_db.team_abbr:
+                        away_abbr = away_team_db.team_abbr
+                        
+                    # Lookup Home Team
+                    home_team_db = Team.get_team_by_name_cached(home_name)
+                    if home_team_db and home_team_db.team_abbr:
+                        home_abbr = home_team_db.team_abbr
+                except Exception as e:
+                    logger.error(f"Error looking up team abbreviations from DB (fallback): {e}")
+
                 game_data = {
                     "espn_game_id": leg.get("gameId", ""),
                     "teams": {
-                        "away": leg.get("away", ""),
-                        "home": leg.get("home", ""),
-                        "away_abbr": "",
-                        "home_abbr": ""
+                        "away": away_name,
+                        "home": home_name,
+                        "away_abbr": away_abbr,
+                        "home_abbr": home_abbr
                     },
                     "startTime": "",
                     "startDateTime": leg.get("game_date", ""),

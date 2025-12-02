@@ -4889,29 +4889,29 @@
             // Use existing getCountdown helper
             const countdown = getCountdown(g.startDateTime);
 
-            const awayAbbr = getTeamAbbr(g.teams.away) || g.teams.away_abbr;
-            const homeAbbr = getTeamAbbr(g.teams.home) || g.teams.home_abbr;
+            const awayAbbr = g.teams.away_abbr || getTeamAbbr(g.teams.away);
+            const homeAbbr = g.teams.home_abbr || getTeamAbbr(g.teams.home);
             gameDetails = `<div style="font-weight:bold;">${awayAbbr} @ ${homeAbbr}</div><div style="font-weight:normal;font-size:0.7rem;">${countdown || g.startTime}</div>`;
           }
           else if (stn === 'STATUS_HALFTIME') {
             gameStatus = 'HALF';
             gameCls = 'status-halftime';
-            const awayAbbr = getTeamAbbr(g.teams.away) || g.teams.away_abbr;
-            const homeAbbr = getTeamAbbr(g.teams.home) || g.teams.home_abbr;
+            const awayAbbr = g.teams.away_abbr || getTeamAbbr(g.teams.away);
+            const homeAbbr = g.teams.home_abbr || getTeamAbbr(g.teams.home);
             gameDetails = `<div style="font-weight:bold;">${awayAbbr} ${g.score.away} - ${g.score.home} ${homeAbbr}</div>`;
           }
           else if (stn === 'STATUS_IN_PROGRESS') {
             gameStatus = 'LIVE';
             gameCls = 'status-live';
-            const awayAbbr = getTeamAbbr(g.teams.away) || g.teams.away_abbr;
-            const homeAbbr = getTeamAbbr(g.teams.home) || g.teams.home_abbr;
+            const awayAbbr = g.teams.away_abbr || getTeamAbbr(g.teams.away);
+            const homeAbbr = g.teams.home_abbr || getTeamAbbr(g.teams.home);
             gameDetails = `<div style="font-weight:normal;font-size:0.7rem;">${getQuarter(g.period)}, ${g.clock}</div><div style="font-weight:bold;">${awayAbbr} ${g.score.away} - ${g.score.home} ${homeAbbr}</div>`;
           }
           else {
             gameStatus = 'FINAL';
             gameCls = 'status-final';
-            const awayAbbr = getTeamAbbr(g.teams.away) || g.teams.away_abbr;
-            const homeAbbr = getTeamAbbr(g.teams.home) || g.teams.home_abbr;
+            const awayAbbr = g.teams.away_abbr || getTeamAbbr(g.teams.away);
+            const homeAbbr = g.teams.home_abbr || getTeamAbbr(g.teams.home);
             gameDetails = `<div style="font-weight:bold;">${awayAbbr} ${g.score.away} - ${g.score.home} ${homeAbbr}</div>`;
           }
 
