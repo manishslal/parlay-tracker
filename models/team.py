@@ -149,3 +149,51 @@ class Team(db.Model):
                 print(f"Unexpected error in get_team_by_name_cached: {e}")
                 return None
         return None
+
+    @staticmethod
+    def get_team_abbr_by_name_cached(team_name):
+        """Get just the team abbreviation string from cache.
+        This avoids db.session.merge() which is expensive and causes transaction issues.
+        """
+        # Reuse the logic from get_team_by_name_cached but return string only
+        # We can call the main method to ensure cache is populated/refreshed
+        # But we need to be careful not to trigger the merge if we can avoid it.
+        
+        if not team_name:
+            return ""
+            
+        # Ensure cache is initialized
+        if not hasattr(Team, '_team_cache'):
+            # Trigger cache load by calling the main method with a dummy or just copying the init logic
+            # Let's copy the init logic to be safe and efficient
+            Team.get_team_by_name_cached("ensure_cache_init")
+            
+        team_name_lower = team_name.lower()
+        t = None
+        
+        # 1. Exact match
+        if team_name_lower in Team._team_cache:
+            t = Team._team_cache[team_name_lower]
+            
+        # 2. Partial match
+        if not t:
+            for key, team in Team._team_cache.items():
+                if team_name_lower in key or key in team_name_lower:
+                    t = team
+                    break
+                    
+        # 3. Fallback (LA teams etc)
+        if not t and team_name_lower.startswith('los angeles'):
+            la_teams = ['lakers', 'clippers', 'rams', 'chargers', 'dodgers', 'angels', 'kings', 'galaxy', 'la fc']
+            for suffix in la_teams:
+                if suffix in team_name_lower:
+                    for key, team in Team._team_cache.items():
+                        if suffix in key:
+                            t = team
+                            break
+                    if t: break
+                    
+        if t and t.team_abbr:
+            return t.team_abbr
+            
+        return ""

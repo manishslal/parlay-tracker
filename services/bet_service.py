@@ -334,14 +334,14 @@ def fetch_game_details_from_espn(game_date, away_team, home_team, sport='NFL'):
             try:
                 from models import Team
                 # Lookup Away Team
-                away_team_db = Team.get_team_by_name_cached(away_name)
-                if away_team_db and away_team_db.team_abbr:
-                    away_abbr = away_team_db.team_abbr
+                abbr = Team.get_team_abbr_by_name_cached(away_name)
+                if abbr:
+                    away_abbr = abbr
                     
                 # Lookup Home Team
-                home_team_db = Team.get_team_by_name_cached(home_name)
-                if home_team_db and home_team_db.team_abbr:
-                    home_abbr = home_team_db.team_abbr
+                abbr = Team.get_team_abbr_by_name_cached(home_name)
+                if abbr:
+                    home_abbr = abbr
             except Exception as e:
                 logger.error(f"Error looking up team abbreviations from DB: {e}")
 
@@ -426,14 +426,14 @@ def process_parlay_data(parlays, fetch_live=True):
                 try:
                     from models import Team
                     # Lookup Away Team
-                    away_team_db = Team.get_team_by_name_cached(away_name)
-                    if away_team_db and away_team_db.team_abbr:
-                        away_abbr = away_team_db.team_abbr
+                    abbr = Team.get_team_abbr_by_name_cached(away_name)
+                    if abbr:
+                        away_abbr = abbr
                         
                     # Lookup Home Team
-                    home_team_db = Team.get_team_by_name_cached(home_name)
-                    if home_team_db and home_team_db.team_abbr:
-                        home_abbr = home_team_db.team_abbr
+                    abbr = Team.get_team_abbr_by_name_cached(home_name)
+                    if abbr:
+                        home_abbr = abbr
                 except Exception as e:
                     logger.error(f"Error looking up team abbreviations from DB (fallback): {e}")
 
