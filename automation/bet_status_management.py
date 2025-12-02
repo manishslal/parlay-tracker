@@ -28,7 +28,12 @@ def auto_move_bets_no_live_legs():
         logging.info("[AUTO-MOVE-NO-LIVE] Checking for bets with no live legs")
         
         # Get all live bets
-        live_bets = Bet.query.filter_by(status='live', is_active=True).all()
+        # Explicitly exclude won/lost/completed to be safe
+        live_bets = Bet.query.filter(
+            Bet.status == 'live',
+            Bet.is_active == True,
+            Bet.status.notin_(['won', 'lost', 'completed'])
+        ).all()
         
         if not live_bets:
             logging.info("[AUTO-MOVE-NO-LIVE] No live bets found")
@@ -106,21 +111,37 @@ def auto_move_bets_no_live_legs():
                 # Log detailed reason for movement
                 logging.info(f"[AUTO-MOVE-NO-LIVE] Bet {bet.id} ready for historical - {final_count}/{len(bet_legs)} legs final, all have data")
                 
+                # Determine new status based on leg results
+                all_legs_won = all(leg.status == 'won' for leg in bet_legs)
+                any_leg_lost = any(leg.status == 'lost' for leg in bet_legs)
+                
+                new_status = 'completed' # Default fallback
+                if all_legs_won:
+                    new_status = 'won'
+                elif any_leg_lost:
+                    new_status = 'lost'
+                
+                # Force all legs to STATUS_FINAL as requested
+                for leg in bet_legs:
+                    if leg.game_status != 'STATUS_FINAL':
+                        leg.game_status = 'STATUS_FINAL'
+                        logging.info(f"[AUTO-MOVE-NO-LIVE] Forcing leg {leg.id} to STATUS_FINAL")
+
                 # Audit log the status change
                 from helpers.audit_helpers import log_bet_status_change
                 log_bet_status_change(
                     db_session=db.session,
                     bet_id=bet.id,
                     old_status=bet.status,
-                    new_status='completed',
+                    new_status=new_status,
                     old_is_active=bet.is_active,
                     new_is_active=False,
                     automation_name='auto_move_bets_no_live_legs',
-                    reason=f"All {final_count} legs have STATUS_FINAL"
+                    reason=f"All {final_count} legs have STATUS_FINAL. Result: {new_status}"
                 )
                 
                 bet.is_active = False  # Move to historical
-                bet.status = 'completed'  # Mark as completed
+                bet.status = new_status  # Mark as won/lost/completed
                 bet.api_fetched = 'Yes'  # Stop fetching
                 updated_count += 1
             else:

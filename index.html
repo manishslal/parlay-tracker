@@ -4888,29 +4888,29 @@
             // Use existing getCountdown helper
             const countdown = getCountdown(g.startDateTime);
 
-            const awayAbbr = g.teams.away_abbr || getTeamAbbr(g.teams.away);
-            const homeAbbr = g.teams.home_abbr || getTeamAbbr(g.teams.home);
+            const awayAbbr = getTeamAbbr(g.teams.away) || g.teams.away_abbr;
+            const homeAbbr = getTeamAbbr(g.teams.home) || g.teams.home_abbr;
             gameDetails = `<div style="font-weight:bold;">${awayAbbr} @ ${homeAbbr}</div><div style="font-weight:normal;font-size:0.7rem;">${countdown || g.startTime}</div>`;
           }
           else if (stn === 'STATUS_HALFTIME') {
             gameStatus = 'HALF';
             gameCls = 'status-halftime';
-            const awayAbbr = g.teams.away_abbr || getTeamAbbr(g.teams.away);
-            const homeAbbr = g.teams.home_abbr || getTeamAbbr(g.teams.home);
+            const awayAbbr = getTeamAbbr(g.teams.away) || g.teams.away_abbr;
+            const homeAbbr = getTeamAbbr(g.teams.home) || g.teams.home_abbr;
             gameDetails = `<div style="font-weight:bold;">${awayAbbr} ${g.score.away} - ${g.score.home} ${homeAbbr}</div>`;
           }
           else if (stn === 'STATUS_IN_PROGRESS') {
             gameStatus = 'LIVE';
             gameCls = 'status-live';
-            const awayAbbr = g.teams.away_abbr || getTeamAbbr(g.teams.away);
-            const homeAbbr = g.teams.home_abbr || getTeamAbbr(g.teams.home);
+            const awayAbbr = getTeamAbbr(g.teams.away) || g.teams.away_abbr;
+            const homeAbbr = getTeamAbbr(g.teams.home) || g.teams.home_abbr;
             gameDetails = `<div style="font-weight:normal;font-size:0.7rem;">${getQuarter(g.period)}, ${g.clock}</div><div style="font-weight:bold;">${awayAbbr} ${g.score.away} - ${g.score.home} ${homeAbbr}</div>`;
           }
           else {
             gameStatus = 'FINAL';
             gameCls = 'status-final';
-            const awayAbbr = g.teams.away_abbr || getTeamAbbr(g.teams.away);
-            const homeAbbr = g.teams.home_abbr || getTeamAbbr(g.teams.home);
+            const awayAbbr = getTeamAbbr(g.teams.away) || g.teams.away_abbr;
+            const homeAbbr = getTeamAbbr(g.teams.home) || g.teams.home_abbr;
             gameDetails = `<div style="font-weight:bold;">${awayAbbr} ${g.score.away} - ${g.score.home} ${homeAbbr}</div>`;
           }
 
@@ -5024,97 +5024,93 @@
         const areAllGamesFinal = validGames && validGames.every(g => g.statusTypeName === 'STATUS_FINAL');
         const areAllGamesScheduled = validGames && validGames.every(g => g.statusTypeName === 'STATUS_SCHEDULED');
 
+        // Helper function to determine leg status (extracted for reuse)
+        const determineLegStatus = (leg) => {
+          // PRIORITY 1: Check database status for completed games (historical bets)
+          if (leg.status === 'won') return 'Hit';
+          if (leg.status === 'lost') return 'Miss';
+
+          // PRIORITY 2: Check ESPN live game data
+          const gameData = parlay.games ? parlay.games.find(g =>
+            g.teams.away === leg.away && g.teams.home === leg.home
+          ) : null;
+
+          const statLower = (leg.stat || '').toLowerCase();
+          const isSpreadOrML = statLower === 'spread' || statLower === 'moneyline';
+          const current = leg.current ?? 0;
+          const pct = leg.target > 0 ? Math.min(100, Math.round(current / leg.target * 100)) : 0;
+
+          // Check leg.gameStatus first (from database), then fall back to gameData
+          const gameStatus = leg.gameStatus || (gameData ? gameData.statusTypeName : null);
+
+          // Check if game is in progress
+          if (gameStatus === 'in_progress' || gameStatus === 'STATUS_IN_PROGRESS' || gameStatus === 'STATUS_HALFTIME') {
+            // For in-progress spread/moneyline bets, check if currently winning/losing
+            if (isSpreadOrML && current !== null) {
+              const scoreDiff = leg.score_diff ?? current;
+              let isWinning = false;
+              if (statLower === 'moneyline') {
+                isWinning = scoreDiff > 0;
+              } else if (statLower === 'spread') {
+                isWinning = (scoreDiff + leg.target) > 0;
+              }
+              return isWinning ? 'In Progress (Winning)' : 'In Progress (Losing)';
+            }
+            return 'In Progress';
+          }
+
+          // Check if not started
+          if (gameStatus === 'scheduled' || gameStatus === 'STATUS_SCHEDULED' || gameStatus === 'pre') {
+            return 'Not Started';
+          }
+          if (!gameStatus && (areAllGamesScheduled || (!isAnyGameLive && !areAllGamesFinal))) {
+            return 'Not Started';
+          }
+
+          // Check if game is final/completed
+          if (gameStatus === 'completed' || gameStatus === 'final' || gameStatus === 'STATUS_FINAL') {
+            if (isSpreadOrML) {
+              const scoreDiff = leg.score_diff ?? current;
+              let isWinningBet = false;
+              if (statLower === 'moneyline') {
+                isWinningBet = scoreDiff > 0;
+              } else if (statLower === 'spread') {
+                isWinningBet = (scoreDiff + leg.target) > 0;
+              }
+              return isWinningBet ? 'Hit' : 'Miss';
+            }
+            // For other stats, check if target was reached
+            if (pct >= 100) {
+              return 'Hit';
+            } else {
+              return 'Miss';
+            }
+          }
+
+          // Check if hit (100% or winning bet for non-final games)
+          if (!isSpreadOrML && pct >= 100) {
+            return 'Hit';
+          }
+
+          return 'Not Started'; // Default
+        };
+
         // Sort legs by status for Live Bets: "In Progress" → "Not Started" → "Hit"
         // Only sort for live bets tab, not historical
         let legsToRender = Array.isArray(parlay.legs) ? parlay.legs : [];
         if (!isHistoricalSection && Array.isArray(parlay.legs)) {
           legsToRender = [...parlay.legs].sort((a, b) => {
-            // Helper function to determine leg status
-            const getLegStatus = (leg) => {
-              // PRIORITY 1: Check database status for completed games (historical bets)
-              // If we have a definitive status from the database, use it
-              if (leg.status === 'won') {
-                return 'Hit';
-              }
-              if (leg.status === 'lost') {
-                return 'Miss';
-              }
+            const statusA = determineLegStatus(a);
+            const statusB = determineLegStatus(b);
 
-              // PRIORITY 2: Check ESPN live game data (for current/live games)
-              const gameData = parlay.games ? parlay.games.find(g =>
-                g.teams.away === leg.away && g.teams.home === leg.home
-              ) : null;
-
-              // Normalize stat to lowercase for comparison
-              const statLower = (leg.stat || '').toLowerCase();
-              const isSpreadOrML = statLower === 'spread' || statLower === 'moneyline';
-              const current = leg.current ?? 0;
-              const pct = leg.target > 0 ? Math.min(100, Math.round(current / leg.target * 100)) : 0;
-
-              // Check leg.gameStatus first (from database), then fall back to gameData
-              const gameStatus = leg.gameStatus || (gameData ? gameData.statusTypeName : null);
-
-              // Check if game is in progress
-              if (gameStatus === 'in_progress' || gameStatus === 'STATUS_IN_PROGRESS' || gameStatus === 'STATUS_HALFTIME') {
-                // For in-progress spread/moneyline bets, check if currently winning/losing
-                if (isSpreadOrML && current !== null) {
-                  const scoreDiff = leg.score_diff ?? current;
-                  let isWinning = false;
-                  if (statLower === 'moneyline') {
-                    isWinning = scoreDiff > 0;
-                  } else if (statLower === 'spread') {
-                    isWinning = (scoreDiff + leg.target) > 0;
-                  }
-                  return isWinning ? 'In Progress (Winning)' : 'In Progress (Losing)';
-                }
-                return 'In Progress';
-              }
-
-              // Check if not started
-              if (gameStatus === 'scheduled' || gameStatus === 'STATUS_SCHEDULED' || gameStatus === 'pre') {
-                return 'Not Started';
-              }
-              if (!gameStatus && (areAllGamesScheduled || (!isAnyGameLive && !areAllGamesFinal))) {
-                return 'Not Started';
-              }
-
-              // Check if game is final/completed
-              if (gameStatus === 'completed' || gameStatus === 'final' || gameStatus === 'STATUS_FINAL') {
-                if (isSpreadOrML) {
-                  const scoreDiff = leg.score_diff ?? current;
-                  let isWinningBet = false;
-                  if (statLower === 'moneyline') {
-                    isWinningBet = scoreDiff > 0;
-                  } else if (statLower === 'spread') {
-                    isWinningBet = (scoreDiff + leg.target) > 0;
-                  }
-                  return isWinningBet ? 'Hit' : 'Miss';
-                }
-                // For other stats, check if target was reached
-                if (pct >= 100) {
-                  return 'Hit';
-                } else {
-                  return 'Miss';
-                }
-              }
-
-              // Check if hit (100% or winning bet for non-final games)
-              if (!isSpreadOrML && pct >= 100) {
-                return 'Hit';
-              }
-
-              return 'In Progress'; // Default
-            };
-
-            const statusA = getLegStatus(a);
-            const statusB = getLegStatus(b);
-
-            // Sort order: "In Progress" → "Not Started" → "Hit" → "Miss"
+            // Sort order: "In Progress (Winning)" -> "In Progress" -> "In Progress (Losing)" -> "Not Started" -> "Hit" -> "Miss"
             const statusOrder = {
-              'In Progress': 0,
-              'Not Started': 1,
-              'Hit': 2,
-              'Miss': 3
+              'In Progress (Winning)': 1,
+              'In Progress': 2,
+              'In Progress (Losing)': 3,
+              'Not Started': 4,
+              'Hit': 5,
+              'Miss': 6
             };
 
             return (statusOrder[statusA] ?? 99) - (statusOrder[statusB] ?? 99);
@@ -5145,7 +5141,7 @@
 
           // Get game data for this leg
           const gameData = parlay.games ? parlay.games.find(g =>
-            g.teams.away === p.away && g.teams.home === p.home
+            g.teams.away === p.away && g.teams.home === g.home
           ) : null;
 
           let progressCol = '';
@@ -5687,11 +5683,25 @@
         const siteText = parlay.betting_site || 'N/A';
 
         // Calculate winnings using potential_winnings from backend
+        // Only show if ALL legs are 'Hit'
         let winningsText = '$0.00';
-        if (parlay.potential_winnings) {
+
+        // We need to re-calculate status for all legs to check if they are all 'Hit'
+        // Since we might be in historical section where legsToRender isn't sorted/processed with determineLegStatus
+        // We need to ensure determineLegStatus is available or duplicate logic.
+        // Actually, determineLegStatus was defined inside the if block above.
+        // We should define it outside or redefine it here.
+        // For simplicity and safety, let's check the legsToRender which we already processed if available,
+        // but legsToRender might not have the status string attached.
+
+        // Re-implement simplified check for "Hit" status for all legs
+        const allLegsHit = parlay.legs && parlay.legs.every(leg => {
+          return determineLegStatus(leg) === 'Hit';
+        });
+
+        if (allLegsHit && parlay.potential_winnings) {
           winningsText = `$${parseFloat(parlay.potential_winnings).toFixed(2)}`;
-        } else if (parlay.returns && parlay.wager) {
-          // Fallback if potential_winnings is missing but returns is present
+        } else if (allLegsHit && parlay.returns && parlay.wager) {
           const winnings = parlay.returns - parlay.wager;
           winningsText = `$${winnings.toFixed(2)}`;
         }

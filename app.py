@@ -1168,7 +1168,10 @@ def auto_move_completed_bets(user_id):
         today = date.today()
         
         # Get all pending and live bets for user
-        bets = get_user_bets_from_db(user_id, status_filter=['pending', 'live'])
+        # Ensure we don't pick up won/lost bets
+        bets = get_user_bets_query(user_id, status_filter=['pending', 'live'])
+        # Double check filtering in memory if get_user_bets_query is broad
+        bets = [b for b in bets if b.status not in ['won', 'lost', 'completed']]
         
         # First, process all bets to get current data from ESPN
         # Use to_dict_structured() to get legs from database, not JSON blob
@@ -1309,22 +1312,53 @@ def auto_move_completed_bets(user_id):
             should_move = False
             move_reason = ""
             
-            if has_confirmed_loss:
+            if all_games_finished:
+                # Only move if ALL games are finished
                 should_move = True
-                move_reason = "has confirmed loss"
-                # Don't mark as fully complete yet if games are still in progress
-                # This allows continued ESPN fetching until all games finish
-                if not all_games_finished:
-                    bet.status = 'live'  # Keep as live to continue fetching
-                    bet.api_fetched = 'No'  # Keep fetching until all games done
+                
+                # Determine status
+                # Won: All legs won
+                # Lost: Any leg lost
+                all_won = True
+                any_lost = False
+                
+                # Re-check leg statuses from processed data or DB
+                # We need to rely on what we just calculated/checked
+                # Iterate through legs again or track it above
+                
+                # Let's track it in the loop above? 
+                # Actually, we can just check the legs again here since we have the data
+                
+                for i, leg in enumerate(legs):
+                     # ... (logic to check status)
+                     # But we already did some checks. Let's simplify.
+                     # We need to know if any leg is lost or all are won.
+                     pass
+
+                # Better approach: We already tracked has_confirmed_loss.
+                # But we need to know if ALL are won.
+                
+                # Let's re-iterate to be safe and clear
+                legs_status_list = []
+                for i, leg in enumerate(legs):
+                    # ... get leg status ...
+                    # This is getting complicated to duplicate logic.
+                    # Let's look at the loop above. It sets has_confirmed_loss.
+                    # We can add has_confirmed_win tracking?
+                    pass
+                
+                # SIMPLIFIED LOGIC:
+                # If all_games_finished is True, then every leg has a result (won or lost).
+                # So if has_confirmed_loss is True, then status is 'lost'.
+                # Else (if no loss), status is 'won'.
+                
+                if has_confirmed_loss:
+                    bet.status = 'lost'
+                    move_reason = "all games finished, bet lost"
                 else:
-                    bet.status = 'completed'
-                    bet.api_fetched = 'Yes'
-                    save_final_results_to_bet(bet, processed_data)
-            elif all_games_finished:
-                should_move = True
-                move_reason = "all games finished"
-                bet.status = 'completed'
+                    bet.status = 'won'
+                    move_reason = "all games finished, bet won"
+                
                 bet.api_fetched = 'Yes'
                 save_final_results_to_bet(bet, processed_data)
             

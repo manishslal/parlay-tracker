@@ -259,8 +259,14 @@ def _update_bet_status_from_legs(bet):
     elif 'pending' in leg_statuses:
         bet.status = 'pending'
     elif all(status in ['won', 'lost'] for status in leg_statuses):
-        # All legs are finished - mark bet as completed
-        bet.status = 'completed'
+        # All legs are finished - determine won/lost
+        if all(status == 'won' for status in leg_statuses):
+            bet.status = 'won'
+        elif any(status == 'lost' for status in leg_statuses):
+            bet.status = 'lost'
+        else:
+            # Should not happen if logic is correct
+            bet.status = 'completed'
     else:
         # Mixed - if any are won/lost, mark as completed (should be unreachable if logic above is correct)
         bet.status = 'completed'
