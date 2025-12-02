@@ -90,44 +90,62 @@ class Team(db.Model):
             Team._team_cache_time = 0
             
         import time
-        current_time = time.time()
+        from sqlalchemy.exc import PendingRollbackError, OperationalError
         
-        # Refresh cache every hour
-        if current_time - getattr(Team, '_team_cache_time', 0) > 3600:
-            all_teams = Team.query.all()
-            Team._team_cache = {t.team_name.lower(): t for t in all_teams}
-            # Also index by abbreviation and short name
-            for t in all_teams:
-                if t.team_abbr:
-                    Team._team_cache[t.team_abbr.lower()] = t
-                if t.team_name_short:
-                    Team._team_cache[t.team_name_short.lower()] = t
-            Team._team_cache_time = current_time
-            
-        team_name_lower = team_name.lower()
-        
-        # Try exact match from cache
-        if team_name_lower in Team._team_cache:
-            t = Team._team_cache[team_name_lower]
-            return db.session.merge(t) if t else None
-        
-        # Try partial match if not found
-        for key, t in Team._team_cache.items():
-            if team_name_lower in key or key in team_name_lower:
-                return db.session.merge(t) if t else None
-        
-        # Fallback for specific known issues
-        if team_name_lower.startswith('los angeles'):
-            # Try to disambiguate based on sport if possible, but here we only have name
-            # If it's just "Los Angeles", we can't do much.
-            # But if it's "Los Angeles Lakers" and it didn't match above, something is wrong with the cache keys.
-            # Let's try matching against specific known LA teams
-            la_teams = ['lakers', 'clippers', 'rams', 'chargers', 'dodgers', 'angels', 'kings', 'galaxy', 'la fc']
-            for suffix in la_teams:
-                if suffix in team_name_lower:
-                    # Try to find the team with this suffix in cache
-                    for key, t in Team._team_cache.items():
-                        if suffix in key:
-                            return db.session.merge(t) if t else None
-                            
+        for attempt in range(2):
+            try:
+                current_time = time.time()
+                
+                # Refresh cache every hour
+                if current_time - getattr(Team, '_team_cache_time', 0) > 3600:
+                    all_teams = Team.query.all()
+                    Team._team_cache = {t.team_name.lower(): t for t in all_teams}
+                    # Also index by abbreviation and short name
+                    for t in all_teams:
+                        if t.team_abbr:
+                            Team._team_cache[t.team_abbr.lower()] = t
+                        if t.team_name_short:
+                            Team._team_cache[t.team_name_short.lower()] = t
+                    Team._team_cache_time = current_time
+                    
+                team_name_lower = team_name.lower()
+                
+                # Try exact match from cache
+                t = None
+                if team_name_lower in Team._team_cache:
+                    t = Team._team_cache[team_name_lower]
+                
+                # Try partial match if not found
+                if not t:
+                    for key, team in Team._team_cache.items():
+                        if team_name_lower in key or key in team_name_lower:
+                            t = team
+                            break
+                
+                # Fallback for specific known issues
+                if not t and team_name_lower.startswith('los angeles'):
+                    la_teams = ['lakers', 'clippers', 'rams', 'chargers', 'dodgers', 'angels', 'kings', 'galaxy', 'la fc']
+                    for suffix in la_teams:
+                        if suffix in team_name_lower:
+                            for key, team in Team._team_cache.items():
+                                if suffix in key:
+                                    t = team
+                                    break
+                            if t: break
+
+                if t:
+                    return db.session.merge(t)
+                return None
+
+            except (PendingRollbackError, OperationalError) as e:
+                if "rollback" in str(e).lower() or isinstance(e, PendingRollbackError):
+                    if attempt == 0:
+                        db.session.rollback()
+                        continue
+                # If it's not a rollback error or we already retried, log and return None
+                print(f"Error in get_team_by_name_cached: {e}")
+                return None
+            except Exception as e:
+                print(f"Unexpected error in get_team_by_name_cached: {e}")
+                return None
         return None
