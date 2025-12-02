@@ -511,8 +511,19 @@ def process_parlay_data(parlays, fetch_live=True):
                         calculated_value = calculate_bet_value(leg, game_data)
                         if calculated_value is not None:
                             leg["current"] = calculated_value
+                    
+                    # Optimization: For historical bets (fetch_live=False) that are already settled,
+                    # trust the DB status and scores if available. Skip expensive calculation.
+                    skip_calculation = False
+                    if not fetch_live and leg.get("status") in ["won", "lost"]:
+                        # Ensure we have scores
+                        if leg.get("homeScore") is not None and leg.get("awayScore") is not None:
+                            skip_calculation = True
+                        else:
+                             logger.warning(f"Historical leg {leg.get('id')} missing scores - falling back to calculation")
+
                     # Add score differential for spread/moneyline bets
-                    if leg["stat"] in ["spread", "moneyline", "point_spread"]:
+                    if not skip_calculation and leg["stat"] in ["spread", "moneyline", "point_spread"]:
                         home_team = game_data.get("teams", {}).get("home", "")
                         away_team = game_data.get("teams", {}).get("away", "")
                         
