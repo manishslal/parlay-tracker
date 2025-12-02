@@ -99,6 +99,12 @@ class Team(db.Model):
                 # Refresh cache every hour
                 if current_time - getattr(Team, '_team_cache_time', 0) > 3600:
                     all_teams = Team.query.all()
+                    # Expunge all teams from session so they are detached but loaded.
+                    # This prevents them from being expired when the session commits/rolls back,
+                    # avoiding DetachedInstanceError when accessing attributes later.
+                    for t in all_teams:
+                        db.session.expunge(t)
+                        
                     Team._team_cache = {t.team_name.lower(): t for t in all_teams}
                     # Also index by abbreviation and short name
                     for t in all_teams:
