@@ -529,12 +529,12 @@ def process_parlay_data(parlays, fetch_live=True):
                             leg["score_diff"] = home_score - away_score
                             leg["bet_team_score"] = home_score
                             leg["opponent_score"] = away_score
-                            logger.info(f"Matched home team: '{bet_team}' == '{home_team}', score_diff = {home_score - away_score}")
+                            # logger.info(f"Matched home team: '{bet_team}' == '{home_team}', score_diff = {home_score - away_score}")
                         elif bet_team_norm == away_team_norm or bet_team_norm in away_team_norm or away_team_norm in bet_team_norm:
                             leg["score_diff"] = away_score - home_score
                             leg["bet_team_score"] = away_score
                             leg["opponent_score"] = home_score
-                            logger.info(f"Matched away team: '{bet_team}' == '{away_team}', score_diff = {away_score - home_score}")
+                            # logger.info(f"Matched away team: '{bet_team}' == '{away_team}', score_diff = {away_score - home_score}")
                         else:
                             leg["score_diff"] = 0
                             leg["bet_team_score"] = 0
