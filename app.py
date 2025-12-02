@@ -465,7 +465,32 @@ def populate_game_ids_for_bet(bet: Any) -> None:
                 leg_home_norm = normalize_team_name_for_matching(leg.home_team, leg.sport or 'NFL')
                 leg_away_norm = normalize_team_name_for_matching(leg.away_team, leg.sport or 'NFL')
                 
-                app.logger.info(f"[GAME-ID-POPULATION] Leg {leg.id}: Matching '{leg.home_team}' (norm: '{leg_home_norm}') @ '{leg.away_team}' (norm: '{leg_away_norm}')")
+                # Normalize player team if available
+                leg_player_team_norm = ''
+                if leg.player_team:
+                    leg_player_team_norm = normalize_team_name_for_matching(leg.player_team, leg.sport or 'NFL')
+                
+                app.logger.info(f"[GAME-ID-POPULATION] Leg {leg.id}: Matching '{leg.home_team}' (norm: '{leg_home_norm}') @ '{leg.away_team}' (norm: '{leg_away_norm}') | Player Team: '{leg.player_team}' (norm: '{leg_player_team_norm}')")
+                
+                # Try to match using player team if available (High Priority for OCR bets where teams might be TBD)
+                if leg_player_team_norm and leg_player_team_norm != 'tbd':
+                    # Check if player team matches any home team
+                    if leg_player_team_norm in game_lookup_single_home:
+                        game_id, espn_away, espn_home = game_lookup_single_home[leg_player_team_norm]
+                        leg.game_id = game_id
+                        leg.away_team = espn_away
+                        leg.home_team = espn_home
+                        app.logger.info(f"[GAME-ID-POPULATION] Set game_id {leg.game_id} for leg {leg.id} using player_team '{leg.player_team}' (matched as home)")
+                        continue
+                        
+                    # Check if player team matches any away team
+                    if leg_player_team_norm in game_lookup_single_away:
+                        game_id, espn_away, espn_home = game_lookup_single_away[leg_player_team_norm]
+                        leg.game_id = game_id
+                        leg.away_team = espn_away
+                        leg.home_team = espn_home
+                        app.logger.info(f"[GAME-ID-POPULATION] Set game_id {leg.game_id} for leg {leg.id} using player_team '{leg.player_team}' (matched as away)")
+                        continue
                 
                 # Skip if both teams are missing or TBD
                 if (not leg.home_team or leg.home_team.lower().strip() == 'tbd') and \
@@ -621,6 +646,8 @@ def populate_player_data_for_bet(bet: Any) -> None:
                 # Use existing player
                 leg.player_id = existing_player.id
                 leg.player_position = existing_player.position
+                if existing_player.current_team:
+                    leg.player_team = existing_player.current_team
                 app.logger.info(f"[PLAYER-POPULATION] Found existing player {existing_player.player_name} (ID: {existing_player.id}) for leg {leg.id}")
                 continue
             
@@ -636,6 +663,8 @@ def populate_player_data_for_bet(bet: Any) -> None:
                 # Reuse the player we just created in this transaction
                 leg.player_id = new_player_in_session.id
                 leg.player_position = new_player_in_session.position
+                if new_player_in_session.current_team:
+                    leg.player_team = new_player_in_session.current_team
                 app.logger.info(f"[PLAYER-POPULATION] Reusing newly created player {new_player_in_session.player_name} (ID: {new_player_in_session.id}) for leg {leg.id}")
                 continue
             
@@ -677,6 +706,8 @@ def populate_player_data_for_bet(bet: Any) -> None:
                 # Update the bet leg
                 leg.player_id = new_player.id
                 leg.player_position = new_player.position
+                if new_player.current_team:
+                    leg.player_team = new_player.current_team
                 
                 app.logger.info(f"[PLAYER-POPULATION] Created new player {new_player.player_name} (ID: {new_player.id}, ESPN ID: {new_player.espn_player_id}) for leg {leg.id}")
             else:
