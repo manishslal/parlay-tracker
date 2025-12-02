@@ -1425,6 +1425,15 @@
       /* Override default min-width */
     }
 
+    /* Adjust scoreboard block margins for mobile padding */
+    @media (max-width: 768px) {
+      .scoreboard-block {
+        width: calc(100% + 1rem);
+        margin-left: -0.5rem;
+        margin-right: -0.5rem;
+      }
+    }
+
     /* Center items in the last row if it's not full (handled by space-evenly mostly, but ensure centering for single items) */
     /* Actually, space-evenly handles 1 item by putting it in the middle if it's the only one? 
        No, space-evenly with 1 item puts it in center. 
@@ -5677,11 +5686,12 @@
         const betIdText = parlay.betting_site_id || 'N/A';
         const siteText = parlay.betting_site || 'N/A';
 
-        // Calculate winnings if bet won (all games final and all legs hit)
+        // Calculate winnings using potential_winnings from backend
         let winningsText = '$0.00';
-        const allGamesFinal = validGames && validGames.every(g => g.statusTypeName === 'STATUS_FINAL');
-
-        if (allGamesFinal && allLegsComplete && parlay.returns && parlay.wager) {
+        if (parlay.potential_winnings) {
+          winningsText = `$${parseFloat(parlay.potential_winnings).toFixed(2)}`;
+        } else if (parlay.returns && parlay.wager) {
+          // Fallback if potential_winnings is missing but returns is present
           const winnings = parlay.returns - parlay.wager;
           winningsText = `$${winnings.toFixed(2)}`;
         }
@@ -5746,10 +5756,12 @@
           const touch = e.touches ? e.touches[0] : e;
           startX = touch.clientX;
           startY = touch.clientY;
+          isScrolling = false; // Reset scrolling flag
 
           if (!selectionMode) {
             // Not in selection mode: start press-and-hold timer (500ms) for FIRST selection
             localPressTimer = setTimeout(() => {
+              if (isScrolling) return; // Don't select if scrolling
               pressHandled = true;
               selectBet(parlay.db_id);
             }, 500);
@@ -5760,27 +5772,37 @@
         };
 
         const checkMovement = (e) => {
-          if (!localPressTimer) return;
-
+          // Always track movement, even if no timer (for selection mode)
           const touch = e.touches ? e.touches[0] : e;
           const deltaX = Math.abs(touch.clientX - startX);
           const deltaY = Math.abs(touch.clientY - startY);
 
-          // If user moved more than threshold, cancel the press (they're scrolling)
+          // If user moved more than threshold, mark as scrolling
           if (deltaX > MOVEMENT_THRESHOLD || deltaY > MOVEMENT_THRESHOLD) {
+            isScrolling = true;
             cancelPress();
           }
         };
 
         const endPress = (e) => {
           // If clicking the collapse arrow, just toggle collapse
-          if (e.target.classList.contains('collapse-icon')) {
+          if (e.target.closest('.collapse-icon')) {
+            e.stopPropagation(); // Prevent triggering card click
             section.classList.toggle('collapsed');
+            const icon = section.querySelector('.collapse-icon');
+            if (icon) {
+              icon.style.transform = section.classList.contains('collapsed') ? 'rotate(-180deg)' : 'rotate(0deg)';
+            }
             return;
           }
 
           // If clicking show scores button, do nothing (handled by its own listener)
           if (e.target.closest('.show-scores-btn')) {
+            return;
+          }
+
+          // If scrolling, ignore the end press (don't toggle selection)
+          if (isScrolling) {
             return;
           }
 
