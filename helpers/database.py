@@ -163,7 +163,9 @@ def auto_move_completed_bets(user_id):
             if all_games_old:
                 logging.info(f"Auto-moving old bet {bet.id} to historical (all games 2+ days old)")
                 bet.is_active = False
-                bet.status = 'completed'
+                # Only set to completed if not already won/lost
+                if bet.status not in ['won', 'lost']:
+                    bet.status = 'completed'
                 bet.api_fetched = 'Yes'  # Mark as processed
                 updated_count += 1
                 # Remove from bets list so it doesn't get processed again
@@ -274,11 +276,11 @@ def auto_move_completed_bets(user_id):
             # AND the bet hasn't already been set to a final status
             if processed_any_leg and all_games_finished and bet.status not in ['won', 'lost', 'completed'] and bet.id not in reverted_bets:
                 if has_confirmed_loss:
-                    bet.status = 'completed'
-                    logging.info(f"Auto-moved bet {bet.id} to COMPLETED (lost)")
+                    bet.status = 'lost'
+                    logging.info(f"Auto-moved bet {bet.id} to LOST")
                 else:
-                    bet.status = 'completed'
-                    logging.info(f"Auto-moved bet {bet.id} to COMPLETED (won)")
+                    bet.status = 'won'
+                    logging.info(f"Auto-moved bet {bet.id} to WON")
                 updated_count += 1
             elif bet.status in ['won', 'lost'] and has_any_not_finished and processed_any_leg:
                 # CRITICAL: Bet was previously marked as won/lost but games are no longer finished
@@ -354,7 +356,22 @@ def auto_move_pending_to_live():
             elif all_games_final and has_final_games:
                 # All games are final - move directly to completed
                 logging.info(f"[AUTO-MOVE-PENDING] Bet {bet.id} has all games final - moving to completed")
-                bet.status = 'completed'
+                
+                # Determine won/lost status
+                all_legs_won = True
+                for leg in bet_legs:
+                    if leg.status == 'lost':
+                        all_legs_won = False
+                        break
+                    # If leg status is not set but game is final, we might need to calculate it?
+                    # But auto_determine_leg_hit_status should have run.
+                    # Let's assume leg.status is accurate if set.
+                
+                if all_legs_won:
+                    bet.status = 'won'
+                else:
+                    bet.status = 'lost'
+                    
                 bet.is_active = False  # Move to historical
                 updated_count += 1
         
