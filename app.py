@@ -622,6 +622,29 @@ def populate_player_data_for_bet(bet: Any) -> None:
     
     app.logger.info(f"[PLAYER-POPULATION] Populating player data for {len(bet_legs)} legs in bet {bet.id}")
     
+    # Expanded list of team identifiers
+    team_identifiers = [
+        # NFL
+        'raiders', 'cowboys', 'chiefs', 'chargers', 'broncos', 'patriots', 'jets', 'giants', 'eagles', 'commanders', 
+        'bears', 'lions', 'packers', 'vikings', 'falcons', 'panthers', 'saints', 'buccaneers', 'cardinals', 'rams', 
+        '49ers', 'seahawks', 'bengals', 'browns', 'steelers', 'ravens', 'bills', 'dolphins', 'texans', 'colts', 
+        'jaguars', 'titans',
+        # NBA
+        'lakers', 'celtics', 'warriors', 'bulls', 'heat', 'knicks', 'nets', 'sixers', 'raptors', 'bucks', 'suns', 
+        'nuggets', 'clippers', 'mavericks', 'thunder', 'jazz', 'blazers', 'kings', 'wizards', 'hornets', 'pelicans', 
+        'grizzlies', 'hawks', 'cavaliers', 'pistons', 'pacers', 'magic', 'spurs', 'rockets', 'timberwolves',
+        # MLB
+        'yankees', 'redsox', 'orioles', 'rays', 'bluejays', 'indians', 'guardians', 'twins', 'whitesox', 'royals', 
+        'tigers', 'athletics', 'mariners', 'rangers', 'astros', 'angels', 'dodgers', 'padres', 'giants', 'rockies', 
+        'braves', 'mets', 'nationals', 'marlins', 'phillies', 'cubs', 'cardinals', 'brewers', 'pirates', 'reds',
+        # NHL
+        'rangers', 'bruins', 'maple leafs', 'canadiens', 'devils', 'flyers', 'penguins', 'sabres', 'red wings', 
+        'lightning', 'hurricanes', 'capitals', 'panthers', 'islanders', 'stars', 'avalanche', 'wild', 'blues', 
+        'jets', 'blackhawks', 'canucks', 'flames', 'oilers', 'ducks', 'sharks', 'kings', 'kraken', 'golden knights', 'predators',
+        # Generic
+        'team', 'total', 'over', 'under', 'game'
+    ]
+
     for leg in bet_legs:
         # SAFEGUARD: Skip player search for team props (moneyline, spread, totals, etc.)
         # These bets are team-based, so "player_name" is actually a team name.
@@ -629,43 +652,37 @@ def populate_player_data_for_bet(bet: Any) -> None:
         is_team_prop = False
         
         # Check bet_type
-        if leg.bet_type and leg.bet_type.lower() in ['moneyline', 'spread', 'total', 'over_under', 'game_line', 'team_total', 'parlay', 'sgp']:
-            # For Parlay/SGP, we need to check the stat_type or if player_name is a team
-            if leg.bet_type.lower() in ['moneyline', 'spread', 'total', 'over_under', 'game_line', 'team_total']:
+        if leg.bet_type and leg.bet_type.lower() in ['moneyline', 'spread', 'game_line', 'parlay', 'sgp']:
+             # Definitive team props
+             if leg.bet_type.lower() in ['moneyline', 'spread', 'game_line']:
+                 is_team_prop = True
+        
+        # Check for ambiguous types (total, over_under, team_total)
+        # Only treat as team prop if player_name matches a team identifier
+        if leg.bet_type and leg.bet_type.lower() in ['total', 'over_under', 'team_total']:
+            player_name_lower = leg.player_name.lower().strip() if leg.player_name else ""
+            if any(team in player_name_lower for team in team_identifiers):
                 is_team_prop = True
+                app.logger.info(f"[PLAYER-POPULATION] Detected team name in player_name '{leg.player_name}' for bet_type '{leg.bet_type}' - treating as team prop")
             
         # Check stat_type (definitive for team props)
         if leg.stat_type and leg.stat_type.lower() in ['moneyline', 'spread', 'total_points', 'over_under', 'team_total_points', 'point_spread', 'total']:
-            is_team_prop = True
+             # Double check if it's a player prop disguised as a total (e.g. "Total Points" for a player)
+             # If it's "Total Points" but has a player name that is NOT a team, it's a player prop
+             if leg.stat_type.lower() in ['total_points', 'total']:
+                 player_name_lower = leg.player_name.lower().strip() if leg.player_name else ""
+                 if any(team in player_name_lower for team in team_identifiers):
+                     is_team_prop = True
+             else:
+                 is_team_prop = True
             
-        # Check if player_name is actually a team name
+        # Check if player_name is actually a team name (Catch-all)
         # This is critical for OCR bets where "Rams" might be extracted as the player
-        # Expanded list of team identifiers
-        team_identifiers = [
-            # NFL
-            'raiders', 'cowboys', 'chiefs', 'chargers', 'broncos', 'patriots', 'jets', 'giants', 'eagles', 'commanders', 
-            'bears', 'lions', 'packers', 'vikings', 'falcons', 'panthers', 'saints', 'buccaneers', 'cardinals', 'rams', 
-            '49ers', 'seahawks', 'bengals', 'browns', 'steelers', 'ravens', 'bills', 'dolphins', 'texans', 'colts', 
-            'jaguars', 'titans',
-            # NBA
-            'lakers', 'celtics', 'warriors', 'bulls', 'heat', 'knicks', 'nets', 'sixers', 'raptors', 'bucks', 'suns', 
-            'nuggets', 'clippers', 'mavericks', 'thunder', 'jazz', 'blazers', 'kings', 'wizards', 'hornets', 'pelicans', 
-            'grizzlies', 'hawks', 'cavaliers', 'pistons', 'pacers', 'magic', 'spurs', 'rockets', 'timberwolves',
-            # MLB
-            'yankees', 'redsox', 'orioles', 'rays', 'bluejays', 'indians', 'guardians', 'twins', 'whitesox', 'royals', 
-            'tigers', 'athletics', 'mariners', 'rangers', 'astros', 'angels', 'dodgers', 'padres', 'giants', 'rockies', 
-            'braves', 'mets', 'nationals', 'marlins', 'phillies', 'cubs', 'cardinals', 'brewers', 'pirates', 'reds',
-            # NHL
-            'rangers', 'bruins', 'maple leafs', 'canadiens', 'devils', 'flyers', 'penguins', 'sabres', 'red wings', 
-            'lightning', 'hurricanes', 'capitals', 'panthers', 'islanders', 'stars', 'avalanche', 'wild', 'blues', 
-            'jets', 'blackhawks', 'canucks', 'flames', 'oilers', 'ducks', 'sharks', 'kings', 'kraken', 'golden knights', 'predators',
-            # Generic
-            'team', 'total', 'over', 'under', 'game'
-        ]
-        
         player_name_lower = leg.player_name.lower().strip() if leg.player_name else ""
         
-        if any(team in player_name_lower for team in team_identifiers):
+        if not is_team_prop and any(team in player_name_lower for team in team_identifiers):
+            # Only set if we haven't already determined it's a player prop (though logic above is mostly inclusive)
+            # Actually, if it matches a team identifier, it's almost certainly a team prop or we shouldn't search for it as a player
             is_team_prop = True
             app.logger.info(f"[PLAYER-POPULATION] Detected team name in player_name '{leg.player_name}' - treating as team prop")
 
