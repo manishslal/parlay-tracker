@@ -38,7 +38,7 @@ class TestNBATracking(unittest.TestCase):
         # We mapped "points" to ("general", "PTS")
         # So we need a statistic group named "general"
         
-        self.mock_game_data["boxscore"][0]["statistics"][0]["name"] = "general"
+        self.mock_game_data["boxscore"][0]["statistics"][0]["name"] = ""
 
     def test_points(self):
         bet = {"player": "LeBron James", "stat": "points"}

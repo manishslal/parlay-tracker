@@ -22,27 +22,32 @@ def test_historical_values(client):
         
         # Mock the database query to return sample data
         # This avoids relying on the actual DB state
-        with patch('routes.bets.Bet') as MockBet, \
+        # Mock the database query to return sample data
+        # Patch get_user_bets_query directly since routes/bets.py uses it
+        with patch('routes.bets.get_user_bets_query') as mock_get_bets, \
              patch('models.db.joinedload') as mock_joinedload:
             
             # Setup mock bet objects
             mock_bet = MagicMock()
             mock_bet.to_dict_structured.return_value = {
                 "legs": [
-                    {"player": "Tyler Allgeier", "stat": "anytime_touchdown", "current": 1},
-                    {"player": "Jacory Croskey-Merritt", "stat": "rushing_yards", "current": 61}
+                    {
+                        "player": "Tyler Allgeier", "stat": "anytime_touchdown", "current": 1,
+                        "game_date": "2023-10-01", "away": "ATL", "home": "JAX", "sport": "nfl"
+                    },
+                    {
+                        "player": "Jacory Croskey-Merritt", "stat": "rushing_yards", "current": 61,
+                        "game_date": "2023-10-01", "away": "UNM", "home": "WYO", "sport": "nfl"
+                    }
                 ]
             }
             
             # Setup query chain
             mock_query = MagicMock()
-            mock_filter = MagicMock()
-            mock_filter_2 = MagicMock()
             mock_options = MagicMock()
             
-            MockBet.query.filter.return_value = mock_filter
-            mock_filter.filter.return_value = mock_filter_2
-            mock_filter_2.options.return_value = mock_options
+            mock_get_bets.return_value = mock_query
+            mock_query.options.return_value = mock_options
             mock_options.all.return_value = [mock_bet]
             
             # Mock automation function which might be failing
