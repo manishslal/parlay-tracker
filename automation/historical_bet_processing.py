@@ -196,6 +196,47 @@ def _fetch_espn_data_for_leg(leg, issues):
         leg.game_id = game_data.get('game_id')
         leg.game_status = game_data.get('game_status', 'STATUS_END_PERIOD')  # Store the actual game status from ESPN
         
+        # Special handling for Team Props (Moneyline, Spread, Total) where achieved_value might be None
+        # because get_espn_game_data only calculates it for player props
+        if leg.achieved_value is None and leg.home_score is not None and leg.away_score is not None:
+            # Check if it's a team prop
+            is_team_prop = False
+            if leg.bet_type and leg.bet_type.lower() in ['moneyline', 'spread', 'total', 'over_under', 'game_line', 'team_total']:
+                is_team_prop = True
+            elif leg.stat_type and leg.stat_type.lower() in ['moneyline', 'spread', 'total_points', 'over_under', 'total']:
+                is_team_prop = True
+            
+            if is_team_prop:
+                try:
+                    home_score = float(leg.home_score)
+                    away_score = float(leg.away_score)
+                    
+                    # Total / Over/Under
+                    if leg.bet_type.lower() in ['total', 'over_under', 'total_points'] or \
+                       (leg.stat_type and leg.stat_type.lower() in ['total', 'over_under', 'total_points']):
+                        leg.achieved_value = home_score + away_score
+                        logger.debug(f"[HISTORICAL-API] Calculated Total achieved_value={leg.achieved_value} for leg {leg.id}")
+                        
+                    # Moneyline / Spread
+                    # We need to know which team was picked to calculate the margin
+                    # Usually leg.player_name holds the team name for team props
+                    elif leg.player_name:
+                        picked_team = leg.player_name.lower().strip()
+                        home_team = leg.home_team.lower().strip()
+                        away_team = leg.away_team.lower().strip()
+                        
+                        # Simple fuzzy match
+                        if picked_team in home_team or home_team in picked_team:
+                            # Picked Home
+                            leg.achieved_value = home_score - away_score
+                            logger.debug(f"[HISTORICAL-API] Calculated Home Team margin={leg.achieved_value} for leg {leg.id}")
+                        elif picked_team in away_team or away_team in picked_team:
+                            # Picked Away
+                            leg.achieved_value = away_score - home_score
+                            logger.debug(f"[HISTORICAL-API] Calculated Away Team margin={leg.achieved_value} for leg {leg.id}")
+                except Exception as e:
+                    logger.warning(f"[HISTORICAL-API] Could not calculate team prop value for leg {leg.id}: {e}")
+
         logger.debug(f"[HISTORICAL-API] Updated leg {leg.id} with ESPN data: achieved={leg.achieved_value}, scores={leg.home_score}-{leg.away_score}, game_status={leg.game_status}")
         return True
         
