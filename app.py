@@ -134,6 +134,11 @@ def uncharted():
 def account():
     return app.send_static_file('account.html')
 
+# Serve issues page
+@app.route('/issues')
+def issues():
+    return app.send_static_file('issues.html')
+
 from routes.admin import admin_bp
 from routes.auth import auth_bp
 from routes import bets_bp
@@ -433,27 +438,49 @@ def populate_game_ids_for_bet(bet: Any) -> None:
                 continue
             
             # Create lookup maps for faster matching
-            # Store game data: (game_id, espn_away, espn_home)
-            game_lookup_both = {}  # (away_norm, home_norm) -> (game_id, espn_away, espn_home)
-            game_lookup_single_home = {}  # home_norm -> (game_id, espn_away, espn_home)
-            game_lookup_single_away = {}  # away_norm -> (game_id, espn_away, espn_home)
+            # Store game data: list of (game_id, espn_away, espn_home, game_date)
+            # We use a list because teams can play multiple games in the 3-day window (e.g. NBA back-to-back)
+            game_lookup_both = {}  # (away_norm, home_norm) -> List[game_data]
+            game_lookup_single_home = {}  # home_norm -> List[game_data]
+            game_lookup_single_away = {}  # away_norm -> List[game_data]
             
-            for game_id, espn_away, espn_home in all_games:
+            for game_id, espn_away, espn_home, g_date in all_games:
                 # Normalize team names for matching
                 away_norm = espn_away.lower().strip()
                 home_norm = espn_home.lower().strip()
-                game_data = (game_id, espn_away, espn_home)
+                game_data = (game_id, espn_away, espn_home, g_date)
                 
                 # Both teams lookup
                 key = f"{away_norm}@{home_norm}"
-                game_lookup_both[key] = game_data
+                if key not in game_lookup_both: game_lookup_both[key] = []
+                game_lookup_both[key].append(game_data)
+                
                 reverse_key = f"{home_norm}@{away_norm}"
-                game_lookup_both[reverse_key] = game_data
+                if reverse_key not in game_lookup_both: game_lookup_both[reverse_key] = []
+                game_lookup_both[reverse_key].append(game_data)
                 
                 # Single team lookups (for TBD cases)
-                game_lookup_single_home[home_norm] = game_data
-                game_lookup_single_away[away_norm] = game_data
+                if home_norm not in game_lookup_single_home: game_lookup_single_home[home_norm] = []
+                game_lookup_single_home[home_norm].append(game_data)
+                
+                if away_norm not in game_lookup_single_away: game_lookup_single_away[away_norm] = []
+                game_lookup_single_away[away_norm].append(game_data)
             
+            def find_best_game_match(potential_games, target_date):
+                """Find the best game match based on date proximity"""
+                if not potential_games:
+                    return None
+                
+                # Priority 1: Exact date match
+                for g in potential_games:
+                    if g[3].date() == target_date:
+                        return g
+                
+                # Priority 2: Closest date match
+                # Sort by absolute difference in days
+                sorted_games = sorted(potential_games, key=lambda x: abs((x[3].date() - target_date).days))
+                return sorted_games[0]
+
             # Match each leg to a game
             for leg in legs:
                 leg_needs_update = (not leg.game_id or leg.game_id == '') or (not leg.away_team or leg.away_team == 'TBD')
@@ -476,21 +503,25 @@ def populate_game_ids_for_bet(bet: Any) -> None:
                 if leg_player_team_norm and leg_player_team_norm != 'tbd':
                     # Check if player team matches any home team
                     if leg_player_team_norm in game_lookup_single_home:
-                        game_id, espn_away, espn_home = game_lookup_single_home[leg_player_team_norm]
-                        leg.game_id = game_id
-                        leg.away_team = espn_away
-                        leg.home_team = espn_home
-                        app.logger.info(f"[GAME-ID-POPULATION] Set game_id {leg.game_id} for leg {leg.id} using player_team '{leg.player_team}' (matched as home)")
-                        continue
+                        match = find_best_game_match(game_lookup_single_home[leg_player_team_norm], leg.game_date)
+                        if match:
+                            game_id, espn_away, espn_home, _ = match
+                            leg.game_id = game_id
+                            leg.away_team = espn_away
+                            leg.home_team = espn_home
+                            app.logger.info(f"[GAME-ID-POPULATION] Set game_id {leg.game_id} for leg {leg.id} using player_team '{leg.player_team}' (matched as home)")
+                            continue
                         
                     # Check if player team matches any away team
                     if leg_player_team_norm in game_lookup_single_away:
-                        game_id, espn_away, espn_home = game_lookup_single_away[leg_player_team_norm]
-                        leg.game_id = game_id
-                        leg.away_team = espn_away
-                        leg.home_team = espn_home
-                        app.logger.info(f"[GAME-ID-POPULATION] Set game_id {leg.game_id} for leg {leg.id} using player_team '{leg.player_team}' (matched as away)")
-                        continue
+                        match = find_best_game_match(game_lookup_single_away[leg_player_team_norm], leg.game_date)
+                        if match:
+                            game_id, espn_away, espn_home, _ = match
+                            leg.game_id = game_id
+                            leg.away_team = espn_away
+                            leg.home_team = espn_home
+                            app.logger.info(f"[GAME-ID-POPULATION] Set game_id {leg.game_id} for leg {leg.id} using player_team '{leg.player_team}' (matched as away)")
+                            continue
                 
                 # Skip if both teams are missing or TBD
                 if (not leg.home_team or leg.home_team.lower().strip() == 'tbd') and \
@@ -502,45 +533,55 @@ def populate_game_ids_for_bet(bet: Any) -> None:
                 if leg_home_norm != 'tbd' and leg_away_norm != 'tbd':
                     key = f"{leg_away_norm}@{leg_home_norm}"
                     if key in game_lookup_both:
-                        game_id, espn_away, espn_home = game_lookup_both[key]
-                        leg.game_id = game_id
-                        leg.away_team = espn_away
-                        leg.home_team = espn_home
-                        app.logger.info(f"[GAME-ID-POPULATION] Set game_id {leg.game_id} for leg {leg.id}, teams: {leg.away_team} @ {leg.home_team}")
-                        continue
+                        match = find_best_game_match(game_lookup_both[key], leg.game_date)
+                        if match:
+                            game_id, espn_away, espn_home, _ = match
+                            leg.game_id = game_id
+                            leg.away_team = espn_away
+                            leg.home_team = espn_home
+                            app.logger.info(f"[GAME-ID-POPULATION] Set game_id {leg.game_id} for leg {leg.id}, teams: {leg.away_team} @ {leg.home_team}")
+                            continue
                 
                 # Try to match on single team if other is TBD
                 if leg_home_norm != 'tbd' and (not leg.away_team or leg.away_team.lower().strip() == 'tbd'):
                     if leg_home_norm in game_lookup_single_home:
-                        game_id, espn_away, espn_home = game_lookup_single_home[leg_home_norm]
-                        leg.game_id = game_id
-                        leg.away_team = espn_away
-                        leg.home_team = espn_home
-                        app.logger.info(f"[GAME-ID-POPULATION] Set game_id {leg.game_id} for leg {leg.id}, matched home team: {leg.home_team}")
-                        continue
+                        match = find_best_game_match(game_lookup_single_home[leg_home_norm], leg.game_date)
+                        if match:
+                            game_id, espn_away, espn_home, _ = match
+                            leg.game_id = game_id
+                            leg.away_team = espn_away
+                            leg.home_team = espn_home
+                            app.logger.info(f"[GAME-ID-POPULATION] Set game_id {leg.game_id} for leg {leg.id}, matched home team: {leg.home_team}")
+                            continue
                     if leg_home_norm in game_lookup_single_away:
-                        game_id, espn_away, espn_home = game_lookup_single_away[leg_home_norm]
-                        leg.game_id = game_id
-                        leg.away_team = espn_away
-                        leg.home_team = espn_home
-                        app.logger.info(f"[GAME-ID-POPULATION] Set game_id {leg.game_id} for leg {leg.id}, matched as away team: {leg.away_team}")
-                        continue
+                        match = find_best_game_match(game_lookup_single_away[leg_home_norm], leg.game_date)
+                        if match:
+                            game_id, espn_away, espn_home, _ = match
+                            leg.game_id = game_id
+                            leg.away_team = espn_away
+                            leg.home_team = espn_home
+                            app.logger.info(f"[GAME-ID-POPULATION] Set game_id {leg.game_id} for leg {leg.id}, matched as away team: {leg.away_team}")
+                            continue
                 
                 if leg_away_norm != 'tbd' and (not leg.home_team or leg.home_team.lower().strip() == 'tbd'):
                     if leg_away_norm in game_lookup_single_away:
-                        game_id, espn_away, espn_home = game_lookup_single_away[leg_away_norm]
-                        leg.game_id = game_id
-                        leg.away_team = espn_away
-                        leg.home_team = espn_home
-                        app.logger.info(f"[GAME-ID-POPULATION] Set game_id {leg.game_id} for leg {leg.id}, matched away team: {leg.away_team}")
-                        continue
+                        match = find_best_game_match(game_lookup_single_away[leg_away_norm], leg.game_date)
+                        if match:
+                            game_id, espn_away, espn_home, _ = match
+                            leg.game_id = game_id
+                            leg.away_team = espn_away
+                            leg.home_team = espn_home
+                            app.logger.info(f"[GAME-ID-POPULATION] Set game_id {leg.game_id} for leg {leg.id}, matched away team: {leg.away_team}")
+                            continue
                     if leg_away_norm in game_lookup_single_home:
-                        game_id, espn_away, espn_home = game_lookup_single_home[leg_away_norm]
-                        leg.game_id = game_id
-                        leg.away_team = espn_away
-                        leg.home_team = espn_home
-                        app.logger.info(f"[GAME-ID-POPULATION] Set game_id {leg.game_id} for leg {leg.id}, matched as home team: {leg.home_team}")
-                        continue
+                        match = find_best_game_match(game_lookup_single_home[leg_away_norm], leg.game_date)
+                        if match:
+                            game_id, espn_away, espn_home, _ = match
+                            leg.game_id = game_id
+                            leg.away_team = espn_away
+                            leg.home_team = espn_home
+                            app.logger.info(f"[GAME-ID-POPULATION] Set game_id {leg.game_id} for leg {leg.id}, matched as home team: {leg.home_team}")
+                            continue
                 
                 app.logger.warning(f"[GAME-ID-POPULATION] No game match found for leg {leg.id}: {leg.away_team} @ {leg.home_team} on {game_date}")
         
@@ -708,6 +749,13 @@ def populate_player_data_for_bet(bet: Any) -> None:
                 leg.player_position = new_player.position
                 if new_player.current_team:
                     leg.player_team = new_player.current_team
+                
+                # CRITICAL FIX: Update leg sport if it differs (e.g. NFL -> NBA)
+                # This allows populate_game_ids_for_bet to find the correct game
+                if new_player.sport and leg.sport != new_player.sport:
+                    app.logger.info(f"[PLAYER-POPULATION] Correcting sport for leg {leg.id}: {leg.sport} -> {new_player.sport}")
+                    leg.sport = new_player.sport
+                    leg.parlay_sport = new_player.sport
                 
                 app.logger.info(f"[PLAYER-POPULATION] Created new player {new_player.player_name} (ID: {new_player.id}, ESPN ID: {new_player.espn_player_id}) for leg {leg.id}")
             else:
@@ -1928,13 +1976,20 @@ def run_populate_missing_player_data():
     logger.info("[SCHEDULER] Running populate_missing_player_data")
     with app.app_context():
         try:
-            # Find all bets with legs that have game_id but no player data
+            # Find all bets with legs that have missing player data
+            # CRITICAL FIX: Do NOT filter by game_id.isnot(None). 
+            # We need player data to be populated FIRST so we can correct the sport (e.g. NFL -> NBA)
+            # and THEN find the game ID.
             bet_ids = db.session.query(Bet.id).join(
                 BetLeg, BetLeg.bet_id == Bet.id
             ).filter(
-                BetLeg.game_id.isnot(None),
                 (BetLeg.achieved_value.is_(None) | (BetLeg.achieved_value == 0.0)),
-                BetLeg.status == 'pending'
+                BetLeg.status == 'pending',
+                # Only process legs that actually need player data (have a player name but no ID)
+                BetLeg.player_name.isnot(None),
+                BetLeg.player_name != 'Unknown',
+                BetLeg.player_name != 'Game Total',
+                BetLeg.player_id.is_(None)
             ).distinct().all()
             
             if not bet_ids:
@@ -1963,6 +2018,16 @@ def run_validate_historical_data():
             validate_historical_bet_data()
         except Exception as e:
             logger.error(f"[DATA-VALIDATION] Error in run_validate_historical_data: {e}")
+
+def run_enrich_player_data():
+    """Background job to enrich incomplete player data"""
+    logger.info("[SCHEDULER] Running enrich_player_data")
+    with app.app_context():
+        try:
+            from jobs.player_enrichment_job import enrich_player_data
+            enrich_player_data()
+        except Exception as e:
+            logger.error(f"[PLAYER-ENRICHMENT] Error in run_enrich_player_data: {e}")
 
 # Schedule automated tasks (moved outside if __name__ == '__main__' so it runs on Render)
 scheduler.add_job(
@@ -2026,6 +2091,13 @@ scheduler.add_job(
     trigger=CronTrigger(hour=3, minute=0, timezone='US/Eastern'),
     id='validate_historical_data',
     name='Validate historical bet data against ESPN API daily at 3 AM ET'
+)
+
+scheduler.add_job(
+    func=run_enrich_player_data,
+    trigger=IntervalTrigger(minutes=5),
+    id='enrich_player_data',
+    name='Enrich incomplete player data every 5 minutes'
 )
 
 # Run diagnostics on startup

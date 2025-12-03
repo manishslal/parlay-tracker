@@ -598,13 +598,36 @@
       });
     }
 
-    // Issues click handler
-    const issuesItem = document.getElementById('issues-item');
-    if (issuesItem) {
-      issuesItem.addEventListener('click', () => {
-        window.location.href = '/#issues';
-      });
-    }
+    // Check if user is admin and show admin menu
+    (function setupAdmin() {
+      fetch('/api/current_user', {
+        credentials: 'include'
+      })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success && data.user) {
+            // Show admin menu and issues menu for admin users
+            if (data.user.user_role === 'admin') {
+              const adminItem = document.getElementById('admin-item');
+              if (adminItem) {
+                adminItem.style.display = 'flex';
+                adminItem.addEventListener('click', function () {
+                  window.location.href = '/admin.html';
+                });
+              }
+
+              const issuesItem = document.getElementById('issues-item');
+              if (issuesItem) {
+                issuesItem.style.display = 'flex';
+                issuesItem.addEventListener('click', function () {
+                  window.location.href = '/issues';
+                });
+              }
+            }
+          }
+        })
+        .catch(error => console.error('Error checking admin status:', error));
+    })();
   </script>
 </body>
 

@@ -45,10 +45,10 @@ def get_espn_games_for_date(date: datetime) -> List[Tuple[str, str]]:
         print(f"Error fetching ESPN data for {date_str}: {e}")
         return []
 
-def get_espn_games_with_ids_for_date(date: datetime) -> List[Tuple[str, str, str]]:
+def get_espn_games_with_ids_for_date(date: datetime) -> List[Tuple[str, str, str, datetime]]:
     """
     Fetch games from ESPN API for a given date (NFL and NBA)
-    Returns list of (game_id, away_team, home_team) tuples
+    Returns list of (game_id, away_team, home_team, game_date) tuples
     """
     # ESPN scoreboard API
     date_str = date.strftime("%Y%m%d")
@@ -88,7 +88,8 @@ def get_espn_games_with_ids_for_date(date: datetime) -> List[Tuple[str, str, str
                                     away_team = comp['team']['displayName']
                             
                             if home_team and away_team:
-                                games.append((game_id, away_team, home_team))
+                                # Return the date passed in as the game date
+                                games.append((game_id, away_team, home_team, date))
         
         except Exception as e:
             print(f"Error fetching ESPN data for {sport}/{league} on {date_str}: {e}")
@@ -422,7 +423,7 @@ def _extract_achieved_value(stats: dict, stat_type: str, bet_type: str, bet_line
     return None
 
 
-def get_espn_game_data(home_team: str, away_team: str, game_date: str, player_name: str = None, sport: str = 'NBA', stat_type: str = None, bet_type: str = None, bet_line_type: str = None) -> dict:
+def get_espn_game_data(home_team: str, away_team: str, game_date: str, player_name: str = None, sport: str = 'NBA', stat_type: str = None, bet_type: str = None, bet_line_type: str = None, game_id: str = None) -> dict:
     """
     Fetch comprehensive ESPN game data for a specific game
     
@@ -435,6 +436,7 @@ def get_espn_game_data(home_team: str, away_team: str, game_date: str, player_na
         stat_type: Stat type for player props (e.g., 'points', 'assists')
         bet_type: Type of bet (e.g., 'total', 'made_threes')
         bet_line_type: Line type ('over', 'under')
+        game_id: Optional ESPN game ID for direct lookup
     
     Returns:
         Dictionary with game data or None if not found
@@ -464,7 +466,18 @@ def get_espn_game_data(home_team: str, away_team: str, game_date: str, player_na
         events = data.get('events', [])
         
         for event in events:
-            game_id = event.get('id')
+            current_game_id = event.get('id')
+            
+            # Priority 1: Direct Game ID Match
+            if game_id and str(game_id) == str(current_game_id):
+                # Found exact match by ID - proceed to process this event
+                pass
+            elif game_id:
+                # If game_id was provided but doesn't match this event, skip
+                continue
+            
+            # If no game_id provided, fall back to team matching logic below...
+            
             competitions = event.get('competitions', [])
             if not competitions:
                 continue
@@ -485,46 +498,51 @@ def get_espn_game_data(home_team: str, away_team: str, game_date: str, player_na
             espn_away = away_competitor.get('team', {}).get('displayName', '')
             
             # Match teams (case-insensitive partial match)
-            home_match = home_team.lower() in espn_home.lower() or espn_home.lower() in home_team.lower()
-            away_match = away_team.lower() in espn_away.lower() or espn_away.lower() in away_team.lower()
+            # Only perform this check if we didn't match by ID
+            if not game_id:
+                home_match = home_team.lower() in espn_home.lower() or espn_home.lower() in home_team.lower()
+                away_match = away_team.lower() in espn_away.lower() or espn_away.lower() in away_team.lower()
+                
+                if not (home_match and away_match):
+                    continue
             
-            if home_match and away_match:
-                home_score = int(home_competitor.get('score', 0))
-                away_score = int(away_competitor.get('score', 0))
-                
-                # Get game status
-                game_status_obj = competition.get('status', {})
-                game_status_name = game_status_obj.get('name', 'STATUS_END_PERIOD')
-                
-                achieved_value = None
-                is_home_game = None
-                
-                if player_name:
-                    # Fetch detailed boxscore for player stats
-                    try:
-                        summary_url = f"https://site.api.espn.com/apis/site/v2/sports/{sport_path}/summary?event={game_id}"
-                        summary_response = requests.get(summary_url, headers=headers, timeout=10)
-                        if summary_response.status_code == 200:
-                            summary_data = summary_response.json()
-                            boxscore = summary_data.get('boxscore', {})
-                            
-                            # Get player stats from boxscore
-                            player_stats = _get_player_stats_from_boxscore(player_name, sport, boxscore)
-                            
-                            if player_stats:
-                                # Extract the relevant stat
-                                achieved_value = _extract_achieved_value(player_stats, stat_type, bet_type, bet_line_type)
-                    except Exception as e:
-                        print(f"Error fetching player stats for {player_name}: {e}")
-                
-                return {
-                    'game_id': game_id,
-                    'home_score': home_score,
-                    'away_score': away_score,
-                    'is_home_game': is_home_game,
-                    'achieved_value': achieved_value,
-                    'game_status': game_status_name
-                }
+            # Extract data (runs for both ID match and team match)
+            home_score = int(home_competitor.get('score', 0))
+            away_score = int(away_competitor.get('score', 0))
+            
+            # Get game status
+            game_status_obj = competition.get('status', {})
+            game_status_name = game_status_obj.get('name', 'STATUS_END_PERIOD')
+            
+            achieved_value = None
+            is_home_game = None
+            
+            if player_name:
+                # Fetch detailed boxscore for player stats
+                try:
+                    summary_url = f"https://site.api.espn.com/apis/site/v2/sports/{sport_path}/summary?event={current_game_id}"
+                    summary_response = requests.get(summary_url, headers=headers, timeout=10)
+                    if summary_response.status_code == 200:
+                        summary_data = summary_response.json()
+                        boxscore = summary_data.get('boxscore', {})
+                        
+                        # Get player stats from boxscore
+                        player_stats = _get_player_stats_from_boxscore(player_name, sport, boxscore)
+                        
+                        if player_stats:
+                            # Extract the relevant stat
+                            achieved_value = _extract_achieved_value(player_stats, stat_type, bet_type, bet_line_type)
+                except Exception as e:
+                    print(f"Error fetching player stats for {player_name}: {e}")
+            
+            return {
+                'game_id': current_game_id,
+                'home_score': home_score,
+                'away_score': away_score,
+                'is_home_game': is_home_game,
+                'achieved_value': achieved_value,
+                'game_status': game_status_name
+            }
         
         return None
         
@@ -569,6 +587,7 @@ def get_espn_player_details(player_id: str, sport: str = "football", league: str
                 'jersey_number': jersey_number if jersey_number not in [None, ''] else None,
                 'team_abbreviation': team.get('abbreviation', ''),
                 'current_team': team.get('displayName', ''),
+                'status': athlete.get('status', {}).get('type', ''),
                 'sport': correct_sport
             }
             return player_info

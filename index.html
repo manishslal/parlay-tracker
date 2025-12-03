@@ -2438,7 +2438,7 @@
       <button class="tab active" data-tab="current">Live Bets</button>
       <button class="tab" data-tab="historical">Historical Bets</button>
       <button class="tab" data-tab="archived">Archived Bets</button>
-      <button class="tab" id="issues-tab" data-tab="issues" style="display: none;">Issues</button>
+
     </div>
     <div class="button-container">
       <button id="refresh-button">Refresh Stats</button>
@@ -2645,24 +2645,7 @@
     <div id="parlay-sections" class="tab-content active" data-tab="current"></div>
     <div id="historical-sections" class="tab-content" data-tab="historical" style="display:none"></div>
     <div id="archived-sections" class="tab-content" data-tab="archived" style="display:none"></div>
-    <div id="issues-sections" class="tab-content" data-tab="issues" style="display:none">
-      <div class="issues-header">
-        <h2>🐛 Debugging Issues</h2>
-        <p>Track and monitor system issues, errors, and debugging information.</p>
-      </div>
-      <div class="issues-content">
-        <div id="issues-list">
-          <!-- Issues will be loaded here -->
-        </div>
-        <div id="issues-loading" style="text-align: center; padding: 2rem; display: none;">
-          <div class="loading-spinner"></div>
-          <p>Loading issues...</p>
-        </div>
-        <div id="issues-empty" style="text-align: center; padding: 2rem; color: var(--text); opacity: 0.7;">
-          <p>No issues found. System is running smoothly! ✅</p>
-        </div>
-      </div>
-    </div>
+
 
     <!-- Profile Page -->
     <div id="profile-page" style="display:none;">
@@ -3864,7 +3847,7 @@
       });
     })();
 
-    // Check if user is admin and show admin menu, also show Issues tab for user ID 1
+    // Check if user is admin and show admin menu
     (function setupAdmin() {
       fetch('/api/current_user', {
         credentials: 'include'
@@ -3872,80 +3855,27 @@
         .then(response => response.json())
         .then(data => {
           if (data.success && data.user) {
-            // Show admin menu for admin users OR user ID 1
-            if (data.user.user_role === 'admin' || data.user.id === 1) {
+            // Show admin menu and issues menu for admin users
+            if (data.user.user_role === 'admin') {
               const adminItem = document.getElementById('admin-item');
-              adminItem.style.display = 'flex';
-              adminItem.addEventListener('click', function () {
-                window.location.href = '/admin.html';
-              });
-            }
-
-            // Show Issues tab for user ID 1 (manishslal)
-            if (data.user.id === 1) {
-              const issuesTab = document.getElementById('issues-tab');
-              issuesTab.style.display = 'inline-block';
+              if (adminItem) {
+                adminItem.style.display = 'flex';
+                adminItem.addEventListener('click', function () {
+                  window.location.href = '/admin.html';
+                });
+              }
 
               const issuesItem = document.getElementById('issues-item');
-              issuesItem.style.display = 'flex';
-              issuesItem.addEventListener('click', async function () {
-                // Switch to issues tab
-                document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
-                document.querySelectorAll('.tab-content').forEach(content => content.style.display = 'none');
-                document.getElementById('issues-tab').classList.add('active');
-                document.getElementById('issues-sections').style.display = 'block';
-
-                // Load issues data
-                try {
-                  const issuesList = document.getElementById('issues-list');
-                  const loadingDiv = document.getElementById('issues-loading');
-                  const emptyDiv = document.getElementById('issues-empty');
-
-                  loadingDiv.style.display = 'block';
-                  emptyDiv.style.display = 'none';
-                  issuesList.innerHTML = '';
-
-                  const issuesUrl = `${API_BASE}/issues?t=${Date.now()}`;
-                  const response = await fetch(issuesUrl, { credentials: 'include' });
-
-                  if (response.ok) {
-                    const issuesData = await response.json();
-                    const issues = issuesData.issues || [];
-
-                    if (issues.length > 0) {
-                      issues.forEach((issue, index) => {
-                        const issueItem = document.createElement('div');
-                        issueItem.className = 'issue-item';
-                        issueItem.innerHTML = `
-                    <h3>Issue ${index + 1}</h3>
-                    <p>${issue}</p>
-                    <div class="issue-timestamp">${new Date().toLocaleString()}</div>
-                  `;
-                        issuesList.appendChild(issueItem);
-                      });
-                      loadingDiv.style.display = 'none';
-                    } else {
-                      loadingDiv.style.display = 'none';
-                      emptyDiv.style.display = 'block';
-                    }
-                  } else {
-                    loadingDiv.style.display = 'none';
-                    issuesList.innerHTML = '<div class="issue-item"><h3>Error</h3><p>Failed to load issues data</p></div>';
-                  }
-                } catch (error) {
-                  console.error('Error loading issues:', error);
-                  document.getElementById('issues-loading').style.display = 'none';
-                  document.getElementById('issues-list').innerHTML = '<div class="issue-item"><h3>Error</h3><p>Failed to load issues data</p></div>';
-                }
-
-                closeMenu();
-              });
+              if (issuesItem) {
+                issuesItem.style.display = 'flex';
+                issuesItem.addEventListener('click', function () {
+                  window.location.href = '/issues';
+                });
+              }
             }
           }
         })
-        .catch(error => {
-          console.error('Error checking admin status:', error);
-        });
+        .catch(error => console.error('Error checking admin status:', error));
     })();
 
     function fetchWithAdminToken(url, options = {}) {
@@ -5678,7 +5608,11 @@
         const footer = document.createElement('div');
         footer.className = 'parlay-footer';
 
-        const oddsText = parlay.odds || 'N/A';
+        let oddsText = parlay.odds || 'N/A';
+        // Format positive odds with + prefix if missing
+        if (oddsText !== 'N/A' && !String(oddsText).startsWith('+') && !String(oddsText).startsWith('-') && !isNaN(oddsText) && Number(oddsText) > 0) {
+          oddsText = '+' + oddsText;
+        }
         const wagerText = parlay.wager ? `$${parlay.wager}` : 'N/A';
         const betIdText = parlay.betting_site_id || 'N/A';
         const siteText = parlay.betting_site || 'N/A';

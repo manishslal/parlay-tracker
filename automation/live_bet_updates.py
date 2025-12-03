@@ -76,7 +76,8 @@ def update_live_bet_legs():
                                         sport=bet_leg.sport,
                                         stat_type=bet_leg.stat_type,
                                         bet_type=bet_leg.bet_type,
-                                        bet_line_type=bet_leg.bet_line_type
+                                        bet_line_type=bet_leg.bet_line_type,
+                                        game_id=bet_leg.game_id  # Pass game_id for direct lookup
                                     )
                                     if game_data and 'achieved_value' in game_data and game_data['achieved_value'] is not None:
                                         new_achieved = game_data['achieved_value']

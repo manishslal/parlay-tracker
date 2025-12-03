@@ -180,7 +180,8 @@ def _fetch_espn_data_for_leg(leg, issues):
             sport=leg.sport,
             stat_type=leg.stat_type,
             bet_type=leg.bet_type,
-            bet_line_type=leg.bet_line_type
+            bet_line_type=leg.bet_line_type,
+            game_id=leg.game_id  # Pass game_id for direct lookup
         )
         
         if not game_data:

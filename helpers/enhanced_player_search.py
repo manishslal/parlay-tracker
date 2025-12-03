@@ -95,6 +95,13 @@ def enhanced_player_search(player_name: str, sport: str = "football", league: st
             if alt_data and alt_data.get('position'):
                 print(f"Enhanced Search: Found {player_name} in NFL!")
                 return alt_data
+            
+            # Try NCAA Basketball
+            print(f"Enhanced Search: No complete data for {player_name} as NBA/NFL, trying NCAA Basketball...")
+            ncaa_data = search_espn_player(player_name, sport="basketball", league="mens-college-basketball")
+            if ncaa_data and ncaa_data.get('position'):
+                print(f"Enhanced Search: Found {player_name} in NCAA Basketball!")
+                return ncaa_data
 
     if player_data and player_data.get('espn_player_id'):
         print(f"  ✓ Found by full name: {player_data['player_name']}")
