@@ -1354,27 +1354,20 @@
       margin: 1rem 0;
     }
 
-    .pagination-row {
+    .pagination-nav-row {
       display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 1rem;
-      flex-wrap: wrap;
-    }
-
-    .pagination-left,
-    .pagination-right {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-    }
-
-    .pagination-center {
-      display: flex;
+      justify-content: center;
       align-items: center;
       gap: 0.25rem;
       flex-wrap: wrap;
+    }
+
+    .pagination-goto-row {
+      display: flex;
       justify-content: center;
+      align-items: center;
+      gap: 0.5rem;
+      margin-top: 0.75rem;
     }
 
     .pagination-label {
@@ -1473,27 +1466,8 @@
         margin: 0.5rem 0;
       }
 
-      .pagination-row {
-        flex-direction: column;
-        gap: 0.5rem;
-      }
-
-      .pagination-left,
-      .pagination-right {
-        width: 100%;
-        justify-content: center;
-      }
-
-      .pagination-left {
-        order: 2;
-      }
-
-      .pagination-right {
-        order: 3;
-      }
-
-      .pagination-center {
-        order: 1;
+      .pagination-nav-row,
+      .pagination-goto-row {
         width: 100%;
         justify-content: center;
       }
@@ -1513,18 +1487,23 @@
         font-size: 0.75rem;
       }
 
-      .pagination-select,
-      .pagination-input {
+      .pagination-select {
         font-size: 0.8rem;
         padding: 0.3rem 0.5rem;
       }
 
       .pagination-input {
         width: 50px;
+        font-size: 0.8rem;
+        padding: 0.3rem 0.5rem;
       }
 
       .pagination-info {
         font-size: 0.75rem;
+        margin-top: 0.5rem;
+      }
+
+      .pagination-goto-row {
         margin-top: 0.5rem;
       }
     }
@@ -2876,6 +2855,15 @@
             <button class="collapse-option" id="unselect-all">Unselect All</button>
           </div>
         </div>
+
+        <div style="position: relative;">
+          <button class="toolbar-button" id="show-dropdown-btn">Show: <span id="show-count">20</span></button>
+          <div class="collapse-menu" id="show-menu">
+            <button class="collapse-option show-option" data-size="20">20</button>
+            <button class="collapse-option show-option" data-size="50">50</button>
+            <button class="collapse-option show-option" data-size="100">100</button>
+          </div>
+        </div>
       </div>
 
       <div class="toolbar-search">
@@ -3609,6 +3597,42 @@
       e.stopPropagation();
     });
 
+    // Show dropdown functionality
+    const showDropdownBtn = document.getElementById('show-dropdown-btn');
+    const showMenu = document.getElementById('show-menu');
+    const showCount = document.getElementById('show-count');
+
+    showDropdownBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      // Close other menus
+      filterMainMenu.classList.remove('active');
+      filterSubPanel.classList.remove('active');
+      addBetDropdown.classList.remove('active');
+      collapseMenu.classList.remove('active');
+      selectMenu.classList.remove('active');
+      showMenu.classList.toggle('active');
+    });
+
+    showMenu.addEventListener('click', (e) => {
+      e.stopPropagation();
+    });
+
+    document.querySelectorAll('.show-option').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const size = parseInt(btn.dataset.size);
+        historicalPerPage = size;
+        showCount.textContent = size;
+        historicalPagesCache = {}; // Clear cache when page size changes
+        showMenu.classList.remove('active');
+
+        // Only reload if on historical tab
+        const activeTab = document.querySelector('.tab.active');
+        if (activeTab && activeTab.dataset.tab === 'historical') {
+          loadHistorical(1, true); // Reset to page 1
+        }
+      });
+    });
+
     collapseAllBtn.addEventListener('click', () => {
       document.querySelectorAll('.parlay-section').forEach(section => {
         if (section.style.display !== 'none') {
@@ -3649,6 +3673,7 @@
 
     document.addEventListener('click', () => {
       selectMenu.classList.remove('active');
+      showMenu.classList.remove('active');
     });
 
     selectMenu.addEventListener('click', (e) => {
@@ -4849,66 +4874,52 @@
 
       if (historicalTotalPages <= 1) return; // No pagination needed
 
-      // Create pagination HTML
-      const createPaginationHTML = () => {
+      // Create pagination HTML with simplified page numbers (current ± 1)
+      const createPaginationHTML = (position) => {
         const isFirst = historicalCurrentPage <= 1;
         const isLast = historicalCurrentPage >= historicalTotalPages;
 
-        // Generate page numbers with ellipsis
+        // Generate simplified page numbers: show current ± 1 only
         const pages = [];
-        const maxVisible = 5;
-        let startPage = Math.max(1, historicalCurrentPage - Math.floor(maxVisible / 2));
-        let endPage = Math.min(historicalTotalPages, startPage + maxVisible - 1);
+        const prevPage = historicalCurrentPage - 1;
+        const nextPage = historicalCurrentPage + 1;
 
-        if (endPage - startPage < maxVisible - 1) {
-          startPage = Math.max(1, endPage - maxVisible + 1);
-        }
-
-        // Always show first page
-        if (startPage > 1) {
-          pages.push(1);
-          if (startPage > 2) pages.push('...');
-        }
-
-        // Middle pages
-        for (let i = startPage; i <= endPage; i++) {
-          pages.push(i);
-        }
-
-        // Always show last page
-        if (endPage < historicalTotalPages) {
-          if (endPage < historicalTotalPages - 1) pages.push('...');
-          pages.push(historicalTotalPages);
-        }
+        if (prevPage >= 1) pages.push(prevPage);
+        pages.push(historicalCurrentPage);
+        if (nextPage <= historicalTotalPages) pages.push(nextPage);
 
         const pageButtons = pages.map(p => {
-          if (p === '...') {
-            return `<span class="pagination-ellipsis">...</span>`;
-          }
           const isActive = p === historicalCurrentPage;
           return `<button class="pagination-btn pagination-page ${isActive ? 'active' : ''}" 
                           data-page="${p}" ${isActive ? 'disabled' : ''}>${p}</button>`;
         }).join('');
 
-        return `
-          <div class="pagination-row">
-            <div class="pagination-left">
-              <label class="pagination-label">Show:</label>
-              <select class="pagination-select" id="per-page-select">
-                <option value="20" ${historicalPerPage === 20 ? 'selected' : ''}>20</option>
-                <option value="50" ${historicalPerPage === 50 ? 'selected' : ''}>50</option>
-                <option value="100" ${historicalPerPage === 100 ? 'selected' : ''}>100</option>
-              </select>
-            </div>
-            <div class="pagination-center">
+        // Top pagination: just navigation buttons
+        if (position === 'top') {
+          return `
+            <div class="pagination-nav-row">
               <button class="pagination-btn pagination-nav" data-action="first" ${isFirst ? 'disabled' : ''} title="First page">«</button>
               <button class="pagination-btn pagination-nav" data-action="prev" ${isFirst ? 'disabled' : ''} title="Previous page">‹</button>
               ${pageButtons}
               <button class="pagination-btn pagination-nav" data-action="next" ${isLast ? 'disabled' : ''} title="Next page">›</button>
               <button class="pagination-btn pagination-nav" data-action="last" ${isLast ? 'disabled' : ''} title="Last page">»</button>
-            </div>
-            <div class="pagination-right">
-              <label class="pagination-label">Go to:</label>
+            </div>`;
+        }
+
+        // Bottom pagination: navigation + Go-to input below
+        return `
+          <div class="pagination-nav-row">
+            <button class="pagination-btn pagination-nav" data-action="first" ${isFirst ? 'disabled' : ''} title="First page">«</button>
+            <button class="pagination-btn pagination-nav" data-action="prev" ${isFirst ? 'disabled' : ''} title="Previous page">‹</button>
+            ${pageButtons}
+            <button class="pagination-btn pagination-nav" data-action="next" ${isLast ? 'disabled' : ''} title="Next page">›</button>
+            <button class="pagination-btn pagination-nav" data-action="last" ${isLast ? 'disabled' : ''} title="Last page">»</button>
+          </div>
+          <div class="pagination-goto-row">
+            <label class="pagination-label">Go to:</label>
+            <input type="number" class="pagination-input" min="1" max="${historicalTotalPages}" placeholder="${historicalCurrentPage}">
+            <button class="pagination-btn pagination-go">Go</button>
+          </div>
               <input type="number" class="pagination-input" min="1" max="${historicalTotalPages}" placeholder="${historicalCurrentPage}">
               <button class="pagination-btn pagination-go">Go</button>
             </div>
@@ -4922,9 +4933,9 @@
         const container = document.createElement('div');
         container.className = 'historical-pagination';
         container.dataset.position = position;
-        container.innerHTML = createPaginationHTML();
+        container.innerHTML = createPaginationHTML(position);
 
-        // Attach event listeners
+        // Attach event listeners for navigation buttons
         container.querySelectorAll('.pagination-btn[data-action]').forEach(btn => {
           btn.onclick = () => {
             const action = btn.dataset.action;
@@ -4935,6 +4946,7 @@
           };
         });
 
+        // Attach event listeners for page number buttons
         container.querySelectorAll('.pagination-page').forEach(btn => {
           btn.onclick = () => {
             const page = parseInt(btn.dataset.page);
@@ -4942,25 +4954,24 @@
           };
         });
 
-        container.querySelector('.pagination-select').onchange = (e) => {
-          historicalPerPage = parseInt(e.target.value);
-          historicalPagesCache = {}; // Clear cache when page size changes
-          loadHistorical(1, true); // Reset to page 1
-        };
+        // Only bottom pagination has Go-to input
+        if (position === 'bottom') {
+          const goInput = container.querySelector('.pagination-input');
+          const goBtn = container.querySelector('.pagination-go');
 
-        const goInput = container.querySelector('.pagination-input');
-        const goBtn = container.querySelector('.pagination-go');
+          if (goInput && goBtn) {
+            const goToPage = () => {
+              const page = parseInt(goInput.value);
+              if (page >= 1 && page <= historicalTotalPages && page !== historicalCurrentPage) {
+                loadHistorical(page);
+              }
+              goInput.value = '';
+            };
 
-        const goToPage = () => {
-          const page = parseInt(goInput.value);
-          if (page >= 1 && page <= historicalTotalPages && page !== historicalCurrentPage) {
-            loadHistorical(page);
+            goBtn.onclick = goToPage;
+            goInput.onkeypress = (e) => { if (e.key === 'Enter') goToPage(); };
           }
-          goInput.value = '';
-        };
-
-        goBtn.onclick = goToPage;
-        goInput.onkeypress = (e) => { if (e.key === 'Enter') goToPage(); };
+        }
 
         return container;
       };
