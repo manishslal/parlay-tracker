@@ -1324,7 +1324,7 @@
       top: 100%;
       left: auto;
       right: 0;
-      background: var(--card-bg);
+      background: var(--card-bg) !important;
       backdrop-filter: blur(10px);
       border: 1px solid var(--border);
       border-radius: 8px;
@@ -1332,6 +1332,7 @@
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
       z-index: 1000;
       max-width: calc(100vw - 20px);
+      font-size: 0.85rem;
     }
 
     #show-menu {
@@ -1340,13 +1341,14 @@
       top: 100%;
       right: 0;
       min-width: 80px;
-      background: var(--card-bg);
+      background: var(--card-bg) !important;
       backdrop-filter: blur(10px);
       border: 1px solid var(--border);
       border-radius: 8px;
       padding: 0.5rem 0.75rem;
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
       z-index: 1000;
+      font-size: 0.85rem;
     }
 
     #show-menu.active,
@@ -2726,6 +2728,8 @@
           </button>
         </div>
       </div>
+    </div>
+    <div style="display: flex; justify-content: center; padding: 0.25rem 0;">
       <button id="clear-cache-button" style="display: none;">Clear Cache 🗑️</button>
     </div>
     <div class="status-container">
