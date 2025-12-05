@@ -297,6 +297,12 @@ def _extract_achieved_value(stats: dict, stat_type: str, bet_type: str, bet_line
 
     # --- NFL Mappings ---
     
+    # Rushing + Receiving Yards
+    if 'rushing' in stat_type_lower and 'receiving' in stat_type_lower:
+        rush = check_keys(['rushing_yds', 'rush_yds']) or 0
+        rec = check_keys(['receiving_yds', 'rec_yds']) or 0
+        return float(rush) + float(rec)
+
     # Rushing Yards
     if 'rushing_yards' in stat_type_lower or 'rush_yds' in stat_type_lower:
         val = check_keys(['rushing_yds', 'yds'])
