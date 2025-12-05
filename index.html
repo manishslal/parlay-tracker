@@ -1365,25 +1365,28 @@
     /* Enhanced Pagination Styles */
     .historical-pagination {
       background: transparent;
-      border-radius: 8px;
-      padding: 0.4rem 0.75rem;
-      margin: 0.5rem 0;
+      border-radius: 0;
+      padding: 0;
+      margin: 0.25rem 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
     }
 
     .pagination-nav-row {
-      display: flex;
+      display: inline-flex;
       justify-content: center;
       align-items: center;
-      gap: 0.1rem;
+      gap: 2px;
       flex-wrap: nowrap;
     }
 
     .pagination-goto-row {
-      display: flex;
+      display: inline-flex;
       justify-content: center;
       align-items: center;
-      gap: 0.3rem;
-      margin-top: 0.4rem;
+      gap: 4px;
+      margin-top: 4px;
     }
 
     .pagination-label {
@@ -4830,6 +4833,8 @@
       // Use cached page if available and not forcing refresh
       if (!forceRefresh && historicalPagesCache[page]) {
         console.log(`📦 Using cached page ${page}`);
+        // CRITICAL: Update state BEFORE rendering to ensure pagination buttons show correct page
+        historicalCurrentPage = page;
         renderHistoricalPage(historicalPagesCache[page], page);
         prefetchNextPage(page);
         return;
