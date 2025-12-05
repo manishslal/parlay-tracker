@@ -128,7 +128,7 @@ IMPORTANT:
                     ]
                 }
             ],
-            'max_tokens': 1000
+            'max_tokens': 2000  # Increased from 1000 to prevent truncation of multi-leg parlays
         }
         
         response = requests.post(
