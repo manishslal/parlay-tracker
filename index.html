@@ -4951,7 +4951,7 @@
           header.appendChild(scoreboardBlock);
         }
 
-        const isAnyGameLive = validGames && validGames.some(g => g.statusTypeName === 'STATUS_IN_PROGRESS' || g.statusTypeName === 'STATUS_HALFTIME');
+        const isAnyGameLive = validGames && validGames.some(g => g.statusTypeName === 'STATUS_IN_PROGRESS' || g.statusTypeName === 'STATUS_HALFTIME' || g.statusTypeName === 'STATUS_END_PERIOD');
         const areAllGamesFinal = validGames && validGames.every(g => g.statusTypeName === 'STATUS_FINAL');
         const areAllGamesScheduled = validGames && validGames.every(g => g.statusTypeName === 'STATUS_SCHEDULED');
 
@@ -5440,7 +5440,7 @@
               txt = '🔜 Not Started';
             } else if (gameData && gameData.statusTypeName === 'STATUS_SCHEDULED') {
               txt = '🔜 Not Started';
-            } else if (gameData && (gameData.statusTypeName === 'STATUS_IN_PROGRESS' || gameData.statusTypeName === 'STATUS_HALFTIME')) {
+            } else if (gameData && (gameData.statusTypeName === 'STATUS_IN_PROGRESS' || gameData.statusTypeName === 'STATUS_HALFTIME' || gameData.statusTypeName === 'STATUS_END_PERIOD')) {
               txt = '⏳ In Progress';
             } else if (!gameData && (areAllGamesScheduled || (!isAnyGameLive && !areAllGamesFinal))) {
               txt = '🔜 Not Started';
