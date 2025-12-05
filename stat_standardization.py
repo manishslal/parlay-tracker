@@ -29,7 +29,7 @@ NFL_STATS = {
     'kicking_points': ['kicking_points', 'kicking points', 'kicker points'],
     'rushing_receiving_yards': ['rushing_receiving_yards', 'rushing receiving yards', 'rush receiving yards', 'alt_rushing_receiving_yards', 'alt rushing receiving yards'],
     'passing_rushing_yards': ['passing_rushing_yards', 'passing rushing yards', 'pass rushing yards'],
-    'anytime_touchdown': ['anytime_touchdown', 'anytime td', 'anytime_td', 'anytime_td_scorer', 'any_time_touchdown_scorer', 'touchdown_scorer', 'td_scorer', 'any_td', 'anytime td scorer', 'touchdown scorer'],
+    'anytime_touchdown': ['anytime_touchdown', 'anytime td', 'anytime_td', 'anytime_td_scorer', 'any_time_touchdown_scorer', 'touchdown_scorer', 'td_scorer', 'any_td', 'anytime td scorer', 'touchdown scorer', 'anytime touchdown scorer', 'anytime touchdown'],
     'team_total_points': ['team_total_points', 'team total points', 'team points', 'team_score'],
     'moneyline': ['moneyline', 'money line', 'ml', 'win'],
     'spread': ['spread', 'point spread', 'spread_total'],

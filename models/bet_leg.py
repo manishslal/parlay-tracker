@@ -70,7 +70,7 @@ class BetLeg(db.Model):
         For other bets, use achieved_value.
         """
         # For moneyline and spread bets, use score_diff (current game difference)
-        if self.bet_type in ['moneyline', 'spread']:
+        if self.stat_type in ['moneyline', 'spread']:
             if self.home_score is not None and self.away_score is not None:
                 # Calculate which team the bet is on
                 bet_team_name = self.player_name or self.player_team or ''

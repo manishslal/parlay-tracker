@@ -886,7 +886,7 @@ def transform_extracted_bet_data(data):
 			'player_name': player_name,
 			'team_name': team_name,
 			'stat_type': standardized_stat,  # Use standardized stat type
-			'bet_type': display_bet_type,  # Frontend also checks bet_type for logic
+			'bet_type': 'Team Prop' if display_bet_type in ['moneyline', 'spread', 'total', 'total_points'] else 'Player Prop',
 			'target_value': target_value,
 			'bet_line_type': 'over' if leg.get('stat_add') == 'over' else 'under' if leg.get('stat_add') == 'under' else None,
 			'odds': leg.get('odds'),
@@ -898,6 +898,13 @@ def transform_extracted_bet_data(data):
 			'game_date': default_game_date,  # Default to today for OCR bets
 			'status': 'pending'  # Set default status for OCR bets
 		}
+		
+		# FIX: Ensure Anytime Touchdown bets have a target of 1.0 (implied "at least 1")
+		# If target is 0 or None, the hit logic (achieved >= target) would mark 0 TDs as a win!
+		if transformed_leg['stat_type'] == 'anytime_touchdown':
+			if not transformed_leg['target_value'] or float(transformed_leg['target_value']) == 0:
+				transformed_leg['target_value'] = 1.0
+				
 		transformed['legs'].append(transformed_leg)
 	
 	return transformed

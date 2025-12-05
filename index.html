@@ -4830,7 +4830,7 @@
             const homeAbbr = g.teams.home_abbr || getTeamAbbr(g.teams.home);
             gameDetails = `<div style="font-weight:bold;">${awayAbbr} ${g.score.away} - ${g.score.home} ${homeAbbr}</div>`;
           }
-          else if (stn === 'STATUS_IN_PROGRESS') {
+          else if (stn === 'STATUS_IN_PROGRESS' || stn === 'STATUS_END_PERIOD') {
             gameStatus = 'LIVE';
             gameCls = 'status-live';
             const awayAbbr = g.teams.away_abbr || getTeamAbbr(g.teams.away);
@@ -4975,7 +4975,7 @@
           const gameStatus = leg.gameStatus || (gameData ? gameData.statusTypeName : null);
 
           // Check if game is in progress
-          if (gameStatus === 'in_progress' || gameStatus === 'STATUS_IN_PROGRESS' || gameStatus === 'STATUS_HALFTIME') {
+          if (gameStatus === 'in_progress' || gameStatus === 'STATUS_IN_PROGRESS' || gameStatus === 'STATUS_HALFTIME' || gameStatus === 'STATUS_END_PERIOD') {
             // For in-progress spread/moneyline bets, check if currently winning/losing
             if (isSpreadOrML && current !== null) {
               const scoreDiff = leg.score_diff ?? current;
