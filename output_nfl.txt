@@ -1,0 +1,78 @@
+2025-12-04 20:05:22,466 - apscheduler.scheduler - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2025-12-04 20:05:22,467 - apscheduler.scheduler - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2025-12-04 20:05:22,467 - apscheduler.scheduler - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2025-12-04 20:05:22,467 - apscheduler.scheduler - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2025-12-04 20:05:22,467 - apscheduler.scheduler - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2025-12-04 20:05:22,467 - apscheduler.scheduler - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2025-12-04 20:05:22,467 - apscheduler.scheduler - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2025-12-04 20:05:22,467 - apscheduler.scheduler - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2025-12-04 20:05:22,467 - apscheduler.scheduler - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2025-12-04 20:05:22,467 - apscheduler.scheduler - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2025-12-04 20:05:22,467 - apscheduler.scheduler - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2025-12-04 20:05:22,468 - apscheduler.scheduler - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2025-12-04 20:05:22,468 - apscheduler.scheduler - INFO - Added job "Update completed bet legs with final results every 30 minutes" to job store "default"
+2025-12-04 20:05:22,468 - apscheduler.scheduler - INFO - Added job "Update live bet legs with real-time data every minute" to job store "default"
+2025-12-04 20:05:22,468 - apscheduler.scheduler - INFO - Added job "Standardize team names in bet_legs to use team_name_short daily" to job store "default"
+2025-12-04 20:05:22,468 - apscheduler.scheduler - INFO - Added job "Move bets with no live legs to historical every 5 minutes" to job store "default"
+2025-12-04 20:05:22,468 - apscheduler.scheduler - INFO - Added job "Determine hit/miss status for legs with achieved values every 10 minutes" to job store "default"
+2025-12-04 20:05:22,468 - apscheduler.scheduler - INFO - Added job "Process historical bets with ESPN API data and update status hourly" to job store "default"
+2025-12-04 20:05:22,468 - apscheduler.scheduler - INFO - Added job "Populate game IDs for bets with missing ESPN game links every 2 minutes" to job store "default"
+2025-12-04 20:05:22,468 - apscheduler.scheduler - INFO - Added job "Populate player data for bets with missing stats every 3 minutes" to job store "default"
+2025-12-04 20:05:22,469 - apscheduler.scheduler - INFO - Added job "Validate historical bet data against ESPN API daily at 3 AM ET" to job store "default"
+2025-12-04 20:05:22,469 - apscheduler.scheduler - INFO - Added job "Enrich incomplete player data every 5 minutes" to job store "default"
+2025-12-04 20:05:22,469 - apscheduler.scheduler - INFO - Added job "Update team data from ESPN daily at 4 AM ET" to job store "default"
+2025-12-04 20:05:22,469 - apscheduler.scheduler - INFO - Added job "Run bet status diagnostics on startup" to job store "default"
+2025-12-04 20:05:22,469 - apscheduler.scheduler - INFO - Scheduler started
+2025-12-04 20:05:22,475 - apscheduler.executors.default - INFO - Running job "Run bet status diagnostics on startup (trigger: date[2025-12-04 20:05:22 EST], next run at: 2025-12-04 20:05:22 EST)" (scheduled at 2025-12-04 20:05:22.468240-05:00)
+2025-12-04 20:05:22,477 - apscheduler.scheduler - INFO - Removed job startup_diagnostics
+2025-12-04 20:05:22,477 - root - INFO - --- BET STATUS DIAGNOSTICS ---
+2025-12-04 20:05:23,727 - root - INFO - Total Bets: 158
+2025-12-04 20:05:23,792 - root - INFO - Status Distribution:
+2025-12-04 20:05:23,793 - root - INFO -   lost: 16
+2025-12-04 20:05:23,793 - root - INFO -   completed: 134
+2025-12-04 20:05:23,793 - root - INFO -   pending: 4
+2025-12-04 20:05:23,793 - root - INFO -   live: 1
+2025-12-04 20:05:23,793 - root - INFO -   won: 3
+2025-12-04 20:05:23,864 - root - INFO - Active Distribution:
+2025-12-04 20:05:23,864 - root - INFO -   is_active=False: 153
+2025-12-04 20:05:23,864 - root - INFO -   is_active=True: 5
+2025-12-04 20:05:23,928 - root - INFO - Archived Distribution:
+2025-12-04 20:05:23,928 - root - INFO -   is_archived=None: 1
+2025-12-04 20:05:23,928 - root - INFO -   is_archived=False: 158
+2025-12-04 20:05:24,017 - root - WARNING - ⚠️ FOUND 1 LIMBO BETS (Inactive but not Historical):
+2025-12-04 20:05:24,017 - root - WARNING -   Bet 103: status='live', is_active=False
+2025-12-04 20:05:24,017 - root - INFO - ------------------------------
+2025-12-04 20:05:24,017 - root - INFO - [AUTO-HIT-STATUS] Checking for legs needing hit status determination
+2025-12-04 20:05:24,310 - app - INFO - [GAME-ID-POPULATION] Populating game IDs for 2 legs in bet 201
+2025-12-04 20:05:24,724 - root - INFO - [AUTO-HIT-STATUS] Processing 70 legs
+2025-12-04 20:05:24,724 - root - INFO - [AUTO-HIT-STATUS] No legs were updated
+2025-12-04 20:05:24,856 - apscheduler.executors.default - INFO - Job "Run bet status diagnostics on startup (trigger: date[2025-12-04 20:05:22 EST], next run at: 2025-12-04 20:05:22 EST)" executed successfully
+2025-12-04 20:05:25,204 - app - INFO - [GAME-ID-POPULATION] Found 6 games for 2025-12-04
+2025-12-04 20:05:26,251 - app - INFO - [GAME-ID-POPULATION] Found 12 games for 2025-12-05
+2025-12-04 20:05:27,275 - app - INFO - [GAME-ID-POPULATION] Found 7 games for 2025-12-06
+2025-12-04 20:05:27,275 - app - INFO - [GAME-ID-POPULATION] Leg 1099: Matching 'Dallas Cowboys' (norm: 'dallas cowboys') @ 'TBD' (norm: 'tbd') | Player Team: 'Dallas Cowboys' (norm: 'dallas cowboys')
+2025-12-04 20:05:27,276 - app - INFO - [GAME-ID-POPULATION] Set game_id 401772947 for leg 1099 using player_team 'Dallas Cowboys' (matched as away)
+2025-12-04 20:05:27,276 - app - INFO - [GAME-ID-POPULATION] Leg 1100: Matching 'Detroit Lions' (norm: 'detroit lions') @ 'TBD' (norm: 'tbd') | Player Team: 'Detroit Lions' (norm: 'detroit lions')
+2025-12-04 20:05:27,276 - app - INFO - [GAME-ID-POPULATION] Set game_id 401772947 for leg 1100 using player_team 'Detroit Lions' (matched as home)
+2025-12-04 20:05:27,858 - app - INFO - [GAME-ID-POPULATION] Successfully populated game IDs for bet 201
+DEBUG: app.py imported
+DEBUG: DATABASE_URL = postgresql://parlays_user:wgEpC1q34LIekYv6uelYqSThFdoy8xJT@dpg-d43b4iripnbc73bmuv5g-a.virginia-postgres.render.com/parlays?sslmode=require
+DEBUG: Configuring for PostgreSQL
+DEBUG: Initializing CORS
+DEBUG: Initializing DB
+DEBUG: DB initialized. Extensions: dict_keys(['sqlalchemy'])
+Creating test NFL bet...
+Created Bet 201
+Leg 1: Dallas Cowboys (Home: Dallas Cowboys)
+Leg 2: Detroit Lions (Home: Detroit Lions)
+
+Running populate_game_ids_for_bet...
+
+Leg 1 Final Game ID: 401772947
+Leg 1 Final Teams: Dallas Cowboys @ Detroit Lions
+Leg 2 Final Game ID: 401772947
+Leg 2 Final Teams: Dallas Cowboys @ Detroit Lions
+✅ SUCCESS: Game IDs populated
+
+Cleaning up...
+2025-12-04 20:05:28,612 - apscheduler.scheduler - INFO - Scheduler has been shut down
