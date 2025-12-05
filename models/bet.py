@@ -102,8 +102,27 @@ class Bet(db.Model):
             'last_api_update': self.last_api_update,
             'secondary_bettors': self.secondary_bettors,
             'watchers': self.watchers,
-            # Add more fields as needed
         }
+        
+        # Resolve bettor usernames for display (primary bettor first, then secondary)
+        from models.user import User
+        bettor_usernames = []
+        
+        # Primary bettor (always first)
+        if self.user_id:
+            primary_user = User.query.get(self.user_id)
+            if primary_user:
+                bettor_usernames.append(primary_user.username)
+        
+        # Secondary bettors
+        if self.secondary_bettors:
+            for user_id in self.secondary_bettors:
+                if user_id:
+                    secondary_user = User.query.get(user_id)
+                    if secondary_user:
+                        bettor_usernames.append(secondary_user.username)
+        
+        result['bettor_usernames'] = bettor_usernames
         
         # Add name field for process_parlay_data compatibility
         # Add name field for process_parlay_data compatibility

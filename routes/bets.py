@@ -613,40 +613,123 @@ def todays():
 @db_error_handler
 def historical():
 	from app import app  # Import here to avoid circular import
+	from datetime import datetime, timedelta
 	try:
-		app.logger.info(f"[HISTORICAL] Starting historical bets request for user {current_user.id}")
-		# Removed synchronous automation calls
-		# /historical shows bets with status in ['won', 'lost', 'completed']
-		# /historical shows bets with status in ['won', 'lost', 'completed']
-		bets = get_user_bets_query(
+		# Get pagination parameters
+		page = request.args.get('page', 1, type=int)
+		per_page = request.args.get('per_page', 50, type=int)
+		
+		# Get filter parameters
+		filter_site = request.args.get('site', '').strip()
+		filter_sport = request.args.get('sport', '').strip()
+		filter_last_30_days = request.args.get('last_30_days', '').lower() == 'true'
+		filter_search = request.args.get('search', '').strip().lower()
+		
+		# Clamp per_page to reasonable limits
+		per_page = min(max(per_page, 10), 100)
+		
+		app.logger.info(f"[HISTORICAL] Request for user {current_user.id}: page={page}, per_page={per_page}, site={filter_site}, sport={filter_sport}, last_30_days={filter_last_30_days}, search={filter_search}")
+		
+		# Get base query for historical bets
+		base_query = get_user_bets_query(
 			current_user,
 			status=['won', 'lost', 'completed']
-		).options(db.joinedload(Bet.bet_legs_rel)).all()
-		app.logger.info(f"[HISTORICAL] Found {len(bets)} historical bets")
+		).options(db.joinedload(Bet.bet_legs_rel))
+		
+		# Apply filters BEFORE pagination
+		
+		# Filter by betting site (supports comma-separated multi-select)
+		if filter_site:
+			sites = [s.strip() for s in filter_site.split(',') if s.strip()]
+			if len(sites) == 1:
+				base_query = base_query.filter(Bet.betting_site == sites[0])
+			elif len(sites) > 1:
+				base_query = base_query.filter(Bet.betting_site.in_(sites))
+		
+		# Filter by sport (supports comma-separated multi-select, requires checking bet_legs)
+		if filter_sport:
+			sports = [s.strip() for s in filter_sport.split(',') if s.strip()]
+			# Use exists() subquery for better performance
+			from sqlalchemy import exists
+			if len(sports) == 1:
+				sport_subquery = db.session.query(BetLeg.bet_id).filter(
+					BetLeg.bet_id == Bet.id,
+					BetLeg.sport == sports[0]
+				).exists()
+			else:
+				sport_subquery = db.session.query(BetLeg.bet_id).filter(
+					BetLeg.bet_id == Bet.id,
+					BetLeg.sport.in_(sports)
+				).exists()
+			base_query = base_query.filter(sport_subquery)
+		
+		# Filter by last 30 days
+		if filter_last_30_days:
+			cutoff_date = (datetime.now() - timedelta(days=30)).strftime('%Y-%m-%d')
+			base_query = base_query.filter(Bet.bet_date >= cutoff_date)
+		
+		# Filter by search term (searches in bet_data JSON, betting_site)
+		if filter_search:
+			search_pattern = f'%{filter_search}%'
+			base_query = base_query.filter(
+				or_(
+					Bet.bet_data.ilike(search_pattern),
+					Bet.betting_site.ilike(search_pattern)
+				)
+			)
+		
+		# Get total count for pagination metadata (AFTER filters applied)
+		total_bets = base_query.count()
+		total_pages = (total_bets + per_page - 1) // per_page  # Ceiling division
+		
+		# Handle edge case: requested page beyond available pages
+		if page > total_pages and total_pages > 0:
+			page = total_pages
+		
+		# Order by bet_date DESC for consistent pagination (newest first)
+		bets = base_query.order_by(Bet.bet_date.desc(), Bet.id.desc()).offset((page - 1) * per_page).limit(per_page).all()
+		
+		app.logger.info(f"[HISTORICAL] Found {len(bets)} bets for page {page} (total filtered: {total_bets})")
 		
 		historical_parlays = []
 		for i, bet in enumerate(bets):
 			try:
 				bet_data = bet.to_dict_structured(use_live_data=False)
 				historical_parlays.append(bet_data)
-				if i < 3:  # Log first few bets
-					app.logger.debug(f"[HISTORICAL] Bet {bet.id}: {len(bet_data.get('legs', []))} legs")
 			except Exception as e:
 				app.logger.error(f"[HISTORICAL] Error processing bet {bet.id}: {e}")
 				continue
 		
 		app.logger.info(f"[HISTORICAL] Successfully processed {len(historical_parlays)} bets")
 		
-		# Historical bets don't need live processing (fetch_live=False)
-		# BUT we DO need to run process_parlay_data to ensure score_diff and other calculated fields
-		# are correct based on the stored homeScore/awayScore.
-		# This fixes issues where "Down X" vs "Up X" might be inverted in the raw JSON.
+		# Process data for correct score_diff calculations
 		processed_data = process_parlay_data(historical_parlays, fetch_live=False)
 		
+		# Sort within the page (should already be sorted by query, but ensures consistency)
 		sorted_data = sort_parlays_by_date(processed_data)
-		app.logger.info(f"[HISTORICAL] Successfully sorted {len(sorted_data)} bets")
 		
-		return jsonify(sorted_data)
+		# Build active filters object for frontend
+		active_filters = {}
+		if filter_site:
+			active_filters['site'] = filter_site
+		if filter_sport:
+			active_filters['sport'] = filter_sport
+		if filter_last_30_days:
+			active_filters['last_30_days'] = True
+		if filter_search:
+			active_filters['search'] = filter_search
+		
+		# Return paginated response with metadata
+		return jsonify({
+			'bets': sorted_data,
+			'page': page,
+			'per_page': per_page,
+			'total_bets': total_bets,
+			'total_pages': total_pages,
+			'has_next': page < total_pages,
+			'has_prev': page > 1,
+			'filters': active_filters
+		})
 	except Exception as e:
 		app.logger.error(f"[HISTORICAL] Unexpected error: {e}", exc_info=True)
 		return jsonify({"error": str(e)}), 500

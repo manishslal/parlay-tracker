@@ -1281,9 +1281,69 @@
     }
 
     .parlay-date {
-      font-size: 0.85rem;
+      font-size: 0.75rem;
       font-weight: normal;
       opacity: 0.8;
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+    }
+
+    .parlay-bettors {
+      font-size: 0.75rem;
+      font-weight: normal;
+      opacity: 0.8;
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+    }
+
+    .parlay-meta-icon {
+      font-size: 0.8rem;
+      opacity: 0.9;
+    }
+
+    .bettors-more {
+      color: var(--primary);
+      cursor: pointer;
+      text-decoration: underline;
+      position: relative;
+    }
+
+    .bettors-more:hover {
+      opacity: 0.8;
+    }
+
+    .bettors-popup {
+      position: absolute;
+      bottom: 100%;
+      left: 0;
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.5rem 0.75rem;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      z-index: 1000;
+      white-space: nowrap;
+      font-size: 0.75rem;
+      display: none;
+    }
+
+    .bettors-more:hover .bettors-popup,
+    .bettors-popup.visible {
+      display: block;
+    }
+
+    .bettors-popup-title {
+      font-weight: 600;
+      margin-bottom: 0.25rem;
+      opacity: 0.7;
+    }
+
+    .bettors-popup-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.15rem;
     }
 
     .game-info-wrapper {
@@ -2834,6 +2894,13 @@
     let cachedLive = null;
     let cachedHistorical = null;
 
+    // === HISTORICAL PAGINATION STATE ===
+    let historicalCurrentPage = 1;
+    let historicalTotalPages = 1;
+    let historicalTotalBets = 0;
+    let historicalPagesCache = {}; // Cache for prefetched pages
+    let historicalPrefetchInProgress = false;
+
     // === SELECTION STATE FOR ARCHIVE/UNARCHIVE ===
     const selectedBets = new Set();
     let pressTimer = null;
@@ -3060,6 +3127,13 @@
 
     function clearHistoricalCache() {
       try {
+        // Reset in-memory pagination state
+        historicalCurrentPage = 1;
+        historicalTotalPages = 1;
+        historicalTotalBets = 0;
+        historicalPagesCache = {};
+        historicalPrefetchInProgress = false;
+
         // Clear both cache keys
         localStorage.removeItem(HISTORICAL_CACHE_KEY);
         localStorage.removeItem(HISTORICAL_CACHE_META_KEY);
@@ -3444,6 +3518,19 @@
     });
 
     function applyAllFilters() {
+      // Check if we're on the historical tab - use server-side filtering
+      const activeTab = document.querySelector('.tab.active');
+      const isHistoricalTab = activeTab && activeTab.dataset.tab === 'historical';
+
+      if (isHistoricalTab) {
+        // For historical tab, trigger server-side refetch with filters
+        // loadHistorical will detect filter changes and reset to page 1
+        loadHistorical(1);
+        // Still apply client-side filtering for immediate visual feedback
+        // on currently loaded bets while server request is in progress
+      }
+
+      // Apply client-side filtering for immediate visual feedback
       document.querySelectorAll('.parlay-section').forEach(section => {
         let shouldShow = true;
 
@@ -4460,19 +4547,204 @@
       container.appendChild(issuesList);
     }
 
-    async function loadHistorical() {
-      msg.textContent = 'Loading historical bets...';
+    // Build query string for historical API with filters (supports multi-select)
+    function buildHistoricalQueryString(page) {
+      const params = new URLSearchParams();
+      params.set('page', page);
+      params.set('per_page', '50');
+
+      // Add active filters (comma-separated for multi-select support)
+      if (activeFilters.site.size > 0) {
+        params.set('site', [...activeFilters.site].join(','));
+      }
+      if (activeFilters.sport.size > 0) {
+        params.set('sport', [...activeFilters.sport].join(','));
+      }
+      if (activeFilters.last30Days) {
+        params.set('last_30_days', 'true');
+      }
+      if (searchQuery) {
+        params.set('search', searchQuery);
+      }
+
+      return params.toString();
+    }
+
+    // Track last filter state to detect changes
+    let lastFilterState = '';
+
+    function getFilterStateKey() {
+      return JSON.stringify({
+        site: [...activeFilters.site],
+        sport: [...activeFilters.sport],
+        last30Days: activeFilters.last30Days,
+        search: searchQuery
+      });
+    }
+
+    async function loadHistorical(page = 1, forceRefresh = false) {
+      // Check if filters changed - clear cache and reset to page 1
+      const currentFilterState = getFilterStateKey();
+      if (currentFilterState !== lastFilterState) {
+        console.log('🔄 Filters changed, clearing cache');
+        historicalPagesCache = {};
+        lastFilterState = currentFilterState;
+        page = 1; // Reset to first page when filters change
+      }
+
+      // Use cached page if available and not forcing refresh
+      if (!forceRefresh && historicalPagesCache[page]) {
+        console.log(`📦 Using cached page ${page}`);
+        renderHistoricalPage(historicalPagesCache[page], page);
+        prefetchNextPage(page);
+        return;
+      }
+
+      msg.textContent = `Loading historical bets (page ${page})...`;
       try {
-        console.log('Fetching from:', histUrl);
-        const r = await fetchWithAdminToken(histUrl);
+        const queryString = buildHistoricalQueryString(page);
+        console.log('Fetching from:', `${histUrl}?${queryString}`);
+        const r = await fetchWithAdminToken(`${histUrl}?${queryString}`);
         if (!r.ok) throw r.status;
-        const historical = await r.json();
-        console.log('Received historical data:', historical);
-        render(historical, histSec);
-        msg.textContent = `Historical data loaded: ${new Date().toLocaleTimeString()}`;
+        const response = await r.json();
+        console.log('Received historical data:', response);
+
+        // Handle both old array format and new paginated format
+        if (Array.isArray(response)) {
+          // Legacy format - render directly
+          render(response, histSec);
+          msg.textContent = `Historical data loaded: ${new Date().toLocaleTimeString()}`;
+          return;
+        }
+
+        // New paginated format
+        historicalCurrentPage = response.page;
+        historicalTotalPages = response.total_pages;
+        historicalTotalBets = response.total_bets;
+
+        // Cache this page (keyed by page number, invalidated when filters change)
+        historicalPagesCache[page] = response.bets;
+
+        // Render the page
+        renderHistoricalPage(response.bets, page);
+
+        // Build status message with filter info
+        const hasFilters = response.filters && Object.keys(response.filters).length > 0;
+        const filterNote = hasFilters ? ' (filtered)' : '';
+        msg.textContent = `Historical bets: Page ${page} of ${historicalTotalPages} (${historicalTotalBets} total${filterNote})`;
+
+        // Prefetch next page
+        prefetchNextPage(page);
+
       } catch (e) {
         console.error('Error loading historical data:', e);
         msg.textContent = 'Error loading historical data: ' + e.toString();
+      }
+    }
+
+    function renderHistoricalPage(bets, page) {
+      // Render bets
+      render(bets, histSec);
+
+      // Add pagination controls
+      renderPaginationControls();
+    }
+
+    function renderPaginationControls() {
+      // Remove existing pagination if any
+      const existingPagination = document.getElementById('historical-pagination');
+      if (existingPagination) existingPagination.remove();
+
+      if (historicalTotalPages <= 1) return; // No pagination needed
+
+      const paginationDiv = document.createElement('div');
+      paginationDiv.id = 'historical-pagination';
+      paginationDiv.style.cssText = `
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 1rem;
+        padding: 1.5rem;
+        margin-top: 1rem;
+        background: rgba(0, 0, 0, 0.2);
+        border-radius: 12px;
+      `;
+
+      // Previous button
+      const prevBtn = document.createElement('button');
+      prevBtn.textContent = '← Previous';
+      prevBtn.disabled = historicalCurrentPage <= 1;
+      prevBtn.style.cssText = `
+        padding: 0.75rem 1.5rem;
+        background: ${historicalCurrentPage <= 1 ? 'rgba(100, 100, 100, 0.3)' : 'var(--primary)'};
+        color: ${historicalCurrentPage <= 1 ? 'rgba(255,255,255,0.5)' : '#fff'};
+        border: none;
+        border-radius: 8px;
+        cursor: ${historicalCurrentPage <= 1 ? 'not-allowed' : 'pointer'};
+        font-weight: 600;
+        font-size: 0.9rem;
+        transition: all 0.2s;
+      `;
+      prevBtn.onclick = () => { if (historicalCurrentPage > 1) loadHistorical(historicalCurrentPage - 1); };
+
+      // Page indicator
+      const pageIndicator = document.createElement('span');
+      pageIndicator.style.cssText = `
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--text);
+        min-width: 120px;
+        text-align: center;
+      `;
+      pageIndicator.textContent = `Page ${historicalCurrentPage} of ${historicalTotalPages}`;
+
+      // Next button
+      const nextBtn = document.createElement('button');
+      nextBtn.textContent = 'Next →';
+      nextBtn.disabled = historicalCurrentPage >= historicalTotalPages;
+      nextBtn.style.cssText = `
+        padding: 0.75rem 1.5rem;
+        background: ${historicalCurrentPage >= historicalTotalPages ? 'rgba(100, 100, 100, 0.3)' : 'var(--primary)'};
+        color: ${historicalCurrentPage >= historicalTotalPages ? 'rgba(255,255,255,0.5)' : '#fff'};
+        border: none;
+        border-radius: 8px;
+        cursor: ${historicalCurrentPage >= historicalTotalPages ? 'not-allowed' : 'pointer'};
+        font-weight: 600;
+        font-size: 0.9rem;
+        transition: all 0.2s;
+      `;
+      nextBtn.onclick = () => { if (historicalCurrentPage < historicalTotalPages) loadHistorical(historicalCurrentPage + 1); };
+
+      paginationDiv.appendChild(prevBtn);
+      paginationDiv.appendChild(pageIndicator);
+      paginationDiv.appendChild(nextBtn);
+
+      histSec.appendChild(paginationDiv);
+    }
+
+    async function prefetchNextPage(currentPage) {
+      const nextPage = currentPage + 1;
+      if (nextPage > historicalTotalPages || historicalPagesCache[nextPage] || historicalPrefetchInProgress) {
+        return; // Already cached or no more pages
+      }
+
+      historicalPrefetchInProgress = true;
+      console.log(`🔄 Prefetching page ${nextPage}...`);
+
+      try {
+        const queryString = buildHistoricalQueryString(nextPage);
+        const r = await fetchWithAdminToken(`${histUrl}?${queryString}`);
+        if (r.ok) {
+          const response = await r.json();
+          if (!Array.isArray(response)) {
+            historicalPagesCache[nextPage] = response.bets;
+            console.log(`✅ Prefetched page ${nextPage}`);
+          }
+        }
+      } catch (e) {
+        console.warn(`Failed to prefetch page ${nextPage}:`, e);
+      } finally {
+        historicalPrefetchInProgress = false;
       }
     }
 
@@ -4761,6 +5033,35 @@
           }
         }
 
+
+        // Build bettors display with +N more popup
+        const bettors = parlay.bettor_usernames || [];
+        let bettorsHtml = '';
+        if (bettors.length > 0) {
+          if (bettors.length <= 2) {
+            // Show all bettors
+            bettorsHtml = `<span class="parlay-bettors"><span class="parlay-meta-icon">👤</span>${bettors.join(', ')}</span>`;
+          } else {
+            // Show first bettor + "+N more" with popup
+            const firstBettor = bettors[0];
+            const remaining = bettors.slice(1);
+            const remainingList = remaining.map(b => `<div>• ${b}</div>`).join('');
+            bettorsHtml = `
+              <span class="parlay-bettors">
+                <span class="parlay-meta-icon">👤</span>${firstBettor}, 
+                <span class="bettors-more">+${remaining.length} more
+                  <div class="bettors-popup">
+                    <div class="bettors-popup-title">All Bettors</div>
+                    <div class="bettors-popup-list">
+                      <div>• ${firstBettor}</div>
+                      ${remainingList}
+                    </div>
+                  </div>
+                </span>
+              </span>`;
+          }
+        }
+
         header.innerHTML = `
           ${allLegsComplete ? `<img src="media/trophy-1.svg" class="trophy-icon trophy-dark" alt="Won"><img src="media/trophy-2.svg" class="trophy-icon trophy-light" alt="Won">` : ''}
           <div class="parlay-title">
@@ -4768,7 +5069,8 @@
               <span class="collapse-icon">▼</span>
               <div>
                 <div>${displayName}</div>
-                ${formattedDate && `<span class="parlay-date">${formattedDate}</span>`}
+                ${formattedDate && `<span class="parlay-date"><span class="parlay-meta-icon">📅</span>${formattedDate}</span>`}
+                ${bettorsHtml}
               </div>
             </div>
           </div>
