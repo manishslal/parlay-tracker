@@ -513,7 +513,8 @@ def get_espn_game_data(home_team: str, away_team: str, game_date: str, player_na
             
             # Get game status
             game_status_obj = competition.get('status', {})
-            game_status_name = game_status_obj.get('name', 'STATUS_END_PERIOD')
+            # Check for status.type.name (standard structure) or status.name (fallback)
+            game_status_name = game_status_obj.get('type', {}).get('name') or game_status_obj.get('name', 'STATUS_END_PERIOD')
             
             achieved_value = None
             is_home_game = None
