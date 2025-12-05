@@ -7033,43 +7033,15 @@
       }
     });
 
-    // Move completed games button
-    const moveBtn = document.getElementById('move-completed-button');
-    moveBtn.addEventListener('click', async () => {
-      try {
-        msg.textContent = 'Moving completed games...';
-        moveBtn.disabled = true;
-
-        const response = await fetchWithAdminToken(`${API_BASE}/admin/move_completed`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          }
-        });
-
-        if (!response.ok) throw new Error(`Move failed: ${response.status}`);
-
-        const result = await response.json();
-        msg.textContent = `Moved ${result.moved_count} parlay(s) to history. ${result.remaining_live} still live.`;
-
-        // Clear caches (including localStorage for historical since new bets were added)
-        cachedLive = null;
-        cachedHistorical = null;
-        clearHistoricalCache();
-
-        // Update twice to ensure all data is refreshed properly
-        await update();
-
-        // Small delay then update again to show the rearranged bets
-        setTimeout(async () => {
-          await update();
-        }, 500);
+    setTimeout(async () => {
+      await update();
+    }, 500);
       } catch (e) {
-        console.error('Error moving completed:', e);
-        msg.textContent = `Error: ${e.message}`;
-      } finally {
-        moveBtn.disabled = false;
-      }
+      console.error('Error moving completed:', e);
+      msg.textContent = `Error: ${e.message}`;
+    } finally {
+      moveBtn.disabled = false;
+    }
     });
 
     // Wait for auth check to complete before calling update
