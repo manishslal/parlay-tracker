@@ -132,9 +132,9 @@ def _link_player_to_leg(leg, db, issues):
     from models import Player
     
     # Skip team prop bets - these don't need player linking
-    # Team props have stat_type in: moneyline, spread, total_points
-    if leg.stat_type and leg.stat_type.lower() in ['moneyline', 'spread', 'total_points']:
-        logger.debug(f"[HISTORICAL-API] Skipping team prop leg {leg.id} (stat_type={leg.stat_type}) - no player linking needed")
+    # Team props have bet_type='Team Prop' or stat_type in: moneyline, spread, total_points
+    if leg.bet_type == 'Team Prop' or (leg.stat_type and leg.stat_type.lower() in ['moneyline', 'spread', 'total_points']):
+        logger.debug(f"[HISTORICAL-API] Skipping team prop leg {leg.id} (bet_type={leg.bet_type}) - no player linking needed")
         return True  # Success, but no linking needed
     
     if not leg.player_name:
@@ -201,7 +201,9 @@ def _fetch_espn_data_for_leg(leg, issues):
         if leg.achieved_value is None and leg.home_score is not None and leg.away_score is not None:
             # Check if it's a team prop
             is_team_prop = False
-            if leg.bet_type and leg.bet_type.lower() in ['moneyline', 'spread', 'total', 'over_under', 'game_line', 'team_total']:
+            if leg.bet_type == 'Team Prop':
+                is_team_prop = True
+            elif leg.bet_type and leg.bet_type.lower() in ['moneyline', 'spread', 'total', 'over_under', 'game_line', 'team_total']:
                 is_team_prop = True
             elif leg.stat_type and leg.stat_type.lower() in ['moneyline', 'spread', 'total_points', 'over_under', 'total']:
                 is_team_prop = True
@@ -212,8 +214,12 @@ def _fetch_espn_data_for_leg(leg, issues):
                     away_score = float(leg.away_score)
                     
                     # Total / Over/Under
-                    if leg.bet_type.lower() in ['total', 'over_under', 'total_points'] or \
-                       (leg.stat_type and leg.stat_type.lower() in ['total', 'over_under', 'total_points']):
+                    # Check stat_type primarily
+                    stat_type_lower = leg.stat_type.lower() if leg.stat_type else ''
+                    bet_type_lower = leg.bet_type.lower() if leg.bet_type else ''
+                    
+                    if stat_type_lower in ['total', 'over_under', 'total_points'] or \
+                       bet_type_lower in ['total', 'over_under', 'total_points']:
                         leg.achieved_value = home_score + away_score
                         logger.debug(f"[HISTORICAL-API] Calculated Total achieved_value={leg.achieved_value} for leg {leg.id}")
                         
@@ -256,17 +262,18 @@ def _update_leg_status(leg):
     
     # Determine if the bet was hit (only if game is finished and we have data)
     if is_game_finished and leg.achieved_value is not None and leg.target_value is not None:
-        stat_type = leg.bet_type.lower()
+        # Use stat_type for logic, falling back to bet_type if needed (for legacy)
+        type_to_check = leg.stat_type.lower() if leg.stat_type else leg.bet_type.lower()
         
         # SAFEGUARD: Ensure values are numbers
         achieved = float(leg.achieved_value)
         target = float(leg.target_value)
         
-        if stat_type == 'moneyline':
+        if type_to_check == 'moneyline':
             leg.is_hit = achieved > 0
-        elif stat_type == 'spread':
+        elif type_to_check == 'spread':
             leg.is_hit = (achieved + target) > 0
-        elif stat_type in ['total_points', 'player_prop', 'total', 'made_threes', 'assists', 'points']:
+        elif type_to_check in ['total_points', 'player_prop', 'total', 'made_threes', 'assists', 'points', 'player prop']:
             if leg.bet_line_type == 'under':
                 leg.is_hit = achieved < target
             else:  # over

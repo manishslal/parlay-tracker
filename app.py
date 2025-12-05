@@ -473,12 +473,27 @@ def populate_game_ids_for_bet(bet: Any) -> None:
                 
                 # Priority 1: Exact date match
                 for g in potential_games:
-                    if g[3].date() == target_date:
+                    game_date_obj = g[3]
+                    # Handle both datetime and date objects
+                    if hasattr(game_date_obj, 'date'):
+                        game_date_val = game_date_obj.date()
+                    else:
+                        game_date_val = game_date_obj
+                        
+                    if game_date_val == target_date:
                         return g
                 
                 # Priority 2: Closest date match
                 # Sort by absolute difference in days
-                sorted_games = sorted(potential_games, key=lambda x: abs((x[3].date() - target_date).days))
+                def get_date_diff(x):
+                    d_obj = x[3]
+                    if hasattr(d_obj, 'date'):
+                        d_val = d_obj.date()
+                    else:
+                        d_val = d_obj
+                    return abs((d_val - target_date).days)
+                    
+                sorted_games = sorted(potential_games, key=get_date_diff)
                 return sorted_games[0]
 
             # Match each leg to a game
@@ -940,13 +955,24 @@ def save_bet_to_db(user_id: int, bet_data: dict, skip_duplicate_check: bool = Fa
             team_value = leg_data.get('team_name')  # Use transformed field name
             if team_value:
                 team_value = normalize_team_name(team_value, sport)
+            
+            # SANITIZATION: Handle "Game Total" or invalid team names from manual entry
+            # This ensures populate_game_ids_for_bet falls back to player_team logic
+            home_team = leg_data.get('home_team', '')
+            if home_team and 'game total' in home_team.lower():
+                home_team = ''
+                
+            away_team = leg_data.get('away_team', '')
+            if away_team and 'game total' in away_team.lower():
+                away_team = ''
+                
             leg_status = leg_data.get('status', 'pending')
             bet_leg = BetLeg(
                 bet_id=bet.id,
                 player_name=leg_data.get('player_name') or team_value or 'Unknown',  # Use transformed field name
                 player_team=team_value,
-                home_team=leg_data.get('home_team', ''),
-                away_team=leg_data.get('away_team', ''),
+                home_team=home_team,
+                away_team=away_team,
                 game_date=game_date,
                 game_time=game_time,
                 sport=sport,
@@ -997,17 +1023,17 @@ def save_bet_to_db(user_id: int, bet_data: dict, skip_duplicate_check: bool = Fa
     
     # Skip expensive operations for OCR bets to avoid timeouts
     if not skip_duplicate_check:
-        # Populate ESPN game IDs for the newly created bet legs
-        try:
-            populate_game_ids_for_bet(bet)
-        except Exception as e:
-            app.logger.error(f"[GAME-ID-POPULATION] Error populating game IDs for bet {bet.id}: {e}")
-        
-        # Populate player data for the newly created bet legs
+        # 1. Populate player data FIRST (so we can get team info from player)
         try:
             populate_player_data_for_bet(bet)
         except Exception as e:
             app.logger.error(f"[PLAYER-POPULATION] Error populating player data for bet {bet.id}: {e}")
+
+        # 2. Populate ESPN game IDs (using team info from player if needed)
+        try:
+            populate_game_ids_for_bet(bet)
+        except Exception as e:
+            app.logger.error(f"[GAME-ID-POPULATION] Error populating game IDs for bet {bet.id}: {e}")
     
     # Skip expensive operations for OCR bets to avoid timeouts
     if not skip_duplicate_check:
@@ -1963,19 +1989,21 @@ def run_populate_missing_game_ids():
     logger.info("[SCHEDULER] Running populate_missing_game_ids")
     with app.app_context():
         try:
-            # Find all bets with legs that have game_date but no game_id
+            # Find all bets with legs that have game_date but no game_id (None or empty string)
+            # Also ensure we only pick up pending/live bets to avoid processing old completed ones unnecessarily
             bet_ids = db.session.query(Bet.id).join(
                 BetLeg, BetLeg.bet_id == Bet.id
             ).filter(
                 BetLeg.game_date.isnot(None),
-                BetLeg.game_id.is_(None)
+                or_(BetLeg.game_id.is_(None), BetLeg.game_id == ''),
+                BetLeg.status.in_(['pending', 'live'])
             ).distinct().all()
             
             if not bet_ids:
-                logger.info("[GAME-ID-POPULATION] No bets with missing game IDs found")
+                # logger.info("[GAME-ID-POPULATION] No bets with missing game IDs found") # Reduce noise
                 return
             
-            logger.info(f"[GAME-ID-POPULATION] Found {len(bet_ids)} bets with missing game IDs")
+            logger.info(f"[GAME-ID-POPULATION] Found {len(bet_ids)} bets with missing game IDs: {[b[0] for b in bet_ids]}")
             
             for (bet_id,) in bet_ids:
                 try:
@@ -2115,6 +2143,13 @@ scheduler.add_job(
     trigger=IntervalTrigger(minutes=5),
     id='enrich_player_data',
     name='Enrich incomplete player data every 5 minutes'
+)
+
+scheduler.add_job(
+    func=lambda: app.app_context().push() or __import__('update_teams').update_teams(),
+    trigger=CronTrigger(hour=4, minute=0, timezone='US/Eastern'),
+    id='daily_team_update',
+    name='Update team data from ESPN daily at 4 AM ET'
 )
 
 # Run diagnostics on startup

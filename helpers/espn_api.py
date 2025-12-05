@@ -408,7 +408,8 @@ def _extract_achieved_value(stats: dict, stat_type: str, bet_type: str, bet_line
     if stat_type_lower in stats:
         return stats[stat_type_lower]
     
-    if bet_type_lower in stats:
+    # Check bet_type only if it's not generic 'player prop' or 'team prop'
+    if bet_type_lower in stats and bet_type_lower not in ['player prop', 'team prop', 'player_prop', 'team_prop']:
         return stats[bet_type_lower]
     
     # Try removing spaces and special characters
@@ -595,4 +596,358 @@ def get_espn_player_details(player_id: str, sport: str = "football", league: str
         return None
     except Exception as e:
         print(f"Error fetching ESPN player details for ID {player_id}: {e}")
+        return None
+
+# Stats Standardization Mapping
+STATS_MAPPING = {
+    "nba": {
+        "points": "points",
+        "totalRebounds": "rebounds",
+        "assists": "assists",
+        "steals": "steals",
+        "blocks": "blocks",
+        "turnovers": "turnovers",
+        "fieldGoalsMade": "field_goals_made",
+        "fieldGoalsAttempted": "field_goals_attempted",
+        "threePointFieldGoalsMade": "three_pointers_made",
+        "threePointFieldGoalsAttempted": "three_pointers_attempted",
+        "freeThrowsMade": "free_throws_made",
+        "freeThrowsAttempted": "free_throws_attempted",
+        "fieldGoalPct": "field_goal_pct",
+        "threePointFieldGoalPct": "three_point_pct",
+        "freeThrowPct": "free_throw_pct",
+        "gamesPlayed": "games_played",
+        "minutes": "minutes",
+        "plusMinus": "plus_minus",
+        "PTS": "points",
+        "REB": "rebounds",
+        "AST": "assists",
+        "STL": "steals",
+        "BLK": "blocks",
+        "TO": "turnovers",
+        "MIN": "minutes",
+        "+/-": "plus_minus",
+        "FG": "field_goals", # usually split later
+        "3PT": "three_pointers",
+        "FT": "free_throws",
+        "PF": "fouls"
+    },
+    "nfl": {
+        "passingYards": "passing_yards",
+        "rushingYards": "rushing_yards",
+        "receivingYards": "receiving_yards",
+        "passingTouchdowns": "passing_touchdowns",
+        "rushingTouchdowns": "rushing_touchdowns",
+        "receivingTouchdowns": "receiving_touchdowns",
+        "totalTouchdowns": "total_touchdowns",
+        "interceptions": "interceptions",
+        "sacks": "sacks",
+        "fumbles": "fumbles",
+        "completions": "completions",
+        "attempts": "attempts",
+        "receptions": "receptions",
+        "targets": "targets",
+        "gamesPlayed": "games_played"
+    },
+    "mlb": {
+        "avg": "batting_average",
+        "homeRuns": "home_runs",
+        "RBIs": "rbi",
+        "runs": "runs",
+        "hits": "hits",
+        "stolenBases": "stolen_bases",
+        "OPS": "ops",
+        "ERA": "era",
+        "wins": "wins",
+        "losses": "losses",
+        "strikeouts": "strikeouts",
+        "saves": "saves",
+        "gamesPlayed": "games_played"
+    },
+    "nhl": {
+        "goals": "goals",
+        "assists": "assists",
+        "points": "points",
+        "plusMinus": "plus_minus",
+        "timeOnIce": "time_on_ice",
+        "powerPlayGoals": "power_play_goals",
+        "powerPlayAssists": "power_play_assists",
+        "shots": "shots",
+        "saves": "saves",
+        "savePct": "save_pct",
+        "goalsAgainstAverage": "goals_against_average",
+        "shutouts": "shutouts",
+        "gamesPlayed": "games_played"
+    }
+}
+
+def standardize_keys(stats_dict, league):
+    """Standardize keys based on league mapping"""
+    if not stats_dict or not league:
+        return stats_dict
+        
+    mapping = STATS_MAPPING.get(league.lower(), {})
+    standardized = {}
+    
+    for k, v in stats_dict.items():
+        # Check if key is in mapping
+        new_key = mapping.get(k, k) # Default to original if not found
+        
+        # Handle special cases like "FG" -> "3-10"
+        if league.lower() == 'nba' and k in ['FG', '3PT', 'FT'] and isinstance(v, str) and '-' in v:
+            try:
+                made, att = v.split('-')
+                prefix = "field_goals" if k == 'FG' else "three_pointers" if k == '3PT' else "free_throws"
+                standardized[f"{prefix}_made"] = int(made)
+                standardized[f"{prefix}_attempted"] = int(att)
+                # Calculate pct if possible
+                if int(att) > 0:
+                    standardized[f"{prefix}_pct"] = round((int(made) / int(att)) * 100, 1)
+            except:
+                standardized[new_key] = v
+        else:
+            standardized[new_key] = v
+            
+    return standardized
+
+def get_player_season_stats(player_id: str, sport: str = "football", league: str = "nfl") -> dict:
+    """
+    Get comprehensive player season stats from ESPN
+    
+    Args:
+        player_id: ESPN player ID
+        sport: Sport (default: "football")
+        league: League (default: "nfl")
+    
+    Returns:
+        Dictionary with:
+        - stats_season: Season averages/totals + season_year
+        - stats_last_5_games: List of last 5 game logs
+    """
+    try:
+        stats_season = {}
+        stats_last_5_games = []
+        season_year = None
+        
+        # 1. Fetch Detailed Stats (Averages & Totals)
+        # Use the /stats endpoint for better granularity
+        stats_url = f"https://site.web.api.espn.com/apis/common/v3/sports/{sport}/{league}/athletes/{player_id}/stats"
+        
+        try:
+            response = requests.get(stats_url, timeout=10)
+            if response.status_code == 200:
+                data = response.json()
+                
+                # Process categories (Regular Season Averages, Totals, etc.)
+                if 'categories' in data:
+                    for cat in data['categories']:
+                        cat_name = cat.get('name')
+                        names = cat.get('names', [])
+                        
+                        # Look for Regular Season stats
+                        if 'statistics' in cat:
+                            # Find the latest season dynamically
+                            latest_stat = None
+                            max_year = 0
+                            
+                            for stat in cat['statistics']:
+                                season = stat.get('season', {})
+                                year = season.get('year', 0)
+                                if year > max_year:
+                                    max_year = year
+                                    latest_stat = stat
+                            
+                            if latest_stat:
+                                # Capture the season year
+                                if not season_year:
+                                    season_year = latest_stat.get('season', {}).get('displayName')
+                                
+                                values = latest_stat.get('stats', [])
+                                
+                                if len(names) == len(values):
+                                        for k, v in zip(names, values):
+                                            # Clean and convert values
+                                            try:
+                                                # Handle combined keys (e.g. "avgThreePointFieldGoalsMade-avgThreePointFieldGoalsAttempted")
+                                                if '-' in k and isinstance(v, str) and '-' in v:
+                                                    k_parts = k.split('-')
+                                                    v_parts = v.split('-')
+                                                    
+                                                    if len(k_parts) == len(v_parts):
+                                                        for sub_k, sub_v in zip(k_parts, v_parts):
+                                                            try:
+                                                                if '.' in sub_v:
+                                                                    stats_season[sub_k] = float(sub_v)
+                                                                else:
+                                                                    stats_season[sub_k] = int(sub_v.replace(',', ''))
+                                                            except:
+                                                                stats_season[sub_k] = sub_v
+                                                        continue # Skip the main assignment
+
+                                                if isinstance(v, str):
+                                                    if '.' in v:
+                                                        val = float(v)
+                                                    else:
+                                                        val = int(v.replace(',', ''))
+                                                else:
+                                                    val = v
+                                                
+                                                stats_season[k] = val
+                                            except:
+                                                stats_season[k] = v
+        except Exception as e:
+            print(f"Error fetching detailed stats: {e}")
+
+        # Add season year to stats
+        if season_year:
+            stats_season['season_year'] = season_year
+
+        # 2. Fallback/Supplement with Overview (if detailed failed or missing basics)
+        if not stats_season:
+            url = f"https://site.web.api.espn.com/apis/common/v3/sports/{sport}/{league}/athletes/{player_id}/overview"
+            response = requests.get(url, timeout=10)
+            if response.status_code == 200:
+                data = response.json()
+                if 'statistics' in data:
+                    stats_data = data['statistics']
+                    keys = stats_data.get('names', [])
+                    splits = stats_data.get('splits', [])
+                    for split in splits:
+                        if split.get('displayName') == 'Regular Season':
+                            values = split.get('stats', [])
+                            if len(keys) == len(values):
+                                for k, v in zip(keys, values):
+                                    try:
+                                        if '.' in v:
+                                            stats_season[k] = float(v)
+                                        else:
+                                            stats_season[k] = int(v.replace(',', ''))
+                                    except:
+                                        stats_season[k] = v
+                            break
+
+        # 3. Calculate True Shooting Percentage (TS%) for NBA
+        # Formula: PTS / (2 * (FGA + 0.44 * FTA))
+        if league.lower() == 'nba':
+            try:
+                pts = float(stats_season.get('points', 0))
+                
+                # Need totals for FGA and FTA
+                # If we only have averages, the formula still works mathematically for the rate
+                # But typically TS% is calculated on totals. Let's try to find totals keys.
+                # From research: 'fieldGoalsMade-fieldGoalsAttempted' might be the key for totals
+                
+                fga = 0
+                fta = 0
+                
+                # Try to find FGA
+                if 'fieldGoalsAttempted' in stats_season:
+                    fga = float(stats_season['fieldGoalsAttempted'])
+                elif 'avgFieldGoalsAttempted' in stats_season:
+                     fga = float(stats_season['avgFieldGoalsAttempted'])
+
+                # Try to find FTA
+                if 'freeThrowsAttempted' in stats_season:
+                    fta = float(stats_season['freeThrowsAttempted'])
+                elif 'avgFreeThrowsAttempted' in stats_season:
+                    fta = float(stats_season['avgFreeThrowsAttempted'])
+                
+                if pts > 0 and (fga + 0.44 * fta) > 0:
+                    ts_pct = pts / (2 * (fga + 0.44 * fta))
+                    stats_season['trueShootingPct'] = round(ts_pct * 100, 1) # Store as percentage (e.g. 58.5)
+                    
+            except Exception as e:
+                print(f"Error calculating TS%: {e}")
+
+        # 4. Fetch Last 5 Games Log
+        try:
+            log_url = f"https://site.web.api.espn.com/apis/common/v3/sports/{sport}/{league}/athletes/{player_id}/gamelog"
+            # print(f"Fetching game log from: {log_url}")
+            log_response = requests.get(log_url, timeout=10)
+            
+            if log_response.status_code == 200:
+                log_data = log_response.json()
+                
+                # Get labels mapping
+                log_names = log_data.get('names', [])
+                # print(f"Log names: {log_names}")
+                
+                if 'events' in log_data:
+                    events = log_data['events']
+                    # print(f"Events type: {type(events)}")
+                    
+                    if isinstance(events, dict):
+                         # Handle case where events is a dict (seen in research)
+                         events = list(events.values())
+                    
+                    
+                    # Ensure events is a list before slicing
+                    if isinstance(events, list):
+                        # Take up to 5
+                        for event in events[:5]:
+                            game_stats = {}
+                            game_id = event.get('id')
+                            
+                            # Basic info
+                            game_stats['gameId'] = game_id
+                            game_stats['gameDate'] = event.get('gameDate')
+                            game_stats['opponent'] = event.get('opponent', {}).get('abbreviation')
+                            
+                            # Fetch detailed boxscore for this game
+                            try:
+                                summary_url = f"https://site.api.espn.com/apis/site/v2/sports/{sport}/{league}/summary?event={game_id}"
+                                summary_res = requests.get(summary_url, timeout=5)
+                                if summary_res.status_code == 200:
+                                    summary_data = summary_res.json()
+                                    if 'boxscore' in summary_data and 'players' in summary_data['boxscore']:
+                                        # Find player in boxscore
+                                        found_stats = False
+                                        for team_box in summary_data['boxscore']['players']:
+                                            if 'statistics' in team_box:
+                                                stats_wrapper = team_box['statistics'][0]
+                                                names = stats_wrapper.get('names', [])
+                                                athletes = stats_wrapper.get('athletes', [])
+                                                
+                                                for athlete in athletes:
+                                                    if athlete.get('athlete', {}).get('id') == player_id:
+                                                        stats_vals = athlete.get('stats', [])
+                                                        if len(names) == len(stats_vals):
+                                                            for k, v in zip(names, stats_vals):
+                                                                game_stats[k] = v
+                                                        found_stats = True
+                                                        break
+                                            if found_stats:
+                                                break
+                            except Exception as e:
+                                print(f"Error fetching boxscore for game {game_id}: {e}")
+                            
+                            # Standardize game stats immediately
+                            game_stats = standardize_keys(game_stats, league)
+                            stats_last_5_games.append(game_stats)
+                    else:
+                        print(f"Events is not a list: {type(events)}")
+                    
+        except Exception as e:
+            print(f"Error fetching game log: {e}")
+        
+        # Standardize season stats
+        stats_season = standardize_keys(stats_season, league)
+        
+        # Wrap in season year structure
+        final_season_stats = {}
+        if season_year:
+            # Ensure season_year is in the stats object too
+            stats_season['season_year'] = season_year
+            final_season_stats[season_year] = stats_season
+        else:
+            # Fallback if no year found
+            final_season_stats['current'] = stats_season
+        
+        return {
+            'stats_season': final_season_stats,
+            'stats_last_5_games': stats_last_5_games
+        }
+        
+    except Exception as e:
+        print(f"Error fetching ESPN player stats for ID {player_id}: {e}")
         return None

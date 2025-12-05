@@ -67,8 +67,15 @@ def run_startup():
             debug_scoreboard()
     except Exception as e:
         print(f"Debug script failed: {e}")
-        
-    print("\n" + "="*50)
+
+    # 4. Update Team Data
+    print("\n[4/4] Updating Team Data...")
+    try:
+        from update_teams import update_teams
+        update_teams()
+        print("Team data update completed.")
+    except Exception as e:
+        print(f"Team data update failed: {e}")
     print("STARTUP TASKS COMPLETED")
     print("="*50 + "\n")
 

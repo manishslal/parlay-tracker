@@ -276,15 +276,31 @@ def create_bet() -> Any:
 			for i, leg in enumerate(data['legs']):
 				# Standardize bet_type for legs
 				stat = leg.get('stat', '').lower()
+				
+				# Determine if it's a Team Prop
+				is_team_prop = False
 				if 'moneyline' in stat:
-					leg['bet_type'] = 'moneyline'
-					leg['target_value'] = 0.00  # Moneyline target is always 0
+					leg['stat_type'] = 'moneyline'
+					leg['target_value'] = 0.00
+					is_team_prop = True
 				elif 'spread' in stat:
-					leg['bet_type'] = 'spread'
-				elif 'total' in stat or 'points' in stat:
-					leg['bet_type'] = 'total_points'
+					leg['stat_type'] = 'spread'
+					is_team_prop = True
+				elif 'total' in stat or 'points' in stat and leg.get('team') == 'Game Total':
+					leg['stat_type'] = 'total_points'
+					is_team_prop = True
+				elif leg.get('team') == 'Game Total':
+					leg['stat_type'] = 'total_points' # Default for Game Total
+					is_team_prop = True
+				
+				# Set bet_type based on classification
+				if is_team_prop:
+					leg['bet_type'] = 'Team Prop'
 				else:
-					leg['bet_type'] = 'player_prop'
+					leg['bet_type'] = 'Player Prop'
+					# If stat_type wasn't set above, use the stat field
+					if 'stat_type' not in leg:
+						leg['stat_type'] = stat
 				
 				# Ensure required fields are present with correct names
 				if 'target_value' not in leg and 'line' in leg:

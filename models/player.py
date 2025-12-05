@@ -18,6 +18,12 @@ class Player(db.Model):
     previous_teams = db.Column(db.Text)
     espn_player_id = db.Column(db.String(50))
     status = db.Column(db.String(20), default='active')
+    
+    # Stats
+    stats_season = db.Column(db.JSON)  # Renamed from season_stats
+    stats_last_5_games = db.Column(db.JSON)  # New column for game logs
+    last_stats_update = db.Column(db.DateTime)
+    
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
