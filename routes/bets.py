@@ -83,6 +83,7 @@ FOR EACH LEG, identify:
 - The betting line (the number, like +4.5, -110, over 45.5, etc.)
 - Whether it's over/under for totals, or the direction for spreads
 - Individual leg odds if shown separately
+- Home and away teams if the matchup is shown (e.g., "LAL @ BOS" or "Lakers vs Celtics")
 
 EXAMPLES of how to parse different bet types:
 
@@ -90,11 +91,12 @@ Moneyline: "Los Angeles Lakers ML" → team: "Los Angeles Lakers", stat: "moneyl
 Spread: "Boston Celtics -3.5" → team: "Boston Celtics", stat: "spread", line: -3.5
 Total: "Game Total Over 220.5" → team: "Game Total", stat: "total_points", line: 220.5, stat_add: "over"
 Player Prop: "LeBron James Over 25.5 Points" → player: "LeBron James", team: "Los Angeles Lakers", stat: "points", line: 25.5, stat_add: "over"
+SGP with matchup: "LAL @ BOS - LeBron James Over 25.5 Points" → player: "LeBron James", team: "Los Angeles Lakers", away_team: "Los Angeles Lakers", home_team: "Boston Celtics"
 
 {
   "bet_id": "the bet confirmation number visible on the slip (e.g., 'O/0240915/0000074' for FanDuel, 'DK638926171300468480' for DraftKings)",
   "bet_site": "name of the betting site (e.g., DraftKings, FanDuel, Caesars, BetMGM)",
-  "bet_type": "parlay|single|teaser|round_robin",
+  "bet_type": "parlay|sgp|single|teaser|round_robin (use 'sgp' for Same Game Parlay or Single Game Parlay)",
   "total_odds": "number like +150, -120, or the American odds format",
   "wager_amount": "number like 10.00, 25.50 - the amount being wagered",
   "potential_payout": "number like 35.00 - total amount you'd receive including wager",
@@ -103,6 +105,8 @@ Player Prop: "LeBron James Over 25.5 Points" → player: "LeBron James", team: "
     {
       "player": "Player name (ONLY for player props, otherwise omit this field)",
       "team": "Team name or 'Game Total' for totals bets",
+      "home_team": "Home team name ONLY if matchup shows '@' (e.g., 'LAL @ BOS' means BOS is home). Omit if 'vs' is used or unclear.",
+      "away_team": "Away team name ONLY if matchup shows '@' (e.g., 'LAL @ BOS' means LAL is away). Omit if 'vs' is used or unclear.",
       "stat": "stat type: 'moneyline', 'spread', 'total_points', 'passing_yards', 'points', 'rebounds', 'assists', etc.",
       "line": "the betting line as a number: -3.5, +150, 25.5, 220.5, etc.",
       "stat_add": "'over' or 'under' for totals/player props, omit for moneyline/spread",
@@ -117,6 +121,8 @@ IMPORTANT:
 - For stats, be specific: "passing_yards" not "passing", "total_points" not "totals"
 - If a leg has both player and team, include both fields
 - The bet_id is CRITICAL - look for confirmation number, reference number, or bet ID on the slip
+- For SGP/Same Game Parlay bets, use bet_type: "sgp"
+- For home/away teams: If matchup uses '@' (LAL @ BOS), BOS is home. If 'vs', leave home_team and away_team blank.
 - Return ONLY the JSON object, no explanations or additional text.'''
                         },
                         {
