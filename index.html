@@ -1346,6 +1346,144 @@
       gap: 0.15rem;
     }
 
+    /* Enhanced Pagination Styles */
+    .historical-pagination {
+      background: rgba(0, 0, 0, 0.25);
+      border-radius: 12px;
+      padding: 1rem 1.5rem;
+      margin: 1rem 0;
+    }
+
+    .pagination-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .pagination-left,
+    .pagination-right {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .pagination-center {
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .pagination-label {
+      font-size: 0.85rem;
+      color: var(--text);
+      opacity: 0.8;
+    }
+
+    .pagination-btn {
+      min-width: 36px;
+      height: 36px;
+      padding: 0.4rem 0.75rem;
+      background: rgba(100, 100, 100, 0.3);
+      color: var(--text);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.9rem;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .pagination-btn:hover:not(:disabled) {
+      background: var(--primary);
+      border-color: var(--primary);
+      color: #fff;
+    }
+
+    .pagination-btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    .pagination-btn.active {
+      background: var(--primary);
+      border-color: var(--primary);
+      color: #fff;
+    }
+
+    .pagination-nav {
+      font-size: 1.1rem;
+      font-weight: 700;
+    }
+
+    .pagination-ellipsis {
+      padding: 0 0.5rem;
+      color: var(--text);
+      opacity: 0.6;
+    }
+
+    .pagination-select {
+      padding: 0.4rem 0.75rem;
+      background: rgba(100, 100, 100, 0.3);
+      color: var(--text);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+      font-size: 0.85rem;
+      cursor: pointer;
+    }
+
+    .pagination-input {
+      width: 60px;
+      padding: 0.4rem 0.5rem;
+      background: rgba(100, 100, 100, 0.3);
+      color: var(--text);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+      font-size: 0.85rem;
+      text-align: center;
+    }
+
+    .pagination-input::-webkit-inner-spin-button,
+    .pagination-input::-webkit-outer-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+
+    .pagination-go {
+      padding: 0.4rem 1rem;
+    }
+
+    .pagination-info {
+      text-align: center;
+      font-size: 0.85rem;
+      color: var(--text);
+      opacity: 0.7;
+      margin-top: 0.75rem;
+    }
+
+    @media (max-width: 768px) {
+      .pagination-row {
+        flex-direction: column;
+        gap: 0.75rem;
+      }
+
+      .pagination-left,
+      .pagination-right {
+        width: 100%;
+        justify-content: center;
+      }
+
+      .pagination-center {
+        order: -1;
+      }
+    }
+
     .game-info-wrapper {
       display: flex;
       gap: 0.5rem;
@@ -2898,6 +3036,7 @@
     let historicalCurrentPage = 1;
     let historicalTotalPages = 1;
     let historicalTotalBets = 0;
+    let historicalPerPage = 20; // Default items per page (can be changed by user)
     let historicalPagesCache = {}; // Cache for prefetched pages
     let historicalPrefetchInProgress = false;
 
@@ -4560,7 +4699,7 @@
     function buildHistoricalQueryString(page) {
       const params = new URLSearchParams();
       params.set('page', page);
-      params.set('per_page', '50');
+      params.set('per_page', String(historicalPerPage));
 
       // Add active filters (comma-separated for multi-select support)
       if (activeFilters.site.size > 0) {
@@ -4660,75 +4799,134 @@
     }
 
     function renderPaginationControls() {
-      // Remove existing pagination if any
-      const existingPagination = document.getElementById('historical-pagination');
-      if (existingPagination) existingPagination.remove();
+      // Remove existing pagination controls
+      document.querySelectorAll('.historical-pagination').forEach(el => el.remove());
 
       if (historicalTotalPages <= 1) return; // No pagination needed
 
-      const paginationDiv = document.createElement('div');
-      paginationDiv.id = 'historical-pagination';
-      paginationDiv.style.cssText = `
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        gap: 1rem;
-        padding: 1.5rem;
-        margin-top: 1rem;
-        background: rgba(0, 0, 0, 0.2);
-        border-radius: 12px;
-      `;
+      // Create pagination HTML
+      const createPaginationHTML = () => {
+        const isFirst = historicalCurrentPage <= 1;
+        const isLast = historicalCurrentPage >= historicalTotalPages;
 
-      // Previous button
-      const prevBtn = document.createElement('button');
-      prevBtn.textContent = '← Previous';
-      prevBtn.disabled = historicalCurrentPage <= 1;
-      prevBtn.style.cssText = `
-        padding: 0.75rem 1.5rem;
-        background: ${historicalCurrentPage <= 1 ? 'rgba(100, 100, 100, 0.3)' : 'var(--primary)'};
-        color: ${historicalCurrentPage <= 1 ? 'rgba(255,255,255,0.5)' : '#fff'};
-        border: none;
-        border-radius: 8px;
-        cursor: ${historicalCurrentPage <= 1 ? 'not-allowed' : 'pointer'};
-        font-weight: 600;
-        font-size: 0.9rem;
-        transition: all 0.2s;
-      `;
-      prevBtn.onclick = () => { if (historicalCurrentPage > 1) loadHistorical(historicalCurrentPage - 1); };
+        // Generate page numbers with ellipsis
+        const pages = [];
+        const maxVisible = 5;
+        let startPage = Math.max(1, historicalCurrentPage - Math.floor(maxVisible / 2));
+        let endPage = Math.min(historicalTotalPages, startPage + maxVisible - 1);
 
-      // Page indicator
-      const pageIndicator = document.createElement('span');
-      pageIndicator.style.cssText = `
-        font-size: 1rem;
-        font-weight: 600;
-        color: var(--text);
-        min-width: 120px;
-        text-align: center;
-      `;
-      pageIndicator.textContent = `Page ${historicalCurrentPage} of ${historicalTotalPages}`;
+        if (endPage - startPage < maxVisible - 1) {
+          startPage = Math.max(1, endPage - maxVisible + 1);
+        }
 
-      // Next button
-      const nextBtn = document.createElement('button');
-      nextBtn.textContent = 'Next →';
-      nextBtn.disabled = historicalCurrentPage >= historicalTotalPages;
-      nextBtn.style.cssText = `
-        padding: 0.75rem 1.5rem;
-        background: ${historicalCurrentPage >= historicalTotalPages ? 'rgba(100, 100, 100, 0.3)' : 'var(--primary)'};
-        color: ${historicalCurrentPage >= historicalTotalPages ? 'rgba(255,255,255,0.5)' : '#fff'};
-        border: none;
-        border-radius: 8px;
-        cursor: ${historicalCurrentPage >= historicalTotalPages ? 'not-allowed' : 'pointer'};
-        font-weight: 600;
-        font-size: 0.9rem;
-        transition: all 0.2s;
-      `;
-      nextBtn.onclick = () => { if (historicalCurrentPage < historicalTotalPages) loadHistorical(historicalCurrentPage + 1); };
+        // Always show first page
+        if (startPage > 1) {
+          pages.push(1);
+          if (startPage > 2) pages.push('...');
+        }
 
-      paginationDiv.appendChild(prevBtn);
-      paginationDiv.appendChild(pageIndicator);
-      paginationDiv.appendChild(nextBtn);
+        // Middle pages
+        for (let i = startPage; i <= endPage; i++) {
+          pages.push(i);
+        }
 
-      histSec.appendChild(paginationDiv);
+        // Always show last page
+        if (endPage < historicalTotalPages) {
+          if (endPage < historicalTotalPages - 1) pages.push('...');
+          pages.push(historicalTotalPages);
+        }
+
+        const pageButtons = pages.map(p => {
+          if (p === '...') {
+            return `<span class="pagination-ellipsis">...</span>`;
+          }
+          const isActive = p === historicalCurrentPage;
+          return `<button class="pagination-btn pagination-page ${isActive ? 'active' : ''}" 
+                          data-page="${p}" ${isActive ? 'disabled' : ''}>${p}</button>`;
+        }).join('');
+
+        return `
+          <div class="pagination-row">
+            <div class="pagination-left">
+              <label class="pagination-label">Show:</label>
+              <select class="pagination-select" id="per-page-select">
+                <option value="20" ${historicalPerPage === 20 ? 'selected' : ''}>20</option>
+                <option value="50" ${historicalPerPage === 50 ? 'selected' : ''}>50</option>
+                <option value="100" ${historicalPerPage === 100 ? 'selected' : ''}>100</option>
+              </select>
+            </div>
+            <div class="pagination-center">
+              <button class="pagination-btn pagination-nav" data-action="first" ${isFirst ? 'disabled' : ''} title="First page">«</button>
+              <button class="pagination-btn pagination-nav" data-action="prev" ${isFirst ? 'disabled' : ''} title="Previous page">‹</button>
+              ${pageButtons}
+              <button class="pagination-btn pagination-nav" data-action="next" ${isLast ? 'disabled' : ''} title="Next page">›</button>
+              <button class="pagination-btn pagination-nav" data-action="last" ${isLast ? 'disabled' : ''} title="Last page">»</button>
+            </div>
+            <div class="pagination-right">
+              <label class="pagination-label">Go to:</label>
+              <input type="number" class="pagination-input" min="1" max="${historicalTotalPages}" placeholder="${historicalCurrentPage}">
+              <button class="pagination-btn pagination-go">Go</button>
+            </div>
+          </div>
+          <div class="pagination-info">Page ${historicalCurrentPage} of ${historicalTotalPages} (${historicalTotalBets} total bets)</div>
+        `;
+      };
+
+      // Create container with styles
+      const createPaginationContainer = (position) => {
+        const container = document.createElement('div');
+        container.className = 'historical-pagination';
+        container.dataset.position = position;
+        container.innerHTML = createPaginationHTML();
+
+        // Attach event listeners
+        container.querySelectorAll('.pagination-btn[data-action]').forEach(btn => {
+          btn.onclick = () => {
+            const action = btn.dataset.action;
+            if (action === 'first') loadHistorical(1);
+            else if (action === 'prev' && historicalCurrentPage > 1) loadHistorical(historicalCurrentPage - 1);
+            else if (action === 'next' && historicalCurrentPage < historicalTotalPages) loadHistorical(historicalCurrentPage + 1);
+            else if (action === 'last') loadHistorical(historicalTotalPages);
+          };
+        });
+
+        container.querySelectorAll('.pagination-page').forEach(btn => {
+          btn.onclick = () => {
+            const page = parseInt(btn.dataset.page);
+            if (page !== historicalCurrentPage) loadHistorical(page);
+          };
+        });
+
+        container.querySelector('.pagination-select').onchange = (e) => {
+          historicalPerPage = parseInt(e.target.value);
+          historicalPagesCache = {}; // Clear cache when page size changes
+          loadHistorical(1, true); // Reset to page 1
+        };
+
+        const goInput = container.querySelector('.pagination-input');
+        const goBtn = container.querySelector('.pagination-go');
+
+        const goToPage = () => {
+          const page = parseInt(goInput.value);
+          if (page >= 1 && page <= historicalTotalPages && page !== historicalCurrentPage) {
+            loadHistorical(page);
+          }
+          goInput.value = '';
+        };
+
+        goBtn.onclick = goToPage;
+        goInput.onkeypress = (e) => { if (e.key === 'Enter') goToPage(); };
+
+        return container;
+      };
+
+      // Add pagination at TOP (before first bet)
+      const topPagination = createPaginationContainer('top');
+      histSec.insertBefore(topPagination, histSec.firstChild);
+
+      // Add pagination at BOTTOM (after last bet)
+      const bottomPagination = createPaginationContainer('bottom');
+      histSec.appendChild(bottomPagination);
     }
 
     async function prefetchNextPage(currentPage) {
