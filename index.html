@@ -1314,10 +1314,21 @@
       opacity: 0.8;
     }
 
-    #show-menu,
-    #collapse-menu,
+    .collapse-menu,
     #select-menu,
     #add-bet-menu {
+      display: none;
+      position: absolute;
+      top: 100%;
+      right: 0;
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.5rem 0.75rem;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    #show-menu {
       display: none;
       position: absolute;
       top: 100%;
@@ -1328,6 +1339,16 @@
       border-radius: 8px;
       padding: 0.5rem 0.75rem;
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    #show-menu.active,
+    .collapse-menu.active,
+    p {
+      position: absolute;
+      bottom: 100%;
+      left: 0;
+      background: var(--card-bg);
+      border: 1px solid var(--border);
     }
 
     .bettors-popup {
@@ -1362,54 +1383,57 @@
       gap: 0.15rem;
     }
 
-    /* Enhanced Pagination Styles */
+    /* Enhanced Pagination Styles - COMPACT VERSION */
     .historical-pagination {
       background: transparent;
-      border-radius: 0;
       padding: 0;
-      margin: 0.25rem 0;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
+      margin: 0;
+      line-height: 1;
+      display: block;
+      text-align: center;
     }
 
     .pagination-nav-row {
-      display: inline-flex;
-      justify-content: center;
-      align-items: center;
-      gap: 2px;
-      flex-wrap: nowrap;
+      display: inline-block;
+      white-space: nowrap;
+      margin: 0;
+      padding: 0;
+      line-height: 1;
     }
 
     .pagination-goto-row {
-      display: inline-flex;
-      justify-content: center;
-      align-items: center;
-      gap: 4px;
-      margin-top: 4px;
+      display: inline-block;
+      white-space: nowrap;
+      margin: 2px 0 0 0;
+      padding: 0;
+      line-height: 1;
     }
 
     .pagination-label {
-      font-size: 0.75rem;
+      font-size: 0.7rem;
       color: var(--text);
       opacity: 0.8;
+      line-height: 1;
+      vertical-align: middle;
+      margin: 0 3px 0 0;
     }
 
     .pagination-btn {
-      min-width: 28px;
-      height: 28px;
-      padding: 0.25rem 0.5rem;
+      width: 28px;
+      height: 24px;
+      padding: 0;
+      margin: 0 1px;
       background: rgba(100, 100, 100, 0.3);
       color: var(--text);
       border: 1px solid rgba(255, 255, 255, 0.1);
-      border-radius: 6px;
+      border-radius: 4px;
       cursor: pointer;
       font-weight: 600;
-      font-size: 0.8rem;
+      font-size: 0.75rem;
       transition: all 0.2s;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      display: inline-block;
+      vertical-align: middle;
+      line-height: 1;
     }
 
     .pagination-btn:hover:not(:disabled) {
@@ -1430,36 +1454,23 @@
     }
 
     .pagination-nav {
-      font-size: 1rem;
+      font-size: 0.9rem;
       font-weight: 700;
     }
 
-    .pagination-ellipsis {
-      padding: 0 0.3rem;
-      color: var(--text);
-      opacity: 0.6;
-    }
-
-    .pagination-select {
-      padding: 0.4rem 0.75rem;
-      background: rgba(100, 100, 100, 0.3);
-      color: var(--text);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      border-radius: 8px;
-      font-size: 0.85rem;
-      cursor: pointer;
-    }
-
     .pagination-input {
-      width: 50px;
-      height: 28px;
-      padding: 0.25rem 0.35rem;
+      width: 40px;
+      height: 24px;
+      padding: 0 4px;
+      margin: 0 2px;
       background: rgba(100, 100, 100, 0.3);
       color: var(--text);
       border: 1px solid rgba(255, 255, 255, 0.1);
-      border-radius: 6px;
-      font-size: 0.75rem;
+      border-radius: 4px;
+      font-size: 0.7rem;
       text-align: center;
+      vertical-align: middle;
+      line-height: 1;
     }
 
     .pagination-input::-webkit-inner-spin-button,
@@ -1469,7 +1480,10 @@
     }
 
     .pagination-go {
-      padding: 0.25rem 0.5rem;
+      width: 36px;
+      height: 24px;
+      padding: 0;
+      margin: 0 0 0 2px;
     }
 
     .pagination-info {
