@@ -3523,11 +3523,17 @@
       const isHistoricalTab = activeTab && activeTab.dataset.tab === 'historical';
 
       if (isHistoricalTab) {
-        // For historical tab, trigger server-side refetch with filters
-        // loadHistorical will detect filter changes and reset to page 1
-        loadHistorical(1);
-        // Still apply client-side filtering for immediate visual feedback
-        // on currently loaded bets while server request is in progress
+        // Only trigger server-side refetch if filters actually changed
+        // This prevents infinite loops where render triggers applyAllFilters
+        const currentFilterState = getFilterStateKey();
+        if (currentFilterState !== lastFilterState) {
+          // For historical tab, trigger server-side refetch with filters
+          // loadHistorical will detect filter changes and reset to page 1
+          loadHistorical(1);
+        }
+        // Don't apply client-side filtering here - let loadHistorical handle it
+        // to avoid conflicts between server and client filtering
+        return;
       }
 
       // Apply client-side filtering for immediate visual feedback
