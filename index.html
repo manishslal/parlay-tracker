@@ -4480,10 +4480,13 @@
 
           // Save to both memory and localStorage cache
           cachedHistorical = historical;
-          saveHistoricalCache(historical);
+          // saveHistoricalCache expects an array, extract bets from paginated response
+          const historicalBets = Array.isArray(historical) ? historical : (historical.bets || []);
+          saveHistoricalCache(historicalBets);
 
           console.log('Historical parlays fetched (fresh):', historical);
-          render(historical, histSec);
+          // render expects an array, extract bets from paginated response
+          render(historicalBets, histSec);
           msg.textContent = `Last updated: ${new Date().toLocaleTimeString()}`;
         } else if (activeTab === 'archived') {
           // Fetch archived bets with cache busting
