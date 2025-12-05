@@ -1468,9 +1468,14 @@
     }
 
     @media (max-width: 768px) {
+      .historical-pagination {
+        padding: 0.75rem;
+        margin: 0.5rem 0;
+      }
+
       .pagination-row {
         flex-direction: column;
-        gap: 0.75rem;
+        gap: 0.5rem;
       }
 
       .pagination-left,
@@ -1479,8 +1484,48 @@
         justify-content: center;
       }
 
+      .pagination-left {
+        order: 2;
+      }
+
+      .pagination-right {
+        order: 3;
+      }
+
       .pagination-center {
-        order: -1;
+        order: 1;
+        width: 100%;
+        justify-content: center;
+      }
+
+      .pagination-btn {
+        min-width: 32px;
+        height: 32px;
+        padding: 0.3rem 0.5rem;
+        font-size: 0.8rem;
+      }
+
+      .pagination-nav {
+        font-size: 1rem;
+      }
+
+      .pagination-label {
+        font-size: 0.75rem;
+      }
+
+      .pagination-select,
+      .pagination-input {
+        font-size: 0.8rem;
+        padding: 0.3rem 0.5rem;
+      }
+
+      .pagination-input {
+        width: 50px;
+      }
+
+      .pagination-info {
+        font-size: 0.75rem;
+        margin-top: 0.5rem;
       }
     }
 
@@ -4962,7 +5007,13 @@
 
       console.log('Render called with parlays:', parlays);
       console.log('Container:', container);
+
+      // Preserve pagination elements when clearing container
+      const existingPagination = container.querySelectorAll('.historical-pagination');
       container.innerHTML = '';
+      // Re-add pagination elements (they'll be at wrong position, but renderPaginationControls will fix it)
+      existingPagination.forEach(el => container.appendChild(el));
+
       if (!Array.isArray(parlays)) {
         console.error('parlays is not an array:', parlays);
         return;
