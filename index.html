@@ -6083,7 +6083,7 @@
 
           // Format for mobile display
           const playerOrTeam = playerDisplay; // Use the calculated playerDisplay
-          const statType = formatStatTypeWithUnder(p.stat, p.bet_line_type);
+          const statType = normalizeStatType(p.stat); // FIXED: Use normalizeStatType for proper display
           const mobileCurrentDisplay = formatStatForMobile(currentDisplay, p.stat);
           const mobileTargetDisplay = formatStatForMobile(targetDisplay, p.stat);
 
