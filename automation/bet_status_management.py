@@ -27,10 +27,11 @@ def auto_move_bets_no_live_legs():
         import logging
         logging.info("[AUTO-MOVE-NO-LIVE] Checking for bets with no live legs")
         
-        # Get all live bets
+        # Get all live AND pending bets
+        # CRITICAL FIX: Include 'pending' to catch bets stuck due to scheduler downtime
         # Explicitly exclude won/lost/completed to be safe
         live_bets = Bet.query.filter(
-            Bet.status == 'live',
+            Bet.status.in_(['live', 'pending']),  # Check both live and pending!
             Bet.is_active == True,
             Bet.status.notin_(['won', 'lost', 'completed'])
         ).all()
@@ -115,11 +116,14 @@ def auto_move_bets_no_live_legs():
                 all_legs_won = all(leg.status == 'won' for leg in bet_legs)
                 any_leg_lost = any(leg.status == 'lost' for leg in bet_legs)
                 
-                new_status = 'completed' # Default fallback
+                # CRITICAL FIX: Prioritize 'lost' status over 'completed'
+                # User wants clear distinction: won/lost/completed (void/push only)
                 if all_legs_won:
                     new_status = 'won'
                 elif any_leg_lost:
-                    new_status = 'lost'
+                    new_status = 'lost'  # Any loss = bet is lost!
+                else:
+                    new_status = 'completed'  # Only for void/push/unclear cases
                 
                 # Force all legs to STATUS_FINAL as requested
                 for leg in bet_legs:

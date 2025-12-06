@@ -534,7 +534,12 @@ def populate_game_ids_for_bet(bet: Any) -> None:
 
             # Match each leg to a game
             for leg in legs:
-                leg_needs_update = (not leg.game_id or leg.game_id == '') or (not leg.away_team or leg.away_team == 'TBD')
+                # Determine if this leg needs game_id or team population
+                # Check for NULL, 'TBD' string (legacy), or empty string
+                leg_needs_update = (
+                    (not leg.game_id or leg.game_id == '') or 
+                    (leg.away_team is None or leg.away_team == 'TBD' or leg.away_team == '')
+                )
                 
                 if not leg_needs_update:  # Already has both game_id and away_team
                     continue

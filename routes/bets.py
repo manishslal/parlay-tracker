@@ -888,9 +888,9 @@ def transform_extracted_bet_data(data):
 			player_team = 'Game Total'
 		elif display_bet_type == 'moneyline' or display_bet_type == 'spread':
 			# For game bets, we need to identify both teams
-			# For now, set the bet team as home and opponent as TBD - this will be resolved by ESPN API
+			# For now, set the bet team as home and opponent as NULL - this will be resolved by ESPN API
 			home_team = team_name
-			away_team = 'TBD'  # Will be resolved by game matching
+			away_team = None  # Will be resolved by game matching (NULL instead of 'TBD' string)
 			player_team = team_name  # For game bets, player_team is the bet team
 		else:
 			# For player props, the team_name should be the player's team
@@ -899,11 +899,11 @@ def transform_extracted_bet_data(data):
 				player_team = team_name
 			else:
 				# Try to extract team from player name context or use a default
-				player_team = 'TBD'  # Will be resolved by player data population
+				player_team = None  # Will be resolved by player data population (NULL instead of 'TBD')
 			
 			# For player props, we don't know the game teams yet
 			home_team = player_team
-			away_team = 'TBD'
+			away_team = None  # NULL instead of 'TBD' string
 		
 		# Set default game_date for all OCR bets (they typically don't include dates)
 		# Use Eastern timezone to ensure correct date regardless of server location
