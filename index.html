@@ -7033,17 +7033,6 @@
       }
     });
 
-    setTimeout(async () => {
-      await update();
-    }, 500);
-      } catch (e) {
-      console.error('Error moving completed:', e);
-      msg.textContent = `Error: ${e.message}`;
-    } finally {
-      moveBtn.disabled = false;
-    }
-    });
-
     // Wait for auth check to complete before calling update
     (async function () {
       try {
