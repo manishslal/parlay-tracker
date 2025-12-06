@@ -744,7 +744,10 @@ def historical():
 @login_required
 @db_error_handler
 def stats():
-	auto_move_completed_bets(current_user.id)
+	# REMOVED: auto_move_completed_bets() - was causing 17s delays on every request
+	# This function makes ESPN API calls for all bets - should only run in background jobs
+	# Background job handles this automatically every 5 minutes
+	
 	pending_bets = get_user_bets_query(current_user, status='pending').options(db.joinedload(Bet.bet_legs_rel)).all()
 	parlays = [bet.to_dict_structured(use_live_data=True) for bet in pending_bets]
 	processed_parlays = process_parlay_data(parlays)
