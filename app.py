@@ -19,6 +19,12 @@ from datetime import datetime, timedelta, date
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
+# Enable SQL query logging with timing for performance debugging
+sql_logger = logging.getLogger('sqlalchemy.engine')
+sql_logger.setLevel(logging.INFO)  # Set to INFO to log queries, WARNING to disable
+sql_logger.addHandler(logging.StreamHandler())
+
+
 # Load environment variables from .env file
 from dotenv import load_dotenv
 load_dotenv()
