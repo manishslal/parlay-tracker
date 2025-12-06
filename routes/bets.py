@@ -750,11 +750,16 @@ def stats():
 	
 	pending_bets = get_user_bets_query(current_user, status='pending').options(db.joinedload(Bet.bet_legs_rel)).all()
 	parlays = [bet.to_dict_structured(use_live_data=True) for bet in pending_bets]
-	processed_parlays = process_parlay_data(parlays)
+	processed_parlays = process_parlay_data(parlays, fetch_live=True)  # Explicitly fetch live data
+	
 	live_bets = get_user_bets_query(current_user, status='live').options(db.joinedload(Bet.bet_legs_rel)).all()
 	live_parlays = [bet.to_dict_structured(use_live_data=True) for bet in live_bets]
-	processed_live = process_parlay_data(live_parlays)
-	return jsonify(sort_parlays_by_date(processed_live))
+	processed_live = process_parlay_data(live_parlays, fetch_live=True)  # Explicitly fetch live data
+	
+	# CRITICAL FIX: Return BOTH pending and live bets, not just live!
+	all_bets = processed_parlays + processed_live
+	return jsonify(sort_parlays_by_date(all_bets))
+
 
 @bets_bp.route('/api/upload-betslip', methods=['POST'])
 @login_required
