@@ -7,6 +7,8 @@ from flask_login import LoginManager, login_user, logout_user, login_required, c
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.interval import IntervalTrigger
 from apscheduler.triggers.cron import CronTrigger
+from apscheduler.jobstores.sqlalchemy import SQLAlchemyJobStore
+from apscheduler.executors.pool import ThreadPoolExecutor
 import requests
 import os
 import time
@@ -329,10 +331,38 @@ def admin_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
-## Migration logic moved to helpers/database.py
+## Migration logic moved# ===== AUTOMATED BACKGROUND JOBS SETUP =====
 
-# Setup background scheduler for automated tasks
-scheduler = BackgroundScheduler()
+# Configure persistent job store to prevent duplicate jobs across multiple Gunicorn workers
+# This stores job state in the database so all workers share the same scheduler state
+DATABASE_URL = os.environ.get('DATABASE_URL', 'sqlite:///data/parlay_tracker.db')
+
+# Fix postgres:// to postgresql:// for SQLAlchemy (Render uses old format)
+if DATABASE_URL.startswith('postgres://'):
+    DATABASE_URL = DATABASE_URL.replace('postgres://', 'postgresql://', 1)
+
+jobstores = {
+    'default': SQLAlchemyJobStore(url=DATABASE_URL)
+}
+
+executors = {
+    'default': ThreadPoolExecutor(10)  # Max 10 concurrent background jobs
+}
+
+job_defaults = {
+    'coalesce': True,        # Combine multiple missed runs into one
+    'max_instances': 1,      # Only allow one instance of each job to run at a time
+    'misfire_grace_time': 60 # Jobs can start up to 60s late
+}
+
+# Create scheduler with persistent storage
+scheduler = BackgroundScheduler(
+    jobstores=jobstores,
+    executors=executors,
+    job_defaults=job_defaults
+)
+
+logger.info("[SCHEDULER] Configured APScheduler with persistent SQLAlchemy job store")
 
 # Shut down scheduler on app exit
 atexit.register(lambda: scheduler.shutdown())
