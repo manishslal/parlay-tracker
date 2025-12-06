@@ -4237,13 +4237,14 @@
     }
 
     // Prefetch historical data in the background AFTER main content loads
+    // This ensures Live Bets load immediately without waiting
     function prefetchHistorical() {
       setTimeout(async () => {
         try {
           const r = await fetchWithAdminToken(histUrl);
           if (r.ok) { cachedHistorical = await r.json(); console.log('Prefetched historical:', cachedHistorical); }
-        } catch (e) { console.warn('Prefetch historical failed', e); }
-      }, 2000); // Wait 2 seconds after page load before prefetching
+        } catch (e) { console.warn('Prefetch historical failed (non-critical)', e); }
+      }, 500); // Reduced from 2000ms - prefetch sooner but still non-blocking
     }
 
     // Start prefetching after initial page load
