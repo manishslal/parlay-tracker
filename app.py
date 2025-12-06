@@ -2115,70 +2115,80 @@ scheduler.add_job(
     func=run_update_completed_bet_legs,
     trigger=IntervalTrigger(minutes=30),
     id='completed_bet_leg_updates',
-    name='Update completed bet legs with final results every 30 minutes'
+    name='Update completed bet legs with final results every 30 minutes',
+    replace_existing=True  # Replace job if already exists in DB
 )
 
 scheduler.add_job(
     func=run_update_live_bet_legs,
     trigger=IntervalTrigger(minutes=1),
     id='live_bet_updates',
-    name='Update live bet legs with real-time data every minute'
+    name='Update live bet legs with real-time data every minute',
+    replace_existing=True  # Replace job if already exists in DB
 )
 
 scheduler.add_job(
     func=run_standardize_bet_leg_team_names,
     trigger=IntervalTrigger(hours=24),
     id='team_name_standardization',
-    name='Standardize team names in bet_legs to use team_name_short daily'
+    name='Standardize team names in bet_legs to use team_name_short daily',
+    replace_existing=True
 )
 
 scheduler.add_job(
     func=run_auto_move_bets_no_live_legs,
     trigger=IntervalTrigger(minutes=5),
     id='auto_move_no_live_legs',
-    name='Move bets with no live legs to historical every 5 minutes'
+    name='Move bets with no live legs to historical every 5 minutes',
+    replace_existing=True
 )
 
 scheduler.add_job(
     func=run_auto_determine_leg_hit_status,
     trigger=IntervalTrigger(minutes=10),
     id='auto_determine_hit_status',
-    name='Determine hit/miss status for legs with achieved values every 10 minutes'
+    name='Determine hit/miss status for legs with achieved values every 10 minutes',
+    replace_existing=True
 )
 
 scheduler.add_job(
     func=run_process_historical_bets_api,
     trigger=IntervalTrigger(hours=1),
     id='historical_bet_processing',
-    name='Process historical bets with ESPN API data and update status hourly'
+    name='Process historical bets with ESPN API data and update status hourly',
+    replace_existing=True
 )
 
 scheduler.add_job(
     func=run_populate_missing_game_ids,
     trigger=IntervalTrigger(minutes=2),
     id='populate_missing_game_ids',
-    name='Populate game IDs for bets with missing ESPN game links every 2 minutes'
+    name='Populate game IDs for bets with missing ESPN game links every 2 minutes',
+    replace_existing=True
 )
 
 scheduler.add_job(
     func=run_populate_missing_player_data,
     trigger=IntervalTrigger(minutes=3),
     id='populate_missing_player_data',
-    name='Populate player data for bets with missing stats every 3 minutes'
+    name='Populate player data for bets with missing stats every 3 minutes',
+    replace_existing=True
 )
 
 scheduler.add_job(
     func=run_validate_historical_data,
     trigger=CronTrigger(hour=3, minute=0, timezone='US/Eastern'),
     id='validate_historical_data',
-    name='Validate historical bet data against ESPN API daily at 3 AM ET'
+    name='Validate historical bet data against ESPN API daily at 3 AM ET',
+    replace_existing=True
 )
 
 scheduler.add_job(
     func=run_enrich_player_data,
     trigger=IntervalTrigger(minutes=5),
     id='enrich_player_data',
-    name='Enrich incomplete player data every 5 minutes'
+    name='Enrich incomplete player data every 5 minutes',
+    replace_existing=True
 )
 
 # REMOVED: Lambda function can't be serialized by SQLAlchemyJobStore
