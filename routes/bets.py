@@ -582,8 +582,7 @@ def db_health_check():
 @login_required
 @db_error_handler
 def live():
-	# Removed synchronous automation calls - relying on background jobs
-	# /live shows only bets with status='live'
+	# Get all live bets for the current user
 	bets = get_user_bets_query(
 		current_user,
 		status='live',
@@ -591,16 +590,16 @@ def live():
 		is_archived=False
 	).options(db.joinedload(Bet.bet_legs_rel)).all()
 	
-	# Do NOT fetch live data synchronously
-	live_parlays = [bet.to_dict_structured(use_live_data=False) for bet in bets]
-	processed = process_parlay_data(live_parlays, fetch_live=False)
+	# FIXED: Fetch live ESPN data for real-time updates
+	live_parlays = [bet.to_dict_structured(use_live_data=True) for bet in bets]
+	processed = process_parlay_data(live_parlays, fetch_live=True)
 	return jsonify(sort_parlays_by_date(processed))
 
 @bets_bp.route("/todays")
 @login_required
 @db_error_handler
 def todays():
-	# Removed synchronous automation calls - relying on background jobs
+	# FIXED: Fetch live ESPN data for real-time updates
 	
 	# /todays shows only bets with status='pending'
 	bets = get_user_bets_query(
@@ -610,8 +609,9 @@ def todays():
 		is_archived=False
 	).options(db.joinedload(Bet.bet_legs_rel)).all()
 	
-	todays_parlays = [bet.to_dict_structured(use_live_data=False) for bet in bets]
-	processed = process_parlay_data(todays_parlays, fetch_live=False)
+	# FIXED: Fetch live ESPN data for real-time updates
+	todays_parlays = [bet.to_dict_structured(use_live_data=True) for bet in bets]
+	processed = process_parlay_data(todays_parlays, fetch_live=True)
 	return jsonify(sort_parlays_by_date(processed))
 
 @bets_bp.route("/historical")
