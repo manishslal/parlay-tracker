@@ -5044,21 +5044,27 @@
       historicalPrefetchInProgress = true;
       console.log(`🔄 Prefetching page ${nextPage}...`);
 
-      try {
-        const queryString = buildHistoricalQueryString(nextPage);
-        const r = await fetchWithAdminToken(`${histUrl}?${queryString}`);
-        if (r.ok) {
-          const response = await r.json();
-          if (!Array.isArray(response)) {
-            historicalPagesCache[nextPage] = response.bets;
-            console.log(`✅ Prefetched page ${nextPage}`);
+      // Prefetch first page of historical bets in background (NON-BLOCKING)
+      // This should NOT delay the loading of live bets
+      setTimeout(async () => {
+        try {
+          const queryString = buildHistoricalQueryString(nextPage); // Use nextPage here
+          const r = await fetchWithAdminToken(`${histUrl}?${queryString}`);
+          if (r.ok) {
+            const response = await r.json();
+            if (!Array.isArray(response)) {
+              historicalPagesCache[nextPage] = response.bets; // Cache nextPage
+              // Do not update historicalCurrentPage, historicalTotalPages, historicalTotalBets here
+              // as this is a background prefetch, not the main load.
+              console.log(`✅ Prefetched page ${nextPage}`);
+            }
           }
+        } catch (e) {
+          console.warn(`Failed to prefetch page ${nextPage}:`, e);
+        } finally {
+          historicalPrefetchInProgress = false;
         }
-      } catch (e) {
-        console.warn(`Failed to prefetch page ${nextPage}:`, e);
-      } finally {
-        historicalPrefetchInProgress = false;
-      }
+      }, 100); // Prefetch after 100ms, allowing live bets to load first
     }
 
     function render(parlays, container) {
