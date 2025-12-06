@@ -11,7 +11,7 @@ import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
 revision = 'add_performance_indexes'
-down_revision = 'create_audit_tables'  # Fixed: pointing to actual last migration
+down_revision = 'add_player_stats'  # Proper chain: create_audit_tables -> add_player_stats -> add_performance_indexes
 branch_labels = None
 depends_on = None
 
