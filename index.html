@@ -7056,6 +7056,17 @@
           }
         }, 30000); // 30 seconds
 
+        // Keep-alive ping to prevent Render cold starts
+        // Ping every 10 minutes to keep backend warm (Render spins down after 15 min inactivity)
+        setInterval(async () => {
+          try {
+            await fetch(`${API_BASE}/health`, { method: 'HEAD' });
+            console.log('Keep-alive ping sent');
+          } catch (e) {
+            console.warn('Keep-alive ping failed:', e);
+          }
+        }, 600000); // 10 minutes
+
       } catch (error) {
         console.error('Skipping update due to auth error:', error);
       }
