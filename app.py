@@ -2181,12 +2181,13 @@ scheduler.add_job(
     name='Enrich incomplete player data every 5 minutes'
 )
 
-scheduler.add_job(
-    func=lambda: app.app_context().push() or __import__('update_teams').update_teams(),
-    trigger=CronTrigger(hour=4, minute=0, timezone='US/Eastern'),
-    id='daily_team_update',
-    name='Update team data from ESPN daily at 4 AM ET'
-)
+# REMOVED: Lambda function can't be serialized by SQLAlchemyJobStore
+# scheduler.add_job(
+#     func=lambda: app.app_context().push() or __import__('update_teams').update_teams(),
+#     trigger=CronTrigger(hour=4, minute=0, timezone='US/Eastern'),
+#     id='daily_team_update',
+#     name='Update team data from ESPN daily at 4 AM ET'
+# )
 
 # Run diagnostics on startup
 try:
