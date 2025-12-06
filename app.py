@@ -19,10 +19,10 @@ from datetime import datetime, timedelta, date
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
-# Enable SQL query logging with timing for performance debugging
-sql_logger = logging.getLogger('sqlalchemy.engine')
-sql_logger.setLevel(logging.INFO)  # Set to INFO to log queries, WARNING to disable
-sql_logger.addHandler(logging.StreamHandler())
+# DISABLED: SQL query logging - too verbose for production, use only for local debugging
+# sql_logger = logging.getLogger('sqlalchemy.engine')
+# sql_logger.setLevel(logging.WARNING)  # Set to INFO to log queries, WARNING to disable
+
 
 
 # Load environment variables from .env file
